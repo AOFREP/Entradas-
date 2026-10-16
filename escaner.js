@@ -23,12 +23,12 @@
     var pend = {}; S.cola.forEach(function (ev) { if (ev.tipo === 'in') pend[ev.c] = ev; if (ev.tipo === 'undo') delete pend[ev.c]; });
     if (completa) {
       var nuevo = {};
-      lista.forEach(function (r) { nuevo[r[0]] = [r[1], r[2], r[3], r[4], r[5], r[6], r[7] || '']; });
+      lista.forEach(function (r) { nuevo[r[0]] = [r[1], r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8] || '']; });
       Object.keys(pend).forEach(function (c) { if (nuevo[c] && !nuevo[c][4]) { nuevo[c][4] = pend[c].ts; nuevo[c][5] = S.ses.puerta; } });
       S.m = nuevo;
     } else {
       lista.forEach(function (r) {
-        var c = r[0], loc = S.m[c], fila = [r[1], r[2], r[3], r[4], r[5], r[6], r[7] || ''];
+        var c = r[0], loc = S.m[c], fila = [r[1], r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8] || ''];
         if (!r[5] && pend[c] && loc && loc[4]) { fila[4] = loc[4]; fila[5] = loc[5]; } // ingreso local aún no subido: se respeta
         S.m[c] = fila;
       });
@@ -86,7 +86,10 @@
       return;
     }
     var dniTxt = r[1] ? ' · DNI •••' + String(r[1]).slice(-3) : '';
-    if (!r[3]) { encolar({ tipo: 'log', c: c, res: 'Anulada' }); mostrar('r', '⛔', 'ANULADA', r[0], 'Esta entrada fue anulada. No puede ingresar.'); return; }
+    if (!r[3]) {
+      if (r[7] === 'En revisión') { encolar({ tipo: 'log', c: c, res: 'En revisión' }); mostrar('r', '⏳', 'SOCIO SIN VALIDAR', r[0], 'Esta entrada de socio todavía no fue validada. Derivá a la mesa de acreditación.'); return; }
+      encolar({ tipo: 'log', c: c, res: r[7] || 'Anulada' }); mostrar('r', '⛔', r[7] === 'Rechazada' ? 'RECHAZADA' : 'ANULADA', r[0], 'Esta entrada no es válida. No puede ingresar.'); return;
+    }
     if (r[4]) {
       encolar({ tipo: 'log', c: c, res: 'Repetida' });
       mostrar('r', '✋', 'YA INGRESÓ', r[0], 'A las ' + F.hora(r[4]) + (r[5] ? ' por ' + r[5] : '') + ' · ' + r[2]);
@@ -231,7 +234,7 @@
     for (var c in S.m) { var r = S.m[c]; if (sinAcentos(r[0]).indexOf(q) >= 0 || String(r[1]).indexOf(q) >= 0 || sinAcentos(c).indexOf(q) >= 0 || sinAcentos(r[6]).indexOf(q) >= 0) res.push([c, r]); if (res.length >= 40) break; }
     res.sort(function (a, b) { return String(a[1][0]).localeCompare(String(b[1][0]), 'es'); });
     $('resultados').innerHTML = res.map(function (x) {
-      var c = x[0], r = x[1], acc = !r[3] ? '<span class="chipE an">ANULADA</span>' : r[4] ? '<span class="chipE in">ADENTRO ' + F.hora(r[4]) + '</span>' : '<button data-c="' + F.esc(c) + '">Dar ingreso</button>';
+      var c = x[0], r = x[1], acc = !r[3] ? '<span class="chipE an">' + (r[7] === 'En revisión' ? 'SIN VALIDAR' : r[7] === 'Rechazada' ? 'RECHAZADA' : 'ANULADA') + '</span>' : r[4] ? '<span class="chipE in">ADENTRO ' + F.hora(r[4]) + '</span>' : '<button data-c="' + F.esc(c) + '">Dar ingreso</button>';
       return '<div class="fila"><div class="i"><b>' + F.esc(r[0]) + '</b><small>' + (r[6] ? F.esc(r[6]) + ' · ' : '') + F.esc(r[2]) + (r[1] ? ' · DNI ' + F.esc(r[1]) : '') + ' · ' + F.esc(c) + '</small></div>' + acc + '</div>';
     }).join('') || '<div style="opacity:.6;padding:14px 4px">Sin resultados.</div>';
   }

@@ -42,7 +42,7 @@
     <div class="seccion">¿Sos socio de AOFREP?</div>
     <div class="socio" id="socioSel">
       <button type="button" data-s="0" class="on">No soy socio<small>Entrada general</small></button>
-      <button type="button" data-s="1">Soy socio<small>Cortesía sin cargo</small></button>
+      <button type="button" data-s="1">Soy socio<small id="socioPrecio">Precio especial</small></button>
     </div>
     <div id="bloqueSocio" class="oculto">
       <div class="card">
@@ -121,15 +121,17 @@
       D = d; $('cargando').classList.add('oculto');
       var ev = d.evento; F.color(ev.color);
       document.title = ev.nombre + ' · ' + (ev.organiza || '');
-      $('subtitulo').textContent = ev.subtitulo || '';
-      $('fecha').textContent = ev.fecha + (ev.horario ? ' · ' + ev.horario : '');
-      $('lugar').textContent = [ev.lugar, ev.direccion].filter(Boolean).join(' · ');
+      $('subtitulo').innerHTML = F.renglones(ev.subtitulo);
+      $('fecha').innerHTML = F.renglones([ev.fecha, ev.horario]);
+      $('lugar').innerHTML = F.renglones([ev.lugar, ev.direccion]);
       $('org').textContent = ev.organiza || 'AOFREP';
       $('bPrueba').classList.toggle('oculto', !ev.prueba);
       $('condiciones').textContent = 'Acepto las condiciones: ' + (d.condiciones || '');
       $('fIva').innerHTML = '<option value="">Elegí…</option>' + d.condIva.map(function (c) { return '<option>' + F.esc(c) + '</option>'; }).join('');
       $('facQuien').textContent = 'La factura la emite ' + (ev.organiza || 'el organizador') + ' con estos datos.';
       $('notaSocio').innerHTML = F.esc(d.cortTexto || '');
+      var ps = d.tipos.filter(function (t) { return t.cort && t.estado === 'venta'; }).map(function (t) { return t.precio; });
+      if (ps.length) $('socioPrecio').textContent = 'Precio socio ' + F.plata(Math.min.apply(null, ps));
       var inc = ev.incluye || [];
       if (ev.descripcion || inc.length) {
         $('info').innerHTML = (ev.descripcion ? '<div style="font-size:15px;line-height:1.5">' + F.esc(ev.descripcion) + '</div>' : '') +
@@ -150,17 +152,17 @@
     socio = b.getAttribute('data-s') === '1';
     Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) { x.classList.toggle('on', x === b); });
     $('bloqueSocio').classList.toggle('oculto', !socio);
-    if (!socio) D.tipos.forEach(function (t) { if (t.cort) cant[t.id] = 0; });
+    D.tipos.forEach(function (t) { if (socio ? !t.cort : t.cort) cant[t.id] = 0; });
     pintarTipos(); actualizar();
   };
   $('cCuitEmp').oninput = function () {
     var c = this.value.replace(/\D/g, '');
     $('cuitEmpMsg').innerHTML = c.length < 11 ? '' : F.cuitOk(c) ? '<div class="okCampo">✓ CUIT válido</div>' : '<div class="malCampo">Ese CUIT no es válido, revisalo.</div>';
   };
-  function visibles() { return D.tipos.filter(function (t) { return socio || !t.cort; }); }
+  function visibles() { return D.tipos.filter(function (t) { return socio ? t.cort : !t.cort; }); }
   function totalCant() { var t = 0; for (var k in cant) t += cant[k]; return t; }
   function cantCort() { var t = 0; D.tipos.forEach(function (x) { if (x.cort) t += cant[x.id] || 0; }); return t; }
-  function maxPara(t) { var m = t.disp; if (t.cort) m = Math.min(m, D.cortMax - (cantCort() - (cant[t.id] || 0))); return m; }
+  function maxPara(t) { var m = t.disp; if (t.cort && D.cortMax > 0) m = Math.min(m, D.cortMax - (cantCort() - (cant[t.id] || 0))); return m; }
   function pintarTipos() {
     var h = visibles().map(function (t) {
       var on = t.estado === 'venta', est = '';
@@ -169,8 +171,8 @@
       else if (t.estado === 'proximamente') est = '<span class="est">Desde el ' + (t.desde ? new Date(t.desde).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' }) : '') + '</span>';
       else if (t.estado === 'finalizado') est = '<span class="est">Finalizada</span>';
       else if (!t.cort && t.disp <= 15) est = '<span class="est pocas">¡Últimos ' + t.disp + ' lugares!</span>';
-      var pre = t.cort ? '<div class="pre gratis">Sin cargo</div>' : '<div class="pre">' + F.plata(t.precio) + '</div>';
-      var desc = t.desc + (t.cort ? '' : (socio ? (t.desc ? ' · ' : '') + 'Para sumar más entradas que las cortesías' : ''));
+      var pre = t.precio > 0 ? '<div class="pre">' + F.plata(t.precio) + '</div>' : '<div class="pre gratis">Sin cargo</div>';
+      var desc = t.desc;
       return '<div class="tipo' + (on ? '' : ' apagado') + '"><div class="info"><div class="nom">' + F.esc(t.nombre) + '</div>' + (desc ? '<div class="des">' + F.esc(desc) + '</div>' : '') + pre + est + '</div>' +
         (on ? '<div class="paso"><button data-m="' + F.esc(t.id) + '" aria-label="Menos">−</button><span class="cant" id="q_' + F.esc(t.id) + '">0</span><button data-p="' + F.esc(t.id) + '" aria-label="Más">+</button></div>' : '') + '</div>';
     }).join('');
@@ -183,7 +185,7 @@
     if (b.getAttribute('data-p')) { if (q < maxPara(t) && totalCant() < D.max) q++; } else if (q > 0) q--;
     cant[id] = q; actualizar();
   };
-  function subtotal() { var s = 0; D.tipos.forEach(function (t) { if (!t.cort) s += (cant[t.id] || 0) * t.precio; }); return Math.round(s * 100) / 100; }
+  function subtotal() { var s = 0; D.tipos.forEach(function (t) { s += (cant[t.id] || 0) * t.precio; }); return Math.round(s * 100) / 100; }
   function total() { var sub = subtotal(); return sub + Math.round(sub * (D.cargo || 0)) / 100; }
   function actualizar() {
     var n = totalCant(), tot = total(), nc = cantCort();
@@ -193,9 +195,9 @@
       if (mas) mas.disabled = (cant[t.id] || 0) >= maxPara(t) || n >= D.max; if (menos) menos.disabled = !(cant[t.id] > 0);
     });
     $('tot').textContent = F.plata(tot);
-    $('totTxt').textContent = n ? n + (n === 1 ? ' entrada' : ' entradas') + (nc ? ' · ' + nc + ' de cortesía' : '') : 'Elegí la cantidad (máx. ' + D.max + ')';
+    $('totTxt').textContent = n ? n + (n === 1 ? ' entrada' : ' entradas') + (nc ? ' de socio' : '') : 'Elegí la cantidad (máx. ' + D.max + ')';
     if (paso === 1) { $('seguir').disabled = !n; $('seguir').textContent = 'Continuar'; }
-    else { $('seguir').disabled = false; $('seguir').textContent = tot > 0 ? 'Ir a pagar' : 'Enviar solicitud'; }
+    else { $('seguir').disabled = false; $('seguir').textContent = 'Ir a pagar'; }
   }
   function irPaso(p) {
     if (p === 2 && cantCort()) {
@@ -213,11 +215,11 @@
     var sub = subtotal(), cargo = Math.round(sub * (D.cargo || 0)) / 100, lineas = [];
     D.tipos.forEach(function (t) {
       if (!cant[t.id]) return;
-      lineas.push('<div class="lin"><span>' + cant[t.id] + ' × ' + F.esc(t.nombre) + '</span><span>' + (t.cort ? '<span class="chip s">Sin cargo · a verificar</span>' : F.plata(cant[t.id] * t.precio)) + '</span></div>');
+      lineas.push('<div class="lin"><span>' + cant[t.id] + ' × ' + F.esc(t.nombre) + '</span><span>' + F.plata(cant[t.id] * t.precio) + '</span></div>');
     });
     if (cargo) lineas.push('<div class="lin"><span>Cargo por servicio</span><span>' + F.plata(cargo) + '</span></div>');
     lineas.push('<div class="lin tot"><span>Total a pagar</span><span>' + F.plata(sub + cargo) + '</span></div>');
-    if (cantCort()) lineas.push('<div class="nota" style="margin-top:10px">Las cortesías para <b>' + F.esc($('cEmpresa').value.trim()) + '</b> quedan <b>sujetas a verificación de la membresía</b>. Te avisamos por mail cuando estén confirmadas.' + (sub > 0 ? ' Las entradas pagas se emiten apenas se aprueba el pago.' : '') + '</div>');
+    if (cantCort()) lineas.push('<div class="nota" style="margin-top:10px">Después del pago verificamos que <b>' + F.esc($('cEmpresa').value.trim()) + '</b> tenga la <b>membresía al día</b> y te mandamos los QR por mail. Si registrara cuotas pendientes, te avisamos y <b>te devolvemos el importe</b> por el mismo medio de pago.</div>');
     $('resumen').innerHTML = lineas.join('');
     $('bloqueFac').classList.toggle('oculto', !(sub > 0));
     actualizarFac();
@@ -286,7 +288,7 @@
     }
     if (!$('acepto').checked) return error2('Tenés que aceptar las condiciones.');
     var items = D.tipos.filter(function (t) { return cant[t.id]; }).map(function (t) { return { t: t.id, q: cant[t.id] }; });
-    var b = $('seguir'); b.disabled = true; b.textContent = total() > 0 ? 'Reservando…' : 'Enviando…'; $('err2').classList.add('oculto');
+    var b = $('seguir'); b.disabled = true; b.textContent = 'Reservando…'; $('err2').classList.add('oculto');
     F.post('orden', { nombre: nombre, dni: dni, mail: mail, tel: $('cTel').value.trim(), acepta: true, items: items, asistentes: asis.map(function (a) { return { t: a.t, n: a.n, d: a.d }; }),
       empresa: cantCort() ? $('cEmpresa').value.trim() : '', cuitEmpresa: cantCort() ? $('cCuitEmp').value.replace(/\D/g, '') : '', facturacion: fac }, 45000)
       .then(function (r) {
@@ -297,7 +299,7 @@
         b.disabled = false; actualizar();
         if (F.esRed(e)) error2('Se cortó la conexión. No se cobró nada. Probá de nuevo en unos segundos.');
         else error2(F.msg(e));
-        if (/agotad|quedan|disponible|habilitada|cortesía/i.test(F.msg(e))) F.get('evento').then(function (d) { D.tipos = d.tipos; pintarTipos(); });
+        if (/agotad|quedan|disponible|habilitada|socio/i.test(F.msg(e))) F.get('evento').then(function (d) { D.tipos = d.tipos; pintarTipos(); });
         ultimaCompra();
       });
   };

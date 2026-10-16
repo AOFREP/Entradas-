@@ -75,7 +75,10 @@ input.campo.mal { border-color: var(--rojo); }
 .hero .eyn { display: block; width: 78%; max-width: 380px; margin: 0 auto 6px; }
 .hero .sub { text-align: center; color: var(--crema); font-weight: 700; font-size: 15px; opacity: .95; margin-bottom: 16px; }
 .hero .datos { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; text-align: center; color: var(--crema); font-weight: 700; font-size: 14px; }
-.hero .datos div { max-width: 210px; } .hero .datos .ic { display: block; margin: 0 auto 6px; }
+.hero .datos div { max-width: 300px; } .hero .datos .ic { display: block; margin: 0 auto 6px; }
+.renglon { display: block; }
+.hero .datos .renglon:first-of-type { white-space: nowrap; }
+.hero .datos .renglon + .renglon { font-weight: 600; opacity: .9; margin-top: 2px; }
 .hero .flyerBtn { display: block; text-align: center; color: rgba(255,255,255,.7); font-size: 13px; margin-top: 14px; text-decoration: underline; cursor: pointer; }
 .hero .hit { display: block; height: 30px; margin: 18px auto 0; opacity: .9; }
 .flyerVer { position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }

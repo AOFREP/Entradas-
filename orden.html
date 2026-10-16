@@ -64,9 +64,20 @@
       '<a class="btn" style="margin-top:12px" href="./">Inscribirme con entrada general</a></div>';
     return '';
   }
+  function bloqueSocio(enRev, rech, d) {
+    var h = '';
+    if (enRev.length) h += '<div class="estadoSol esp"><b>⏳ Entrada' + (enRev.length > 1 ? 's' : '') + ' de socio en verificación (' + enRev.length + ')</b>' +
+      '<div style="margin-top:6px">' + enRev.map(function (e) { return F.esc(e.nombre); }).join(' · ') + (d.empresa ? ' · ' + F.esc(d.empresa) : '') + '</div>' +
+      '<div style="margin-top:6px">Tu pago está aprobado. Estamos verificando el estado de la membresía; cuando esté confirmada te mandamos ' + (enRev.length > 1 ? 'los QR' : 'el QR') + ' por mail y también aparece' + (enRev.length > 1 ? 'n' : '') + ' acá.</div></div>';
+    if (rech.length) h += '<div class="estadoSol rec"><b>No pudimos validar la membresía</b><div style="margin-top:6px">' + rech.map(function (e) { return F.esc(e.nombre); }).join(' · ') +
+      '</div><div style="margin-top:6px">Según nuestros registros, la membresía de ' + (d.empresa ? '<b>' + F.esc(d.empresa) + '</b>' : 'la empresa') + ' no se encuentra al día, así que ' + (rech.length > 1 ? 'esas entradas quedaron' : 'esa entrada quedó') + ' sin efecto. ' +
+      (d.devolver ? 'Te devolvemos ' + F.plata(d.devolver) + ' por el mismo medio de pago. ' : 'Te devolvemos el importe por el mismo medio de pago. ') + 'Te enviamos el detalle por mail.</div>' +
+      '<a class="btn" style="margin-top:12px" href="./">Inscribirme con entrada general</a></div>';
+    return h;
+  }
   function mostrar(d) {
     var ev = d.evento; F.color(ev.color);
-    $('fecha').textContent = ev.fecha + (ev.horario ? ' · ' + ev.horario : ''); $('lugar').textContent = [ev.lugar, ev.direccion].filter(Boolean).join(' · ');
+    $('fecha').innerHTML = F.renglones([ev.fecha, ev.horario]); $('lugar').innerHTML = F.renglones([ev.lugar, ev.direccion]);
     $('bPrueba').classList.toggle('oculto', !ev.prueba);
     document.title = 'Tu inscripción · ' + ev.nombre;
     var est = d.estado, otra = d.otra || null;
@@ -76,8 +87,17 @@
     var solEmpresa = d.esSolicitud ? d.empresa : (otra ? otra.empresa : '');
     var pagaEnt = d.esSolicitud ? (otra && otra.entradas || []) : d.entradas;
     var estPago = d.esSolicitud ? (otra ? otra.estado : null) : est;
-    var todas = (pagaEnt || []).concat(sol && sol.entradas ? sol.entradas : []);
-    $('solicitud').innerHTML = bloqueSolicitud(sol, solEmpresa);
+    var todasE = (pagaEnt || []).concat(sol && sol.entradas ? sol.entradas : []);
+    // Entradas de socio que esperan validación o fueron rechazadas: no tienen QR
+    var enRev = todasE.filter(function (e) { return e.estado === 'En revisión'; }), rech = todasE.filter(function (e) { return e.estado === 'Rechazada'; });
+    var todas = todasE.filter(function (e) { return e.cod; });
+    $('solicitud').innerHTML = bloqueSolicitud(sol, solEmpresa) + bloqueSocio(enRev, rech, d);
+    if (enRev.length) setTimeout(consultar, 30000);
+    if (!todas.length && (enRev.length || rech.length)) {
+      $('cargando').classList.add('oculto');
+      $('estado').innerHTML = enRev.length ? '<div class="ok">✓ ¡Recibimos tu pago, ' + F.esc(String(d.nombre).split(' ')[0]) + '!<div style="font-weight:500;margin-top:4px">Te escribimos a <b>' + F.esc(d.mail) + '</b> apenas validemos la membresía.</div></div>' : '';
+      return;
+    }
     if (todas.length) {
       $('cargando').classList.add('oculto');
       var cort = sol && sol.estado === 'Cortesía';

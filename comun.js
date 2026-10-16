@@ -44,6 +44,11 @@
   F.esRed = function (e) { return /^RED:|Failed to fetch|NetworkError|Load failed|network/i.test(String(e && e.message)); };
   F.msg = function (e) { return String(e && e.message || e).replace(/^RED: /, ''); };
 
+  /** Texto en renglones: acepta una lista o un texto separado por " · ". */
+  F.renglones = function (x) {
+    var l = Array.isArray(x) ? x : String(x || '').split(/\s+·\s+/);
+    return l.filter(function (t) { return t && String(t).trim(); }).map(function (t) { return '<span class="renglon">' + F.esc(String(t).trim()) + '</span>'; }).join('');
+  };
   F.color = function (c) {
     if (/^#[0-9a-f]{6}$/i.test(c || '')) document.documentElement.style.setProperty('--marca', c);
   };
