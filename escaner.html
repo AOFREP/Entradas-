@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Acreditación · Eventos y Negocios</title>
+<meta name="theme-color" content="#071A33">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { background: #050F1F; color: #fff; overscroll-behavior: none; }
+  .top { display: flex; align-items: center; gap: 10px; padding: 10px 14px; padding-top: calc(10px + env(safe-area-inset-top)); background: #071A33; }
+  .top .ev { flex: 1; min-width: 0; } .top .ev b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .top .ev small { opacity: .7; font-size: 12px; }
+  .punto { width: 10px; height: 10px; border-radius: 50%; background: #3DDC97; display: inline-block; margin-right: 4px; } .punto.off { background: #F0B429; } .punto.err { background: #FF5A5A; }
+  .cont { text-align: right; font-size: 12px; opacity: .9; } .cont b { font-size: 20px; display: block; }
+  .tabs { display: flex; background: #071A33; border-top: 1px solid rgba(255,255,255,.08); }
+  .tabs button { flex: 1; background: none; border: 0; color: rgba(255,255,255,.6); padding: 12px; font-size: 15px; font-weight: 700; font-family: inherit; border-bottom: 3px solid transparent; }
+  .tabs button.on { color: #fff; border-bottom-color: #3DDC97; }
+  #vista { position: relative; background: #000; width: 100%; height: calc(100vh - 200px); height: calc(100dvh - 200px); overflow: hidden; }
+  #video { width: 100%; height: 100%; object-fit: cover; }
+  .marco { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .marco div { width: 64vmin; height: 64vmin; max-width: 340px; max-height: 340px; border: 4px solid rgba(255,255,255,.85); border-radius: 22px; box-shadow: 0 0 0 9999px rgba(0,0,0,.35); }
+  .camBtns { position: absolute; bottom: 14px; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; }
+  .camBtns button { background: rgba(0,0,0,.55); color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 30px; padding: 10px 16px; font-size: 14px; font-weight: 700; font-family: inherit; }
+  #arrancar { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #050F1F; padding: 20px; text-align: center; }
+  .pie2 { display: flex; gap: 10px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .pie2 button { flex: 1; background: #12305A; color: #fff; border: 0; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; font-family: inherit; }
+  #res { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; color: #fff; }
+  #res.v { background: #0E8F4F; } #res.r { background: #C42B1C; } #res.g { background: #5B6770; } #res.a { background: #D98E04; }
+  #res .ico { font-size: 96px; line-height: 1; } #res .tit { font-family: Montserrat, Arial; font-size: 40px; font-weight: 800; margin-top: 10px; }
+  #res .nom { font-size: 26px; font-weight: 700; margin-top: 14px; } #res .det { font-size: 18px; opacity: .92; margin-top: 6px; }
+  #res .toca { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom)); opacity: .75; font-size: 14px; }
+  .panel { padding: 14px; }
+  .panel input { width: 100%; font-size: 17px; padding: 14px; border-radius: 12px; border: 0; font-family: inherit; }
+  .fila { display: flex; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .fila .i { flex: 1; min-width: 0; } .fila .i b { display: block; } .fila .i small { opacity: .7; }
+  .fila button { background: #3DDC97; color: #0B1F23; border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 800; font-family: inherit; }
+  .chipE { font-size: 12px; font-weight: 800; padding: 4px 8px; border-radius: 12px; white-space: nowrap; } .chipE.in { background: #1F4E8C; } .chipE.an { background: #C42B1C; }
+  #login { max-width: 420px; margin: 0 auto; padding: 40px 20px; }
+  #login h1 { font-size: 26px; } #login label { display: block; font-size: 13px; opacity: .8; margin: 16px 0 6px; font-weight: 700; }
+  #login input { width: 100%; font-size: 18px; padding: 14px; border-radius: 12px; border: 0; font-family: inherit; }
+  .avisoE { background: #F0B429; color: #3A2A00; padding: 10px 14px; font-weight: 700; font-size: 14px; }
+  .toast { position: fixed; left: 12px; right: 12px; bottom: calc(80px + env(safe-area-inset-bottom)); background: #F0B429; color: #3A2A00; border-radius: 12px; padding: 12px 14px; font-weight: 700; z-index: 40; box-shadow: 0 6px 24px rgba(0,0,0,.4); }
+</style>
+</head>
+<body>
+<!-- LOGIN -->
+<section id="login" class="oculto">
+  <div style="font-size:12px;letter-spacing:3px;opacity:.7;font-weight:800">EVENTOS Y NEGOCIOS · ACREDITACIÓN</div>
+  <h1>Escáner de entradas</h1>
+  <label>Nombre de esta puerta / dispositivo</label>
+  <input id="lPuerta" placeholder="Ej: Puerta 1, Tablet Gero" autocomplete="off">
+  <label>PIN</label>
+  <input id="lPin" type="password" inputmode="numeric" placeholder="••••" autocomplete="off">
+  <button class="btn" id="lOk" style="margin-top:22px">Entrar</button>
+  <div id="lErr" class="error oculto"></div>
+  <p style="opacity:.6;font-size:13px;margin-top:24px">Al entrar se descarga la lista de entradas a este dispositivo. Después funciona aunque se corte internet.</p>
+</section>
+
+<!-- APP -->
+<section id="app" class="oculto">
+  <div class="top">
+    <div class="ev"><b id="tEv">…</b><small><span class="punto" id="punto"></span><span id="tEstado">Conectado</span> · <span id="tPuerta"></span></small></div>
+    <div class="cont"><b id="cAdentro">0</b>de <span id="cTotal">0</span> adentro</div>
+  </div>
+  <div id="avisoPrueba" class="avisoE oculto">🧪 Modo prueba</div>
+  <div class="tabs"><button class="on" data-tab="scan">📷 Escanear</button><button data-tab="buscar">🔎 Buscar</button><button data-tab="mas">⋯</button></div>
+
+  <div id="tScan">
+    <div id="vista">
+      <video id="video" playsinline muted autoplay></video>
+      <div class="marco"><div></div></div>
+      <div class="camBtns"><button id="bLinterna" class="oculto">🔦 Linterna</button><button id="bCambiar">🔄 Cámara</button></div>
+      <div id="arrancar"><div style="font-size:60px">📷</div><button class="btn" id="bCam" style="max-width:280px">Activar cámara</button><div id="camErr" style="opacity:.8;font-size:14px"></div></div>
+    </div>
+    <div class="pie2"><button id="bDeshacer">↩️ Deshacer último</button><button id="bSync">🔄 Sincronizar</button></div>
+  </div>
+
+  <div id="tBuscar" class="panel oculto">
+    <input id="q" placeholder="Nombre, DNI, empresa o código" autocomplete="off" autocapitalize="none">
+    <div id="resultados"></div>
+  </div>
+
+  <div id="tMas" class="panel oculto">
+    <div class="fila"><div class="i"><b>Pendientes de sincronizar</b><small id="mPend">0</small></div></div>
+    <div class="fila"><div class="i"><b>Última sincronización</b><small id="mUlt">—</small></div></div>
+    <div class="fila"><div class="i"><b>Entradas en este dispositivo</b><small id="mLista">0</small></div></div>
+    <div class="fila"><div class="i"><b>Tiempo en pantalla del resultado</b><small>Más corto = más rápido</small></div><select id="mDur" style="font-size:16px;padding:8px;border-radius:8px"><option value="1200">1,2 s</option><option value="1800" selected>1,8 s</option><option value="2500">2,5 s</option></select></div>
+    <div class="fila"><div class="i"><b>Sonido</b></div><input type="checkbox" id="mSonido" checked style="width:26px;height:26px"></div>
+    <div id="mConf" style="margin-top:14px"></div>
+    <button class="btn sec" id="mSalir" style="margin-top:20px;background:transparent;color:#fff;border-color:rgba(255,255,255,.4)">Cerrar sesión de este dispositivo</button>
+  </div>
+</section>
+
+<div id="res" class="oculto"><div class="ico" id="rIco"></div><div class="tit" id="rTit"></div><div class="nom" id="rNom"></div><div class="det" id="rDet"></div><div class="toca">Tocá para seguir</div></div>
+<div id="toast" class="toast oculto"></div>
+
+<script src="config.js"></script>
+<script src="lib/jsQR.js"></script>
+<script src="comun.js"></script>
+<script src="escaner.js"></script>
+</body>
+</html>

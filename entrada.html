@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entrada</title>
+<meta name="theme-color" content="#071A33">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<main class="contenedor" style="padding-top:16px">
+  <div id="cargando" class="cargando"><div class="spinner"></div>Cargando tu entrada…</div>
+  <div id="err"></div>
+  <div id="ent" class="ent oculto"><canvas id="cv"></canvas>
+    <div style="text-align:center;margin-top:12px" id="est"></div>
+    <div class="acc"><button class="btn sec" id="bajar">⬇️ Descargar</button></div>
+  </div>
+</main>
+<div class="pie">Mostrá este QR en la puerta. Subí el brillo del celular.</div>
+<script src="config.js"></script>
+<script src="lib/qrcode.js"></script>
+<script src="comun.js"></script>
+<script>
+(function () {
+  var $ = F.$, c = F.param('c');
+  if (!c) { $('cargando').classList.add('oculto'); $('err').innerHTML = '<div class="error">Link incompleto.</div>'; return; }
+  var logos = F.cargarLogos();
+  F.get('entrada', { c: c }).then(function (d) { return logos.then(function () { return d; }); }).then(function (d) {
+    $('cargando').classList.add('oculto'); F.color(d.evento.color);
+    document.title = 'Entrada · ' + d.evento.nombre;
+    F.dibujarEntrada($('cv'), d.entrada, d.evento); $('ent').classList.remove('oculto');
+    var e = d.entrada;
+    $('est').innerHTML = e.estado === 'Anulada' ? '<span class="chip r">ANULADA</span>' : e.ingreso ? '<span class="chip a">INGRESÓ ' + F.hora(e.ingreso) + '</span>' : '<span class="chip v">VÁLIDA</span>';
+    $('bajar').onclick = function () { F.descargar($('cv'), 'entrada-' + e.cod + '.png'); };
+  }).catch(function (e) { $('cargando').classList.add('oculto'); $('err').innerHTML = '<div class="error">' + F.esc(F.msg(e)) + '</div>'; });
+})();
+</script>
+</body>
+</html>
