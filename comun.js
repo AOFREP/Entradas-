@@ -42,7 +42,10 @@
     return conTiempo(fetch(url, { method: 'POST', body: JSON.stringify(Object.assign({ a: accion }, datos || {})), redirect: 'follow' }), ms || 40000).then(leer);
   };
   F.esRed = function (e) { return /^RED:|Failed to fetch|NetworkError|Load failed|network/i.test(String(e && e.message)); };
-  F.msg = function (e) { return String(e && e.message || e).replace(/^RED: /, ''); };
+  F.msg = function (e) {
+    if (F.esRed(e) && !/^RED: /.test(String(e && e.message))) return 'No pudimos conectarnos con el sistema de tickets. Revisá tu conexión y probá de nuevo en unos segundos.';
+    return String(e && e.message || e).replace(/^RED: /, '');
+  };
 
   /** Texto en renglones: acepta una lista o un texto separado por " · ". */
   F.renglones = function (x) {

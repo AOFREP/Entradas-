@@ -35,7 +35,10 @@
     var e = d.entrada;
     $('est').innerHTML = e.estado === 'Anulada' ? '<span class="chip r">ANULADO</span>' : e.ingreso ? '<span class="chip a">INGRESÓ ' + F.hora(e.ingreso) + '</span>' : '<span class="chip v">VÁLIDO</span>';
     $('bajar').onclick = function () { F.descargar($('cv'), 'ticket-' + e.cod + '.png'); };
-  }).catch(function (e) { $('cargando').classList.add('oculto'); $('err').innerHTML = '<div class="error">' + F.esc(F.msg(e)) + '</div>'; });
+  }).catch(function (e) {
+    $('cargando').classList.add('oculto');
+    $('err').innerHTML = '<div class="error">' + F.esc(F.msg(e)) + (F.esRed(e) ? ' <a href="" onclick="location.reload();return false">Reintentar</a>' : '') + '</div>';
+  });
 })();
 </script>
 </body>

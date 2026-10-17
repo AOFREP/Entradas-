@@ -142,7 +142,8 @@
     var c = this.value.replace(/\D/g, '');
     $('cuitEmpMsg').innerHTML = c.length < 11 ? '' : F.cuitOk(c) ? '<div class="okCampo">✓ CUIT válido</div>' : '<div class="malCampo">Ese CUIT no es válido, revisalo.</div>';
   };
-  function visibles() { return D.tipos; }
+  // Orden: primero los de no socio (en el orden de la planilla) y al final los de socio
+  function visibles() { return D.tipos.filter(function (t) { return !t.cort; }).concat(D.tipos.filter(function (t) { return t.cort; })); }
   function totalCant() { var t = 0; for (var k in cant) t += cant[k]; return t; }
   function cantCort() { var t = 0; D.tipos.forEach(function (x) { if (x.cort) t += cant[x.id] || 0; }); return t; }
   function maxPara(t) { var m = t.disp; if (t.cort && D.cortMax > 0) m = Math.min(m, D.cortMax - (cantCort() - (cant[t.id] || 0))); return m; }
@@ -199,7 +200,7 @@
   function alerta(t) { $('falla').textContent = t; $('falla').classList.remove('oculto'); setTimeout(function () { $('falla').classList.add('oculto'); }, 4000); window.scrollTo({ top: $('falla').offsetTop - 20, behavior: 'smooth' }); }
   function armarPaso2() {
     var sub = subtotal(), cargo = Math.round(sub * (D.cargo || 0)) / 100, lineas = [];
-    D.tipos.forEach(function (t) {
+    visibles().forEach(function (t) {
       if (!cant[t.id]) return;
       lineas.push('<div class="lin"><span>' + cant[t.id] + ' × ' + F.esc(t.nombre) + '</span><span>' + F.plata(cant[t.id] * t.precio) + '</span></div>');
     });
@@ -211,7 +212,7 @@
     actualizarFac();
     if (!D.nominal) { $('bloqueAsis').classList.add('oculto'); return; }
     var previos = leerAsis(), h = '', i = 0;
-    D.tipos.forEach(function (t) {
+    visibles().forEach(function (t) {
       for (var k = 0; k < (cant[t.id] || 0); k++) {
         var p = previos[i] || {};
         h += '<div class="asis" data-t="' + F.esc(t.id) + '"><div class="t">Ticket ' + (i + 1) + ' · ' + F.esc(t.nombre) + '</div>' +

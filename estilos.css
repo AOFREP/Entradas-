@@ -96,7 +96,7 @@ input.campo.mal { border-color: var(--rojo); }
 .estadoSol.esp { background: #EEF4FD; color: #1F4E8C; } .estadoSol.rec { background: var(--rojoF); color: #7A1B12; }
 
 /* v1.4 · encabezado jerarquizado */
-.hero .bajada { text-align: center; color: var(--crema); margin: 6px 0 22px; }
+.hero .bajada { text-align: center; color: var(--crema); margin: 26px 0 22px; }
 .hero .bajada .kicker { display: inline-block; font-family: Montserrat, Inter, sans-serif; font-weight: 800; font-size: 19px; letter-spacing: .5px;
   padding: 7px 16px; border: 1.5px solid rgba(255, 245, 204, .55); border-radius: 999px; }
 .hero .bajada .lema { display: block; margin-top: 16px; font-weight: 500; font-size: 15.5px; line-height: 1.45; opacity: .88; }
