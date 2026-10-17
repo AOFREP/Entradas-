@@ -1,0 +1,21 @@
+{
+ "name": "Escáner · Eventos y Negocios",
+ "short_name": "Escáner EyN",
+ "start_url": "escaner.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#050F1F",
+ "theme_color": "#071A33",
+ "icons": [
+  {
+   "src": "assets/icono-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "assets/icono-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  }
+ ]
+}
