@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Entrada</title>
+<title>Ticket</title>
 <meta name="theme-color" content="#071A33">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,7 @@
 </head>
 <body>
 <main class="contenedor" style="padding-top:16px">
-  <div id="cargando" class="cargando"><div class="spinner"></div>Cargando tu entrada…</div>
+  <div id="cargando" class="cargando"><div class="spinner"></div>Cargando tu ticket…</div>
   <div id="err"></div>
   <div id="ent" class="ent oculto"><canvas id="cv"></canvas>
     <div style="text-align:center;margin-top:12px" id="est"></div>
@@ -30,11 +30,11 @@
   var logos = F.cargarLogos();
   F.get('entrada', { c: c }).then(function (d) { return logos.then(function () { return d; }); }).then(function (d) {
     $('cargando').classList.add('oculto'); F.color(d.evento.color);
-    document.title = 'Entrada · ' + d.evento.nombre;
+    document.title = 'Ticket · ' + d.evento.nombre;
     F.dibujarEntrada($('cv'), d.entrada, d.evento); $('ent').classList.remove('oculto');
     var e = d.entrada;
-    $('est').innerHTML = e.estado === 'Anulada' ? '<span class="chip r">ANULADA</span>' : e.ingreso ? '<span class="chip a">INGRESÓ ' + F.hora(e.ingreso) + '</span>' : '<span class="chip v">VÁLIDA</span>';
-    $('bajar').onclick = function () { F.descargar($('cv'), 'entrada-' + e.cod + '.png'); };
+    $('est').innerHTML = e.estado === 'Anulada' ? '<span class="chip r">ANULADO</span>' : e.ingreso ? '<span class="chip a">INGRESÓ ' + F.hora(e.ingreso) + '</span>' : '<span class="chip v">VÁLIDO</span>';
+    $('bajar').onclick = function () { F.descargar($('cv'), 'ticket-' + e.cod + '.png'); };
   }).catch(function (e) { $('cargando').classList.add('oculto'); $('err').innerHTML = '<div class="error">' + F.esc(F.msg(e)) + '</div>'; });
 })();
 </script>

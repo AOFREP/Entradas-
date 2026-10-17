@@ -81,14 +81,14 @@
     var r = S.m[c];
     if (!r) {
       encolar({ tipo: 'log', c: c, res: 'No existe' });
-      mostrar('g', '?', 'NO ENCONTRADA', c.length > 20 ? c.slice(0, 20) + '…' : c, 'No es de este evento o se compró hace segundos: tocá 🔄 Sincronizar y volvé a escanear.');
+      mostrar('g', '?', 'NO ENCONTRADO', c.length > 20 ? c.slice(0, 20) + '…' : c, 'No es de este evento o se compró hace segundos: tocá 🔄 Sincronizar y volvé a escanear.');
       sincronizarPronto(300);
       return;
     }
     var dniTxt = r[1] ? ' · DNI •••' + String(r[1]).slice(-3) : '';
     if (!r[3]) {
-      if (r[7] === 'En revisión') { encolar({ tipo: 'log', c: c, res: 'En revisión' }); mostrar('r', '⏳', 'SOCIO SIN VALIDAR', r[0], 'Esta entrada de socio todavía no fue validada. Derivá a la mesa de acreditación.'); return; }
-      encolar({ tipo: 'log', c: c, res: r[7] || 'Anulada' }); mostrar('r', '⛔', r[7] === 'Rechazada' ? 'RECHAZADA' : 'ANULADA', r[0], 'Esta entrada no es válida. No puede ingresar.'); return;
+      if (r[7] === 'En revisión') { encolar({ tipo: 'log', c: c, res: 'En revisión' }); mostrar('r', '⏳', 'SOCIO SIN VALIDAR', r[0], 'Este ticket de socio todavía no fue validado. Derivá a la mesa de acreditación.'); return; }
+      encolar({ tipo: 'log', c: c, res: r[7] || 'Anulada' }); mostrar('r', '⛔', r[7] === 'Rechazada' ? 'RECHAZADO' : 'ANULADO', r[0], 'Este ticket no es válido. No puede ingresar.'); return;
     }
     if (r[4]) {
       encolar({ tipo: 'log', c: c, res: 'Repetida' });
@@ -135,7 +135,7 @@
       aplicarLista(r.lista || [], !!r.completa); guardarLista();
       (r.conflictos || []).forEach(function (x) {
         if (x.motivo === 'repetida') { var m = '⚠ ' + (x.nombre || x.c) + ' ya había ingresado por ' + (x.puerta || 'otra puerta') + (x.cuando ? ' a las ' + F.hora(x.cuando) : '') + '. Pasó dos veces.'; S.conflictos.unshift(m); toast(m, 6000); }
-        if (x.motivo === 'anulada') { var m2 = '⚠ ' + x.c + ' estaba ANULADA y se escaneó sin conexión.'; S.conflictos.unshift(m2); toast(m2, 6000); }
+        if (x.motivo === 'anulada') { var m2 = '⚠ ' + x.c + ' estaba ANULADO y se escaneó sin conexión.'; S.conflictos.unshift(m2); toast(m2, 6000); }
       });
       pintarConflictos();
       S.ultSync = Date.now(); S.online = true;
@@ -234,7 +234,7 @@
     for (var c in S.m) { var r = S.m[c]; if (sinAcentos(r[0]).indexOf(q) >= 0 || String(r[1]).indexOf(q) >= 0 || sinAcentos(c).indexOf(q) >= 0 || sinAcentos(r[6]).indexOf(q) >= 0) res.push([c, r]); if (res.length >= 40) break; }
     res.sort(function (a, b) { return String(a[1][0]).localeCompare(String(b[1][0]), 'es'); });
     $('resultados').innerHTML = res.map(function (x) {
-      var c = x[0], r = x[1], acc = !r[3] ? '<span class="chipE an">' + (r[7] === 'En revisión' ? 'SIN VALIDAR' : r[7] === 'Rechazada' ? 'RECHAZADA' : 'ANULADA') + '</span>' : r[4] ? '<span class="chipE in">ADENTRO ' + F.hora(r[4]) + '</span>' : '<button data-c="' + F.esc(c) + '">Dar ingreso</button>';
+      var c = x[0], r = x[1], acc = !r[3] ? '<span class="chipE an">' + (r[7] === 'En revisión' ? 'SIN VALIDAR' : r[7] === 'Rechazada' ? 'RECHAZADO' : 'ANULADO') + '</span>' : r[4] ? '<span class="chipE in">ADENTRO ' + F.hora(r[4]) + '</span>' : '<button data-c="' + F.esc(c) + '">Dar ingreso</button>';
       return '<div class="fila"><div class="i"><b>' + F.esc(r[0]) + '</b><small>' + (r[6] ? F.esc(r[6]) + ' · ' : '') + F.esc(r[2]) + (r[1] ? ' · DNI ' + F.esc(r[1]) : '') + ' · ' + F.esc(c) + '</small></div>' + acc + '</div>';
     }).join('') || '<div style="opacity:.6;padding:14px 4px">Sin resultados.</div>';
   }

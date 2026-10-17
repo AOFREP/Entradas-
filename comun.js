@@ -49,6 +49,12 @@
     var l = Array.isArray(x) ? x : String(x || '').split(/\s+·\s+/);
     return l.filter(function (t) { return t && String(t).trim(); }).map(function (t) { return '<span class="renglon">' + F.esc(String(t).trim()) + '</span>'; }).join('');
   };
+  /** Bajada del encabezado: lo primero destacado ("Jornada de capacitación"), el resto en renglones más livianos. */
+  F.bajada = function (x) {
+    var l = String(x || '').split(/\s+·\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
+    if (!l.length) return '';
+    return '<span class="kicker">' + F.esc(l[0]) + '</span>' + (l.length > 1 ? '<span class="lema">' + l.slice(1).map(function (t) { return '<span class="renglon">' + F.esc(t) + '</span>'; }).join('') + '</span>' : '');
+  };
   F.color = function (c) {
     if (/^#[0-9a-f]{6}$/i.test(c || '')) document.documentElement.style.setProperty('--marca', c);
   };
@@ -86,7 +92,7 @@
     var n = q.getModuleCount(), lado = 470, cel = Math.floor(lado / (n + 8)), tam = cel * n, x0 = (W - tam) / 2, y0 = 370;
     cx.fillStyle = ent.estado === 'Anulada' ? '#C9CED0' : '#000';
     for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) cx.fillRect(x0 + c * cel, y0 + r * cel, cel, cel);
-    if (ent.estado === 'Anulada') { cx.save(); cx.translate(W / 2, y0 + tam / 2); cx.rotate(-0.4); cx.fillStyle = '#B42318'; cx.font = 'bold 80px Arial'; cx.fillText('ANULADA', 0, 25); cx.restore(); }
+    if (ent.estado === 'Anulada') { cx.save(); cx.translate(W / 2, y0 + tam / 2); cx.rotate(-0.4); cx.fillStyle = '#B42318'; cx.font = 'bold 80px Arial'; cx.fillText('ANULADO', 0, 25); cx.restore(); }
     var yb = y0 + tam + 60;
     cx.fillStyle = '#1E6FD9'; cx.font = 'bold 22px Montserrat, Arial'; cx.fillText(recortar(cx, String(ent.tipo || '').toUpperCase(), W - 80), W / 2, yb);
     cx.fillStyle = '#13233A'; cx.font = 'bold 40px Montserrat, Arial'; cx.fillText(recortar(cx, ent.nombre || '', W - 80), W / 2, yb + 52);
@@ -95,7 +101,7 @@
     cx.fillStyle = '#5F6B7D'; cx.font = '26px monospace'; cx.fillText(ent.cod, W / 2, y2 + 46);
     cx.font = '22px Arial'; cx.fillText(recortar(cx, [ev.lugar, ev.direccion].filter(Boolean).join(' · '), W - 80), W / 2, y2 + 86);
     if (L.hitOsc) { var hh = 30, wh = L.hitOsc.width * hh / L.hitOsc.height; cx.globalAlpha = 0.85; cx.drawImage(L.hitOsc, (W - wh) / 2, Hh - (ev.prueba ? 110 : 64), wh, hh); cx.globalAlpha = 1; }
-    if (ev.prueba) { cx.fillStyle = '#FFF1C2'; cx.fillRect(0, Hh - 54, W, 54); cx.fillStyle = '#8A5A00'; cx.font = 'bold 22px Arial'; cx.fillText('MODO PRUEBA · NO VÁLIDA', W / 2, Hh - 20); }
+    if (ev.prueba) { cx.fillStyle = '#FFF1C2'; cx.fillRect(0, Hh - 54, W, 54); cx.fillStyle = '#8A5A00'; cx.font = 'bold 22px Arial'; cx.fillText('MODO PRUEBA · NO VÁLIDO', W / 2, Hh - 20); }
     cx.textAlign = 'left';
   };
   function recortar(cx, t, max) { t = String(t); if (cx.measureText(t).width <= max) return t; while (t.length > 1 && cx.measureText(t + '…').width > max) t = t.slice(0, -1); return t + '…'; }

@@ -94,3 +94,15 @@ input.campo.mal { border-color: var(--rojo); }
 .okCampo { color: #11663A; font-size: 12px; font-weight: 700; margin-top: 4px; } .malCampo { color: var(--rojo); font-size: 12px; font-weight: 700; margin-top: 4px; }
 .estadoSol { border-radius: 12px; padding: 14px; margin-top: 14px; font-size: 14px; }
 .estadoSol.esp { background: #EEF4FD; color: #1F4E8C; } .estadoSol.rec { background: var(--rojoF); color: #7A1B12; }
+
+/* v1.4 · encabezado jerarquizado */
+.hero .bajada { text-align: center; color: var(--crema); margin: 6px 0 22px; }
+.hero .bajada .kicker { display: inline-block; font-family: Montserrat, Inter, sans-serif; font-weight: 800; font-size: 19px; letter-spacing: .5px;
+  padding: 7px 16px; border: 1.5px solid rgba(255, 245, 204, .55); border-radius: 999px; }
+.hero .bajada .lema { display: block; margin-top: 16px; font-weight: 500; font-size: 15.5px; line-height: 1.45; opacity: .88; }
+/* tickets agotados */
+.tipo .est.agot { background: #B42318; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
+.tipo.agot .pre { text-decoration: line-through; text-decoration-thickness: 2px; opacity: .55; }
+/* aviso al elegir ticket de socio */
+.socioAviso { background: #EEF4FD; border: 1px solid #C9DBF5; color: #1F4E8C; border-radius: 14px; padding: 14px 16px; margin-top: 14px; font-size: 14px; line-height: 1.5; }
+#bloqueSocio .card { margin-top: 10px; }

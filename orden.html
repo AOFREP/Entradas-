@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-<div id="bPrueba" class="prueba oculto">🧪 MODO PRUEBA — estas entradas no son válidas</div>
+<div id="bPrueba" class="prueba oculto">🧪 MODO PRUEBA — estos tickets no son válidos</div>
 <header class="hero" style="padding:22px 0 20px">
   <div class="contenedor">
     <div class="logos"><img src="assets/logo-aofrep.png" alt="AOFREP" style="height:24px"></div>
@@ -25,7 +25,7 @@
   <div id="entradas"></div>
   <div id="solicitud"></div>
 </main>
-<div class="pie">Guardá esta página o el mail: ahí están siempre tus entradas.</div>
+<div class="pie">Guardá esta página o el mail: ahí están siempre tus tickets.</div>
 <script src="config.js"></script>
 <script src="lib/qrcode.js"></script>
 <script src="comun.js"></script>
@@ -49,7 +49,7 @@
   }
   document.body.addEventListener('click', function (e) {
     var b = e.target.closest('[data-lib]'); if (!b) return;
-    if (!confirm('¿Seguro que no vas a poder ir? Tu lugar (y las entradas sin costo de esta inscripción) se liberan para otra persona.')) return;
+    if (!confirm('¿Seguro que no vas a poder ir? Tu lugar (y los tickets sin costo de esta inscripción) se liberan para otra persona.')) return;
     b.disabled = true; b.textContent = 'Liberando…';
     F.post('liberar', { o: b.getAttribute('data-lib'), k: k }).then(function () {
       $('solicitud').innerHTML = '<div class="ok">✓ Listo, liberaste tu lugar. ¡Gracias por avisar! Si cambiás de idea, podés volver a inscribirte mientras haya cupo.</div><a class="btn sec" style="margin-top:12px" href="./">Volver al inicio</a>';
@@ -59,20 +59,20 @@
   function bloqueSolicitud(s, empresa) {
     if (!s) return '';
     if (s.estado === 'Solicitada') return '<div class="estadoSol esp"><b>⏳ Cortesía de socio en verificación</b><div style="margin-top:6px">' + F.esc(s.detalle) + (empresa ? ' · ' + F.esc(empresa) : '') +
-      '</div><div style="margin-top:6px">Estamos verificando el estado de la membresía. Cuando esté confirmada, te llegan las entradas por mail (y también aparecen acá).</div></div>' + (s.liberable ? botonLiberar(s.id) : '');
+      '</div><div style="margin-top:6px">Estamos verificando el estado de la membresía. Cuando esté confirmada, te llegan los tickets por mail (y también aparecen acá).</div></div>' + (s.liberable ? botonLiberar(s.id) : '');
     if (s.estado === 'Rechazada') return '<div class="estadoSol rec"><b>No pudimos confirmar la cortesía</b><div style="margin-top:6px">Según nuestros registros, la membresía de la empresa no se encuentra al día. Te enviamos el detalle por mail. Si ya regularizaste, respondé ese mail y lo revisamos.</div>' +
-      '<a class="btn" style="margin-top:12px" href="./">Inscribirme con entrada general</a></div>';
+      '<a class="btn" style="margin-top:12px" href="./">Comprar ticket general</a></div>';
     return '';
   }
   function bloqueSocio(enRev, rech, d) {
     var h = '';
-    if (enRev.length) h += '<div class="estadoSol esp"><b>⏳ Entrada' + (enRev.length > 1 ? 's' : '') + ' de socio en verificación (' + enRev.length + ')</b>' +
+    if (enRev.length) h += '<div class="estadoSol esp"><b>⏳ Ticket' + (enRev.length > 1 ? 's' : '') + ' de socio en verificación (' + enRev.length + ')</b>' +
       '<div style="margin-top:6px">' + enRev.map(function (e) { return F.esc(e.nombre); }).join(' · ') + (d.empresa ? ' · ' + F.esc(d.empresa) : '') + '</div>' +
       '<div style="margin-top:6px">Tu pago está aprobado. Estamos verificando el estado de la membresía; cuando esté confirmada te mandamos ' + (enRev.length > 1 ? 'los QR' : 'el QR') + ' por mail y también aparece' + (enRev.length > 1 ? 'n' : '') + ' acá.</div></div>';
     if (rech.length) h += '<div class="estadoSol rec"><b>No pudimos validar la membresía</b><div style="margin-top:6px">' + rech.map(function (e) { return F.esc(e.nombre); }).join(' · ') +
-      '</div><div style="margin-top:6px">Según nuestros registros, la membresía de ' + (d.empresa ? '<b>' + F.esc(d.empresa) + '</b>' : 'la empresa') + ' no se encuentra al día, así que ' + (rech.length > 1 ? 'esas entradas quedaron' : 'esa entrada quedó') + ' sin efecto. ' +
+      '</div><div style="margin-top:6px">Según nuestros registros, la membresía de ' + (d.empresa ? '<b>' + F.esc(d.empresa) + '</b>' : 'la empresa') + ' no se encuentra al día, así que ' + (rech.length > 1 ? 'esos tickets quedaron' : 'ese ticket quedó') + ' sin efecto. ' +
       (d.devolver ? 'Te devolvemos ' + F.plata(d.devolver) + ' por el mismo medio de pago. ' : 'Te devolvemos el importe por el mismo medio de pago. ') + 'Te enviamos el detalle por mail.</div>' +
-      '<a class="btn" style="margin-top:12px" href="./">Inscribirme con entrada general</a></div>';
+      '<a class="btn" style="margin-top:12px" href="./">Comprar ticket general</a></div>';
     return h;
   }
   function mostrar(d) {
@@ -101,7 +101,7 @@
     if (todas.length) {
       $('cargando').classList.add('oculto');
       var cort = sol && sol.estado === 'Cortesía';
-      $('estado').innerHTML = (estPago === 'Revisar' ? '<div class="aviso">Tu pago está aprobado y tus entradas están listas. Estamos haciendo una verificación interna; si hiciera falta algo te escribimos.</div>' : '') +
+      $('estado').innerHTML = (estPago === 'Revisar' ? '<div class="aviso">Tu pago está aprobado y tus tickets están listos. Estamos haciendo una verificación interna; si hiciera falta algo te escribimos.</div>' : '') +
         '<div class="ok">✓ ' + (cort && !(pagaEnt || []).length ? '¡Cortesía confirmada! Te esperamos, ' : '¡Listo! Te esperamos, ') + F.esc(String(d.nombre).split(' ')[0]) + '.' +
         '<div style="font-weight:500;margin-top:4px">Te las mandamos también a <b>' + F.esc(d.mail) + '</b>. Presentá cada QR con tu DNI en la acreditación.</div></div>';
       pintar(todas, ev);
@@ -125,7 +125,7 @@
     if (est === 'Pendiente') {
       $('cargTxt').textContent = intentos < 4 ? 'Confirmando tu pago con Mercado Pago…' : 'Seguimos esperando la confirmación de Mercado Pago…';
       if (intentos < 45) setTimeout(consultar, intentos < 10 ? 3000 : 6000);
-      else { $('cargando').classList.add('oculto'); $('estado').innerHTML = '<div class="aviso">Todavía no tenemos la confirmación del pago. Si pagaste, no te preocupes: apenas Mercado Pago lo confirme te llegan las entradas por mail. Podés volver a abrir este link más tarde.</div>'; }
+      else { $('cargando').classList.add('oculto'); $('estado').innerHTML = '<div class="aviso">Todavía no tenemos la confirmación del pago. Si pagaste, no te preocupes: apenas Mercado Pago lo confirme te llegan los tickets por mail. Podés volver a abrir este link más tarde.</div>'; }
       return;
     }
     $('cargando').classList.add('oculto');
@@ -137,7 +137,7 @@
   function pintar(ents, ev) {
     var nuevas = ents.filter(function (e) { return !pintadas[e.cod]; });
     if (!nuevas.length) return;
-    if (!$('entradas').innerHTML) $('entradas').innerHTML = '<div class="seccion">Tus entradas</div><div id="lista"></div>';
+    if (!$('entradas').innerHTML) $('entradas').innerHTML = '<div class="seccion">Tus tickets</div><div id="lista"></div>';
     nuevas.forEach(function (e) {
       pintadas[e.cod] = 1;
       var div = document.createElement('div'); div.className = 'ent';
@@ -145,11 +145,11 @@
       $('lista').appendChild(div);
       var cv = div.querySelector('canvas'); F.dibujarEntrada(cv, e, ev);
       var bs = div.querySelectorAll('button');
-      bs[0].onclick = function () { F.descargar(cv, 'entrada-' + e.cod + '.png'); };
+      bs[0].onclick = function () { F.descargar(cv, 'ticket-' + e.cod + '.png'); };
       bs[1].onclick = function () {
         var url = location.origin + location.pathname.replace(/orden\.html$/, '') + 'entrada.html?c=' + encodeURIComponent(e.cod);
-        var txt = 'Tu entrada para ' + ev.nombre + ' (' + e.nombre + '): ' + url;
-        if (navigator.share) navigator.share({ title: 'Entrada · ' + ev.nombre, text: txt }).catch(function () { });
+        var txt = 'Tu ticket para ' + ev.nombre + ' (' + e.nombre + '): ' + url;
+        if (navigator.share) navigator.share({ title: 'Ticket · ' + ev.nombre, text: txt }).catch(function () { });
         else location.href = 'https://wa.me/?text=' + encodeURIComponent(txt);
       };
     });

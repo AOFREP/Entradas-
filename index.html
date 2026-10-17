@@ -20,7 +20,7 @@
     <div class="logos"><img src="assets/logo-aofrep.png" alt="AOFREP"></div>
     <div class="sub" style="margin-bottom:8px;opacity:.85">presenta</div>
     <img class="eyn" src="assets/logo-eyn.png" alt="Eventos y Negocios">
-    <div class="sub" id="subtitulo">Jornada de capacitación</div>
+    <div class="bajada" id="subtitulo"><span class="kicker">Jornada de capacitación</span></div>
     <div class="datos">
       <div><svg class="ic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFF5CC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span id="fecha">…</span></div>
       <div><svg class="ic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFF5CC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span id="lugar">…</span></div>
@@ -39,12 +39,10 @@
 
   <!-- Paso 1 -->
   <section id="p1" class="oculto">
-    <div class="seccion">¿Sos socio de AOFREP?</div>
-    <div class="socio" id="socioSel">
-      <button type="button" data-s="0" class="on">No soy socio<small>Entrada general</small></button>
-      <button type="button" data-s="1">Soy socio<small id="socioPrecio">Precio especial</small></button>
-    </div>
+    <div class="seccion">Tickets</div>
+    <div class="card" style="padding-top:4px;padding-bottom:4px" id="tipos"></div>
     <div id="bloqueSocio" class="oculto">
+      <div class="socioAviso" id="notaSocio"></div>
       <div class="card">
         <label class="et">Empresa socia de AOFREP</label>
         <input class="campo" id="cEmpresa" placeholder="Nombre de la empresa" autocomplete="organization">
@@ -52,10 +50,7 @@
         <input class="campo" id="cCuitEmp" inputmode="numeric" placeholder="30-12345678-9" autocomplete="off">
         <div id="cuitEmpMsg"></div>
       </div>
-      <div class="nota" id="notaSocio"></div>
     </div>
-    <div class="seccion">Elegí tus entradas</div>
-    <div class="card" style="padding-top:4px;padding-bottom:4px" id="tipos"></div>
   </section>
 
   <!-- Paso 2 -->
@@ -69,12 +64,12 @@
         <div><label class="et">Celular</label><input class="campo" id="cTel" inputmode="tel" autocomplete="tel" placeholder="11 5555 5555"></div>
       </div>
       <label class="et">Mail</label>
-      <input class="campo" id="cMail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Ahí te llegan las entradas">
+      <input class="campo" id="cMail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Ahí te llegan los tickets">
       <label class="et">Repetí el mail</label>
       <input class="campo" id="cMail2" type="email" inputmode="email" autocomplete="off" autocapitalize="none" placeholder="Para evitar errores">
     </div>
     <div id="bloqueAsis" class="oculto">
-      <div class="seccion">¿Quién va a usar cada entrada?</div>
+      <div class="seccion">¿Quién va a usar cada ticket?</div>
       <div class="card" id="asis"></div>
     </div>
     <div id="bloqueFac" class="oculto">
@@ -113,7 +108,7 @@
 <script src="comun.js"></script>
 <script>
 (function () {
-  var $ = F.$, D = null, cant = {}, paso = 1, socio = false;
+  var $ = F.$, D = null, cant = {}, paso = 1;
   $('verFlyer').onclick = function () { $('flyerVer').classList.remove('oculto'); };
   $('flyerVer').onclick = function () { this.classList.add('oculto'); };
   function cargar() {
@@ -121,7 +116,7 @@
       D = d; $('cargando').classList.add('oculto');
       var ev = d.evento; F.color(ev.color);
       document.title = ev.nombre + ' · ' + (ev.organiza || '');
-      $('subtitulo').innerHTML = F.renglones(ev.subtitulo);
+      $('subtitulo').innerHTML = F.bajada(ev.subtitulo);
       $('fecha').innerHTML = F.renglones([ev.fecha, ev.horario]);
       $('lugar').innerHTML = F.renglones([ev.lugar, ev.direccion]);
       $('org').textContent = ev.organiza || 'AOFREP';
@@ -129,17 +124,13 @@
       $('condiciones').textContent = 'Acepto las condiciones: ' + (d.condiciones || '');
       $('fIva').innerHTML = '<option value="">Elegí…</option>' + d.condIva.map(function (c) { return '<option>' + F.esc(c) + '</option>'; }).join('');
       $('facQuien').textContent = 'La factura la emite ' + (ev.organiza || 'el organizador') + ' con estos datos.';
-      $('notaSocio').innerHTML = F.esc(d.cortTexto || '');
-      var ps = d.tipos.filter(function (t) { return t.cort && t.estado === 'venta'; }).map(function (t) { return t.precio; });
-      if (ps.length) $('socioPrecio').textContent = 'Precio socio ' + F.plata(Math.min.apply(null, ps));
+      $('notaSocio').innerHTML = '<b>🔎 Ticket de socio: sujeto a verificación</b><div style="margin-top:6px">' + F.esc(d.cortTexto || '') + '</div>';
       var inc = ev.incluye || [];
       if (ev.descripcion || inc.length) {
-        $('info').innerHTML = (ev.descripcion ? '<div style="font-size:15px;line-height:1.5">' + F.esc(ev.descripcion) + '</div>' : '') +
-          (inc.length ? '<div class="seccion" style="margin-top:14px">La inscripción incluye</div>' + inc.map(function (x) { return '<div style="padding:4px 0">✓ ' + F.esc(x) + '</div>'; }).join('') : '');
+        $('info').innerHTML = (ev.descripcion ? '<div class="seccion" style="margin-top:0">¿De qué se trata el evento?</div><div style="font-size:15px;line-height:1.5">' + F.esc(ev.descripcion) + '</div>' : '') +
+          (inc.length ? '<div class="seccion" style="margin-top:16px">¿Qué incluye el ticket?</div>' + inc.map(function (x) { return '<div style="padding:4px 0">✓ ' + F.esc(x) + '</div>'; }).join('') : '');
         $('info').classList.remove('oculto');
       }
-      var hayCort = d.tipos.some(function (t) { return t.cort; });
-      if (!hayCort) document.querySelector('#p1 .seccion').classList.add('oculto'), $('socioSel').classList.add('oculto');
       if (!d.abierta) { $('cerrada').classList.remove('oculto'); return; }
       pintarTipos(); $('p1').classList.remove('oculto'); $('barra').classList.remove('oculto'); actualizar();
       ultimaCompra();
@@ -147,36 +138,30 @@
       $('cargando').classList.add('oculto'); $('falla').innerHTML = 'No pudimos cargar la inscripción: ' + F.esc(F.msg(e)) + ' <a href="" onclick="location.reload();return false">Reintentar</a>'; $('falla').classList.remove('oculto');
     });
   }
-  $('socioSel').onclick = function (e) {
-    var b = e.target.closest('button'); if (!b) return;
-    socio = b.getAttribute('data-s') === '1';
-    Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) { x.classList.toggle('on', x === b); });
-    $('bloqueSocio').classList.toggle('oculto', !socio);
-    D.tipos.forEach(function (t) { if (socio ? !t.cort : t.cort) cant[t.id] = 0; });
-    pintarTipos(); actualizar();
-  };
   $('cCuitEmp').oninput = function () {
     var c = this.value.replace(/\D/g, '');
     $('cuitEmpMsg').innerHTML = c.length < 11 ? '' : F.cuitOk(c) ? '<div class="okCampo">✓ CUIT válido</div>' : '<div class="malCampo">Ese CUIT no es válido, revisalo.</div>';
   };
-  function visibles() { return D.tipos.filter(function (t) { return socio ? t.cort : !t.cort; }); }
+  function visibles() { return D.tipos; }
   function totalCant() { var t = 0; for (var k in cant) t += cant[k]; return t; }
   function cantCort() { var t = 0; D.tipos.forEach(function (x) { if (x.cort) t += cant[x.id] || 0; }); return t; }
   function maxPara(t) { var m = t.disp; if (t.cort && D.cortMax > 0) m = Math.min(m, D.cortMax - (cantCort() - (cant[t.id] || 0))); return m; }
   function pintarTipos() {
     var h = visibles().map(function (t) {
       var on = t.estado === 'venta', est = '';
-      if (t.estado === 'agotado') est = '<span class="est">Agotado</span>';
+      if (t.estado === 'agotado') est = '<span class="est agot">Agotado</span>';
       else if (t.estado === 'reservado') est = '<span class="est">Agotado por ahora · pueden liberarse lugares en minutos</span>';
       else if (t.estado === 'proximamente') est = '<span class="est">Desde el ' + (t.desde ? new Date(t.desde).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' }) : '') + '</span>';
-      else if (t.estado === 'finalizado') est = '<span class="est">Finalizada</span>';
-      else if (!t.cort && t.disp <= 15) est = '<span class="est pocas">¡Últimos ' + t.disp + ' lugares!</span>';
+      else if (t.estado === 'finalizado') est = '<span class="est agot">Agotado</span>';
+      else if (t.disp <= 15) est = '<span class="est pocas">¡Últimos ' + t.disp + ' lugares!</span>';
       var pre = t.precio > 0 ? '<div class="pre">' + F.plata(t.precio) + '</div>' : '<div class="pre gratis">Sin cargo</div>';
       var desc = t.desc;
-      return '<div class="tipo' + (on ? '' : ' apagado') + '"><div class="info"><div class="nom">' + F.esc(t.nombre) + '</div>' + (desc ? '<div class="des">' + F.esc(desc) + '</div>' : '') + pre + est + '</div>' +
+      if (t.estado === 'agotado' || t.estado === 'finalizado') desc = '';
+      var agot = t.estado === 'agotado' || t.estado === 'finalizado';
+      return '<div class="tipo' + (on ? '' : ' apagado') + (agot ? ' agot' : '') + '"><div class="info"><div class="nom">' + F.esc(t.nombre) + '</div>' + (desc ? '<div class="des">' + F.esc(desc) + '</div>' : '') + pre + est + '</div>' +
         (on ? '<div class="paso"><button data-m="' + F.esc(t.id) + '" aria-label="Menos">−</button><span class="cant" id="q_' + F.esc(t.id) + '">0</span><button data-p="' + F.esc(t.id) + '" aria-label="Más">+</button></div>' : '') + '</div>';
     }).join('');
-    $('tipos').innerHTML = h || '<div style="padding:16px;color:var(--gris)">Todavía no hay entradas disponibles.</div>';
+    $('tipos').innerHTML = h || '<div style="padding:16px;color:var(--gris)">Todavía no hay tickets disponibles.</div>';
   }
   $('tipos').onclick = function (e) {
     var b = e.target.closest('button'); if (!b) return;
@@ -195,7 +180,8 @@
       if (mas) mas.disabled = (cant[t.id] || 0) >= maxPara(t) || n >= D.max; if (menos) menos.disabled = !(cant[t.id] > 0);
     });
     $('tot').textContent = F.plata(tot);
-    $('totTxt').textContent = n ? n + (n === 1 ? ' entrada' : ' entradas') + (nc ? ' de socio' : '') : 'Elegí la cantidad (máx. ' + D.max + ')';
+    $('bloqueSocio').classList.toggle('oculto', !nc);
+    $('totTxt').textContent = n ? n + (n === 1 ? ' ticket' : ' tickets') + (nc && nc < n ? ' · ' + nc + ' de socio' : nc ? ' de socio' : '') : 'Elegí la cantidad (máx. ' + D.max + ')';
     if (paso === 1) { $('seguir').disabled = !n; $('seguir').textContent = 'Continuar'; }
     else { $('seguir').disabled = false; $('seguir').textContent = 'Ir a pagar'; }
   }
@@ -219,7 +205,7 @@
     });
     if (cargo) lineas.push('<div class="lin"><span>Cargo por servicio</span><span>' + F.plata(cargo) + '</span></div>');
     lineas.push('<div class="lin tot"><span>Total a pagar</span><span>' + F.plata(sub + cargo) + '</span></div>');
-    if (cantCort()) lineas.push('<div class="nota" style="margin-top:10px">Después del pago verificamos que <b>' + F.esc($('cEmpresa').value.trim()) + '</b> tenga la <b>membresía al día</b> y te mandamos los QR por mail. Si registrara cuotas pendientes, te avisamos y <b>te devolvemos el importe</b> por el mismo medio de pago.</div>');
+    if (cantCort()) lineas.push('<div class="nota" style="margin-top:10px">Después del pago verificamos que <b>' + F.esc($('cEmpresa').value.trim()) + '</b> tenga la <b>membresía al día</b> y te mandamos ' + (cantCort() > 1 ? 'los tickets de socio' : 'el ticket de socio') + ' por mail. Si registrara cuotas pendientes, te avisamos y <b>te devolvemos ese importe</b> por el mismo medio de pago.' + (cantCort() < totalCant() ? ' Los demás tickets te llegan apenas se aprueba el pago.' : '') + '</div>');
     $('resumen').innerHTML = lineas.join('');
     $('bloqueFac').classList.toggle('oculto', !(sub > 0));
     actualizarFac();
@@ -228,7 +214,7 @@
     D.tipos.forEach(function (t) {
       for (var k = 0; k < (cant[t.id] || 0); k++) {
         var p = previos[i] || {};
-        h += '<div class="asis" data-t="' + F.esc(t.id) + '"><div class="t">Entrada ' + (i + 1) + ' · ' + F.esc(t.nombre) + '</div>' +
+        h += '<div class="asis" data-t="' + F.esc(t.id) + '"><div class="t">Ticket ' + (i + 1) + ' · ' + F.esc(t.nombre) + '</div>' +
           (i === 0 ? '<label class="chk" style="margin-top:8px"><input type="checkbox" class="yo"' + (p.yo !== false ? ' checked' : '') + '><span>Es para mí</span></label>' : '') +
           '<div class="dos"><div><label class="et">Nombre y apellido</label><input class="campo an" value="' + F.esc(p.n || '') + '"></div>' +
           '<div><label class="et">DNI</label><input class="campo ad" inputmode="numeric" value="' + F.esc(p.d || '') + '"></div></div></div>';
@@ -270,12 +256,12 @@
     var nombre = $('cNombre').value.trim(), dni = $('cDni').value.replace(/\D/g, ''), mail = $('cMail').value.trim().toLowerCase(), mail2 = $('cMail2').value.trim().toLowerCase();
     if (nombre.split(/\s+/).length < 2) return error2('Poné nombre y apellido.', $('cNombre'));
     if (dni.length < 7) return error2('Revisá el DNI.', $('cDni'));
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(mail)) return error2('Revisá el mail: ahí te llegan las entradas.', $('cMail'));
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(mail)) return error2('Revisá el mail: ahí te llegan los tickets.', $('cMail'));
     if (mail !== mail2) return error2('Los mails no coinciden.', $('cMail2'));
     var asis = [];
     if (D.nominal) {
       copiarYo(); asis = leerAsis();
-      for (var i = 0; i < asis.length; i++) { if (asis[i].n.split(/\s+/).length < 2 || asis[i].d.length < 7) return error2('Completá nombre, apellido y DNI de la entrada ' + (i + 1) + '.'); }
+      for (var i = 0; i < asis.length; i++) { if (asis[i].n.split(/\s+/).length < 2 || asis[i].d.length < 7) return error2('Completá nombre, apellido y DNI del ticket ' + (i + 1) + '.'); }
     }
     var fac = null;
     if (subtotal() > 0) {
@@ -307,7 +293,7 @@
     try {
       var u = JSON.parse(localStorage.getItem('fz_ultima') || 'null');
       if (u && Date.now() - u.ts < 7 * 86400000) {
-        $('ultima').innerHTML = 'Tu última inscripción: <a href="orden.html?o=' + encodeURIComponent(u.o) + '&k=' + encodeURIComponent(u.k) + '">ver estado y entradas</a>';
+        $('ultima').innerHTML = 'Tu última inscripción: <a href="orden.html?o=' + encodeURIComponent(u.o) + '&k=' + encodeURIComponent(u.k) + '">ver estado y tickets</a>';
         $('ultima').classList.remove('oculto');
       }
     } catch (e) { }

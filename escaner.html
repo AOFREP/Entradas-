@@ -48,14 +48,14 @@
 <!-- LOGIN -->
 <section id="login" class="oculto">
   <div style="font-size:12px;letter-spacing:3px;opacity:.7;font-weight:800">EVENTOS Y NEGOCIOS · ACREDITACIÓN</div>
-  <h1>Escáner de entradas</h1>
+  <h1>Escáner de tickets</h1>
   <label>Nombre de esta puerta / dispositivo</label>
   <input id="lPuerta" placeholder="Ej: Puerta 1, Tablet Gero" autocomplete="off">
   <label>PIN</label>
   <input id="lPin" type="password" inputmode="numeric" placeholder="••••" autocomplete="off">
   <button class="btn" id="lOk" style="margin-top:22px">Entrar</button>
   <div id="lErr" class="error oculto"></div>
-  <p style="opacity:.6;font-size:13px;margin-top:24px">Al entrar se descarga la lista de entradas a este dispositivo. Después funciona aunque se corte internet.</p>
+  <p style="opacity:.6;font-size:13px;margin-top:24px">Al entrar se descarga la lista de tickets a este dispositivo. Después funciona aunque se corte internet.</p>
 </section>
 
 <!-- APP -->
@@ -85,7 +85,7 @@
   <div id="tMas" class="panel oculto">
     <div class="fila"><div class="i"><b>Pendientes de sincronizar</b><small id="mPend">0</small></div></div>
     <div class="fila"><div class="i"><b>Última sincronización</b><small id="mUlt">—</small></div></div>
-    <div class="fila"><div class="i"><b>Entradas en este dispositivo</b><small id="mLista">0</small></div></div>
+    <div class="fila"><div class="i"><b>Tickets en este dispositivo</b><small id="mLista">0</small></div></div>
     <div class="fila"><div class="i"><b>Tiempo en pantalla del resultado</b><small>Más corto = más rápido</small></div><select id="mDur" style="font-size:16px;padding:8px;border-radius:8px"><option value="1200">1,2 s</option><option value="1800" selected>1,8 s</option><option value="2500">2,5 s</option></select></div>
     <div class="fila"><div class="i"><b>Sonido</b></div><input type="checkbox" id="mSonido" checked style="width:26px;height:26px"></div>
     <div id="mConf" style="margin-top:14px"></div>
