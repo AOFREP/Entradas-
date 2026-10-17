@@ -28,7 +28,7 @@
   var $ = F.$, c = F.param('c');
   if (!c) { $('cargando').classList.add('oculto'); $('err').innerHTML = '<div class="error">Link incompleto.</div>'; return; }
   var logos = F.cargarLogos();
-  F.get('entrada', { c: c }).then(function (d) { return logos.then(function () { return d; }); }).then(function (d) {
+  F.get('entrada', { cod: c }).then(function (d) { return logos.then(function () { return d; }); }).then(function (d) {
     $('cargando').classList.add('oculto'); F.color(d.evento.color);
     document.title = 'Ticket · ' + d.evento.nombre;
     F.dibujarEntrada($('cv'), d.entrada, d.evento); $('ent').classList.remove('oculto');

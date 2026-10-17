@@ -5,7 +5,8 @@
   var $ = F.$;
   var K = { ses: 'fz_esc_sesion', lista: 'fz_esc_lista', cola: 'fz_esc_cola', conf: 'fz_esc_conf', pref: 'fz_esc_pref' };
   var S = { ses: null, version: 0, m: {}, cola: [], conflictos: [], ultimo: { c: '', t: 0 }, ultIngreso: null, mostrando: false, sincronizando: false, ultSync: 0, ultCompleta: 0, online: true };
-  var pref = { dur: 1800, sonido: true };
+  var pref = { durRes: 10000, sonido: true, rapida: false };
+  var IDLE_CAM = 60000; // sin leer nada en 1 minuto, la cámara se apaga sola
 
   // ── Guardado local (con try/catch: nunca debe romper el escaneo) ──
   function guardar(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
@@ -60,17 +61,27 @@
     else { tono(220, 0.22); tono(180, 0.3, 0.26); try { navigator.vibrate && navigator.vibrate([200, 80, 200]); } catch (e) { } }
   }
 
-  // ── Resultado en pantalla completa ──
-  var timerRes = null;
+  // ── Resultado: pantalla completa unos segundos y después queda chico en el inicio ──
+  var timerRes = null, timerCuenta = null;
   function mostrar(clase, ico, tit, nom, det) {
     S.mostrando = true;
     var r = $('res'); r.className = clase; $('rIco').textContent = ico; $('rTit').textContent = tit; $('rNom').textContent = nom || ''; $('rDet').textContent = det || '';
     sonar(clase === 'v' ? 'v' : 'x');
-    clearTimeout(timerRes);
-    timerRes = setTimeout(ocultarRes, clase === 'v' ? pref.dur : Math.max(pref.dur, 2600));
+    // recuadro chico del inicio
+    $('ult').className = 'ult ' + (clase === 'v' ? 'v' : clase === 'g' ? 'g' : 'r');
+    $('ult').innerHTML = '<div class="i">' + F.esc(ico) + '</div><div class="t"><b>' + F.esc(tit) + '</b><div class="n">' + F.esc(nom || '') + '</div><small>' + F.esc(det || '') + '</small></div><div class="h">' + F.hora(Date.now()) + '</div>';
+    $('ultBox').classList.remove('oculto');
+    clearTimeout(timerRes); clearInterval(timerCuenta);
+    if (pref.rapida) { $('rCuenta').textContent = ''; timerRes = setTimeout(function () { ocultarRes(); }, clase === 'v' ? 2000 : 3000); return; }
+    cerrarCamara(true); // la cámara se apaga mientras se muestra el resultado
+    var fin = Date.now() + pref.durRes;
+    var pintar = function () { var s = Math.max(0, Math.ceil((fin - Date.now()) / 1000)); $('rCuenta').textContent = 'Vuelve al inicio en ' + s + ' s'; };
+    pintar(); timerCuenta = setInterval(pintar, 500);
+    timerRes = setTimeout(function () { ocultarRes(); irInicio(); }, pref.durRes);
   }
-  function ocultarRes() { clearTimeout(timerRes); $('res').className = 'oculto'; S.mostrando = false; }
-  $('res').onclick = ocultarRes;
+  function ocultarRes() { clearTimeout(timerRes); clearInterval(timerCuenta); $('res').className = 'oculto'; S.mostrando = false; }
+  $('rOtro').onclick = function () { ocultarRes(); abrirCamara(); };
+  $('rListo').onclick = function () { ocultarRes(); irInicio(); };
 
   // ── Procesar una lectura ──
   function procesar(raw, manual) {
@@ -172,17 +183,24 @@
       stream = st; track = st.getVideoTracks()[0];
       var video = $('video'); video.srcObject = st; video.setAttribute('playsinline', ''); return video.play();
     }).then(function () {
-      $('arrancar').classList.add('oculto');
+      if (!S.escaneando) { detenerCamara(); return; } // la cerraron mientras arrancaba
+      $('inicio').classList.add('oculto');
       try { var cap = track.getCapabilities ? track.getCapabilities() : {}; $('bLinterna').classList.toggle('oculto', !cap.torch); } catch (e) { }
       navigator.mediaDevices.enumerateDevices().then(function (ds) { camaras = ds.filter(function (d) { return d.kind === 'videoinput'; }); $('bCambiar').classList.toggle('oculto', camaras.length < 2); }).catch(function () { });
       pedirPantalla();
       if (!leyendo) { leyendo = true; bucle(); }
     }).catch(function (e) {
-      $('arrancar').classList.remove('oculto');
+      S.escaneando = false; $('inicio').classList.remove('oculto');
       $('camErr').textContent = /NotAllowed|Permission/i.test(e.name + e.message) ? 'Permiso de cámara denegado. Habilitalo en la configuración del navegador para este sitio y tocá de nuevo.' : 'No se pudo abrir la cámara: ' + (e.message || e.name);
     });
   }
-  function detenerCamara() { if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; track = null; } }
+  function detenerCamara() { if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; track = null; } linterna = false; }
+  // Inicio (cámara apagada) ↔ escaneando (cámara prendida)
+  var timerIdle = null;
+  function abrirCamara() { S.escaneando = true; $('inicio').classList.add('oculto'); iniciarCamara(camIdx >= 0 && camaras[camIdx] ? camaras[camIdx].deviceId : undefined); reiniciarIdle(); }
+  function cerrarCamara(silencio) { S.escaneando = false; clearTimeout(timerIdle); detenerCamara(); $('video').srcObject = null; if (!silencio) irInicio(); }
+  function irInicio() { $('inicio').classList.remove('oculto'); }
+  function reiniciarIdle() { clearTimeout(timerIdle); if (pref.rapida) return; timerIdle = setTimeout(function () { if (S.escaneando && !S.mostrando) { cerrarCamara(); toast('Cámara apagada para ahorrar batería. Tocá "Escanear" para seguir.', 3500); } }, IDLE_CAM); }
   if ('BarcodeDetector' in window) {
     try { BarcodeDetector.getSupportedFormats().then(function (f) { if (f.indexOf('qr_code') >= 0) detector = new BarcodeDetector({ formats: ['qr_code'] }); }).catch(function () { }); } catch (e) { }
   }
@@ -202,10 +220,11 @@
     } catch (e) { }
     setTimeout(bucle, 110);
   }
-  $('bCam').onclick = function () { iniciarCamara(); };
+  $('bCam').onclick = function () { abrirCamara(); };
+  $('bCerrarCam').onclick = function () { cerrarCamara(); };
   $('bCambiar').onclick = function () {
     if (camaras.length < 2) return;
-    camIdx = (camIdx + 1) % camaras.length; iniciarCamara(camaras[camIdx].deviceId);
+    camIdx = (camIdx + 1) % camaras.length; iniciarCamara(camaras[camIdx].deviceId); reiniciarIdle();
   };
   $('bLinterna').onclick = function () { if (!track) return; linterna = !linterna; track.applyConstraints({ advanced: [{ torch: linterna }] }).catch(function () { toast('Esta cámara no tiene linterna.'); }); };
   var wake = null;
@@ -213,7 +232,9 @@
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
       pedirPantalla(); sincronizarPronto(200);
-      if (S.ses && track && track.readyState === 'ended') iniciarCamara(); // iOS corta la cámara al minimizar
+      if (S.ses && S.escaneando && (!track || track.readyState === 'ended')) iniciarCamara(); // iOS corta la cámara al minimizar
+    } else if (S.escaneando && !pref.rapida) {
+      cerrarCamara(); // si minimizan la app, la cámara se apaga
     }
   });
 
@@ -223,6 +244,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
     var t = b.getAttribute('data-tab');
     $('tScan').classList.toggle('oculto', t !== 'scan'); $('tBuscar').classList.toggle('oculto', t !== 'buscar'); $('tMas').classList.toggle('oculto', t !== 'mas');
+    if (t !== 'scan' && S.escaneando) cerrarCamara(); // fuera del escáner, cámara apagada
     if (t === 'buscar') { $('q').focus(); buscar(); }
   };
 
@@ -247,11 +269,12 @@
   };
 
   // ── Más ──
-  $('mDur').onchange = function () { pref.dur = Number(this.value); guardar(K.pref, pref); };
+  $('mDur').onchange = function () { pref.durRes = Number(this.value); guardar(K.pref, pref); };
+  $('mRapida').onchange = function () { pref.rapida = this.checked; guardar(K.pref, pref); reiniciarIdle(); };
   $('mSonido').onchange = function () { pref.sonido = this.checked; guardar(K.pref, pref); audio(); };
   $('mSalir').onclick = function () {
     if (S.cola.length && !confirm('Hay ' + S.cola.length + ' ingresos sin sincronizar. Si cerrás sesión se van a subir cuando vuelvas a entrar en ESTE dispositivo. ¿Cerrar igual?')) return;
-    S.ses = null; guardar(K.ses, null); detenerCamara(); verLogin('');
+    S.ses = null; guardar(K.ses, null); cerrarCamara(true); verLogin('');
   };
 
   // ── Login ──
@@ -280,7 +303,7 @@
   }
 
   // ── Arranque ──
-  pref = Object.assign(pref, leer(K.pref, {})); $('mDur').value = String(pref.dur); $('mSonido').checked = pref.sonido;
+  pref = Object.assign(pref, leer(K.pref, {})); delete pref.dur; $('mDur').value = String(pref.durRes); $('mSonido').checked = pref.sonido; $('mRapida').checked = !!pref.rapida;
   S.cola = leer(K.cola, []) || [];
   var l = leer(K.lista, null); if (l) { S.version = l.version || 0; S.m = l.m || {}; S.ultCompleta = l.ultCompleta || 0; }
   S.ses = leer(K.ses, null);
