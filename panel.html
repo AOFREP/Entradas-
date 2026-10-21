@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel · Eventos y Negocios</title>
+<meta name="theme-color" content="#071A33">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Panel EyN">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="panel.webmanifest">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .barra { background: var(--marca); color: #fff; padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top)); display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
+  .barra .t { flex: 1; min-width: 0; } .barra .t b { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .barra .t small { opacity: .7; font-size: 12px; }
+  .barra button { background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 10px; padding: 8px 12px; font-weight: 700; font-family: inherit; font-size: 13px; }
+  .nav { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--borde); display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 6; }
+  .nav button { flex: 1; background: none; border: 0; padding: 9px 4px 10px; font-family: inherit; font-size: 12px; font-weight: 700; color: var(--suave); position: relative; }
+  .nav button span { display: block; font-size: 21px; line-height: 1.2; }
+  .nav button.on { color: var(--acento); }
+  .nav .badge { position: absolute; top: 4px; left: 50%; margin-left: 8px; background: var(--rojo); color: #fff; font-size: 11px; border-radius: 10px; padding: 1px 6px; display: none; }
+  .vista { padding: 4px 0 20px; }
+  .seg { display: flex; gap: 8px; margin: 14px 0 4px; }
+  .seg button { flex: 1; border: 1.5px solid var(--acento); background: #fff; color: var(--acento); border-radius: 20px; padding: 9px; font-weight: 700; font-family: inherit; font-size: 14px; }
+  .seg button.on { background: var(--acento); color: #fff; }
+  .sol { background: #fff; border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; margin-top: 12px; box-shadow: var(--sombra); }
+  .sol.dev { border-color: #F5B26B; background: #FFF8EF; }
+  .sol .emp { font-size: 19px; font-weight: 800; line-height: 1.2; }
+  .sol .cuit { font-family: monospace; color: var(--gris); font-size: 15px; margin-top: 2px; }
+  .sol .linea { color: #3B4A60; font-size: 14px; margin-top: 8px; }
+  .sol .linea small { color: var(--suave); }
+  .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 12px; background: #ECECEC; color: #555; }
+  .chip.ok { background: #D6F0DD; color: #11663A; } .chip.mal { background: var(--rojoF); color: var(--rojo); } .chip.rev { background: #DCE8F7; color: #1F4E8C; } .chip.dev { background: #FFD8A8; color: #8A3A00; }
+  .aviso { background: var(--amarillo); color: var(--amarilloT); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 700; margin-top: 8px; }
+  .acc { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .b { border: 0; border-radius: 12px; padding: 13px 16px; font-weight: 800; font-size: 15px; font-family: inherit; cursor: pointer; text-align: center; text-decoration: none; display: inline-block; }
+  .b:disabled { opacity: .5; }
+  .b.verde { background: #11663A; color: #fff; flex: 1; } .b.wa { background: #25D366; color: #fff; flex: 1; }
+  .b.azul { background: var(--acento); color: #fff; flex: 1; }
+  .b.linea { background: #fff; color: var(--acento); border: 1.5px solid var(--acento); }
+  .b.rojo { background: #fff; color: var(--rojo); border: 1.5px solid var(--rojo); }
+  .b.marron { background: #8A3A00; color: #fff; flex: 1; }
+  .b.full { width: 100%; }
+  textarea.campo { width: 100%; font-size: 15px; padding: 12px; border: 1.5px solid var(--borde); border-radius: 11px; font-family: inherit; min-height: 90px; }
+  .vacio { text-align: center; color: var(--suave); padding: 40px 10px; }
+  .res { background: #fff; border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; margin-top: 10px; display: flex; gap: 10px; align-items: center; }
+  .res .i { flex: 1; min-width: 0; } .res .i b { display: block; } .res .i small { color: var(--gris); font-size: 13px; }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .kpi { background: #fff; border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; }
+  .kpi small { color: var(--gris); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; } .kpi b { display: block; font-size: 26px; margin-top: 2px; line-height: 1.15; }
+  .kpi.alerta { border-color: #F5B26B; background: #FFF8EF; }
+  table.tt { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff; border-radius: var(--radio); overflow: hidden; margin-top: 12px; border: 1px solid var(--borde); }
+  .tt th { text-align: right; font-size: 11px; color: var(--gris); text-transform: uppercase; padding: 10px 8px; background: #F6F8FB; }
+  .tt th:first-child, .tt td:first-child { text-align: left; padding-left: 12px; } .tt td { text-align: right; padding: 10px 8px; border-top: 1px solid var(--borde); }
+  .tt td small { display: block; color: var(--suave); font-size: 11px; }
+  .sw { display: flex; align-items: center; gap: 14px; }
+  .sw .i { flex: 1; } .sw .i b { font-size: 17px; display: block; } .sw .i small { color: var(--gris); font-size: 13px; }
+  .tog { position: relative; width: 58px; height: 34px; flex: none; }
+  .tog input { opacity: 0; width: 0; height: 0; }
+  .tog span { position: absolute; inset: 0; background: #C9D2DD; border-radius: 34px; transition: .2s; }
+  .tog span:before { content: ''; position: absolute; width: 26px; height: 26px; left: 4px; top: 4px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .tog input:checked + span { background: #11663A; } .tog.rojo input:checked + span { background: var(--rojo); }
+  .tog input:checked + span:before { transform: translateX(24px); }
+  .hoja { position: fixed; inset: 0; background: rgba(7,26,51,.55); z-index: 10; display: flex; align-items: flex-end; justify-content: center; }
+  .hoja .caja { background: var(--fondo); width: 100%; max-width: 560px; max-height: 92vh; max-height: 92dvh; overflow-y: auto; border-radius: 20px 20px 0 0; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .hoja .cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; } .hoja .cab b { font-size: 18px; }
+  .hoja .cerrar { background: #fff; border: 1px solid var(--borde); border-radius: 50%; width: 36px; height: 36px; font-size: 18px; }
+  .qr { display: block; width: 210px; height: 210px; margin: 8px auto; image-rendering: pixelated; background: #fff; border-radius: 10px; }
+  .toast { position: fixed; left: 12px; right: 12px; top: calc(12px + env(safe-area-inset-top)); z-index: 20; background: #11663A; color: #fff; border-radius: 12px; padding: 13px 15px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.2); max-width: 560px; margin: 0 auto; }
+  .toast.err { background: var(--rojo); }
+  .login { max-width: 420px; margin: 0 auto; padding: 40px 18px; }
+  .login h1 { font-size: 24px; margin: 0 0 4px; } .login p { color: var(--gris); margin: 0 0 8px; }
+  .msgerr { color: var(--rojo); font-weight: 700; margin-top: 12px; min-height: 20px; }
+  .hora { color: var(--suave); font-size: 12px; text-align: right; margin-top: 10px; }
+  .cargando { opacity: .55; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div id="pLogin" class="login oculto">
+  <h1>Panel del evento</h1>
+  <p id="lEvento">Eventos y Negocios</p>
+  <label class="et" for="lQuien">Tu nombre</label>
+  <input class="campo" id="lQuien" autocomplete="name" maxlength="30" placeholder="Ej: Gero">
+  <label class="et" for="lClave">Clave del panel</label>
+  <input class="campo" id="lClave" type="password" autocomplete="current-password" maxlength="60">
+  <button class="b azul full" id="lEntrar" style="margin-top:18px">Entrar</button>
+  <div class="msgerr" id="lErr"></div>
+  <p style="font-size:13px;margin-top:20px">Uso interno. Lo que hagas queda registrado con tu nombre. La sesión dura 12 horas.</p>
+</div>
+
+<div id="pApp" class="oculto">
+  <div class="barra"><div class="t"><b id="aEvento">Panel</b><small id="aQuien"></small></div><button id="aSalir">Salir</button></div>
+  <div class="prueba oculto" id="aPrueba">MODO PRUEBA</div>
+
+  <div class="contenedor">
+    <!-- SOCIOS -->
+    <div class="vista" id="vSocios">
+      <div class="seg"><button class="on" data-s="p">Para validar <span id="sNP"></span></button><button data-s="r">Resueltas <span id="sND"></span></button></div>
+      <div id="sLista"><div class="vacio">Cargando…</div></div>
+    </div>
+
+    <!-- TICKETS -->
+    <div class="vista oculto" id="vTickets">
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <input class="campo" id="tQ" type="search" placeholder="Nombre, DNI, código, mail u orden" enterkeyhint="search" autocomplete="off">
+        <button class="b azul" id="tBuscar" style="flex:none">Buscar</button>
+      </div>
+      <button class="b linea full" id="tCort" style="margin-top:10px">＋ Cortesía rápida</button>
+      <div id="tLista"><div class="vacio">Buscá un ticket para verlo, mandarlo por WhatsApp o reenviar el mail.</div></div>
+    </div>
+
+    <!-- NÚMEROS -->
+    <div class="vista oculto" id="vNumeros">
+      <div class="kpis" id="nKpis"></div>
+      <table class="tt" id="nTabla"></table>
+      <div class="hora"><span id="nHora"></span> · <a href="#" id="nAct">Actualizar</a></div>
+    </div>
+
+    <!-- VENTA -->
+    <div class="vista oculto" id="vVenta">
+      <div class="card sw"><div class="i"><b>Venta abierta</b><small>Apagado: la página muestra "venta cerrada" y nadie puede comprar.</small></div><label class="tog"><input type="checkbox" id="vAbierta"><span></span></label></div>
+      <div class="card sw"><div class="i"><b>Agotar todos los tickets</b><small>Prendido: todos los tickets se muestran "Agotado". Para agotar uno solo, usá la columna Agotado en Tipos.</small></div><label class="tog rojo"><input type="checkbox" id="vAgotado"><span></span></label></div>
+      <div class="card" id="vInfo" style="font-size:14px;color:var(--gris)"></div>
+      <a class="b linea full" id="vVer" target="_blank" rel="noopener" style="margin-top:14px">Ver la página de venta</a>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="on" data-v="Socios"><span>✅</span>Socios<i class="badge" id="navBadge"></i></button>
+    <button data-v="Tickets"><span>🎟️</span>Tickets</button>
+    <button data-v="Numeros"><span>📊</span>Números</button>
+    <button data-v="Venta"><span>⚙️</span>Venta</button>
+  </nav>
+</div>
+
+<div id="hoja" class="hoja oculto"><div class="caja" id="hojaCaja"></div></div>
+<div id="toast" class="toast oculto"></div>
+
+<script src="config.js"></script>
+<script src="comun.js"></script>
+<script src="panel.js"></script>
+</body>
+</html>
