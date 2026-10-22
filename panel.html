@@ -75,6 +75,9 @@
   .toast.err { background: var(--rojo); }
   .login { max-width: 420px; margin: 0 auto; padding: 40px 18px; }
   .login h1 { font-size: 24px; margin: 0 0 4px; } .login p { color: var(--gris); margin: 0 0 8px; }
+  .mot { display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 1.5px solid var(--borde); border-radius: 12px; padding: 12px; margin-top: 8px; }
+  .mot input { width: 20px; height: 20px; margin-top: 2px; flex: none; } .mot b { display: block; font-size: 15px; } .mot small { color: var(--gris); font-size: 13px; }
+  .mot:has(input:checked) { border-color: var(--rojo); background: var(--rojoF); }
   .msgerr { color: var(--rojo); font-weight: 700; margin-top: 12px; min-height: 20px; }
   .hora { color: var(--suave); font-size: 12px; text-align: right; margin-top: 10px; }
   .cargando { opacity: .55; pointer-events: none; }

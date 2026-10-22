@@ -2,6 +2,11 @@
 (function () {
   var $ = F.$, esc = F.esc, plata = F.plata;
   var S = null, D = { socios: null, resumen: null, tipos: [] }, tabSoc = 'p', vista = 'Socios', timer = null;
+  var MOTIVOS = [
+    ['NO_SOCIO', 'No es socia de AOFREP', 'La invita a asociarse (WhatsApp) o a comprar el ticket general.'],
+    ['DEUDA', 'Membresía con cuotas pendientes', 'La invita a regularizar o a comprar el ticket general.'],
+    ['OTRO', 'Otro motivo', 'Escribí la nota: es lo que le explica el rechazo.']
+  ];
 
   // ── sesión (solo en este celular; vence a las 12 h) ──
   function leerS() { try { var s = JSON.parse(localStorage.getItem('panel_s') || 'null'); return s && s.vence > Date.now() ? s : null; } catch (e) { return null; } }
@@ -108,10 +113,19 @@
       var y = buscarSol(id);
       abrirHoja('<div class="cab"><b>Rechazar socio</b><button class="cerrar" data-cerrar>✕</button></div>' +
         '<p style="margin:4px 0 0"><b>' + esc(y.empresa) + '</b> · CUIT ' + esc(y.cuit) + '</p>' +
-        '<p style="font-size:14px;color:var(--gris)">Le llega un mail amable avisando que la membresía no está al día y que se le devuelve ' + plata(y.montoRev) + '. La orden queda "A devolver".</p>' +
-        '<label class="et">Nota para el mail (opcional)</label><textarea class="campo" id="hNota" maxlength="300"></textarea>' +
-        '<button class="b rojo full" id="hRech" style="margin-top:14px">Rechazar y avisar</button>');
-      $('hRech').onclick = function () { accionSocio('rechazar', id, { nota: $('hNota').value }, $('hojaCaja')); };
+        '<label class="et">Motivo</label>' + MOTIVOS.map(function (m) {
+          return '<label class="mot"><input type="radio" name="hMot" value="' + m[0] + '"><span><b>' + m[1] + '</b><small>' + m[2] + '</small></span></label>';
+        }).join('') +
+        '<label class="et">Nota para el mail <span id="hNotaOb">(opcional)</span></label><textarea class="campo" id="hNota" maxlength="300"></textarea>' +
+        '<p style="font-size:13px;color:var(--gris)">En todos los casos el mail avisa que se le devuelven ' + plata(y.montoRev) + ' y la orden queda "A devolver".</p>' +
+        '<button class="b rojo full" id="hRech" style="margin-top:6px">Rechazar y avisar</button>');
+      Array.prototype.forEach.call(document.querySelectorAll('[name=hMot]'), function (r) { r.onchange = function () { $('hNotaOb').textContent = r.value === 'OTRO' ? '(obligatoria)' : '(opcional)'; }; });
+      $('hRech').onclick = function () {
+        var m = document.querySelector('[name=hMot]:checked');
+        if (!m) { toast('Elegí el motivo del rechazo.', true); return; }
+        if (m.value === 'OTRO' && !$('hNota').value.trim()) { toast('Con "Otro motivo" escribí la nota: es lo que le explica el rechazo.', true); $('hNota').focus(); return; }
+        accionSocio('rechazar', id, { motivo: m.value, nota: $('hNota').value }, $('hojaCaja'));
+      };
     } else if ((id = b.getAttribute('data-dev'))) {
       if (!confirm('¿Ya hiciste la devolución en Mercado Pago?')) return;
       accionSocio('devuelto', id, null, card);
