@@ -1,0 +1,467 @@
+/* Credenciales: imprime el sticker de 80 × 50 mm de cada persona en la Zebra (tanda previa o en la puerta). Uso interno, con el PIN del escáner. */
+(function () {
+  var $ = F.$, esc = F.esc;
+  var S = null, D = { creds: [], roles: [], sitio: '' }, actual = null, vista = 'Puerta', imprimiendo = false, cancelar = false;
+  var ANCHO = 640, ALTO = 400; // 80 × 50 mm a 203 dpi (8 puntos por mm)
+  var CFG_DEF = { modo: 'zebra', qr: true, ribbon: true, oscuro: 0, dx: 0, dy: 0 };
+  var cfg = Object.assign({}, CFG_DEF, leerJSON('cred_cfg') || {});
+
+  function leerJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function guardarJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
+  function toast(t, err) { var x = $('toast'); x.textContent = t; x.className = 'toast' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { x.className = 'toast oculto'; }, err ? 7000 : 3500); }
+  function api(op, datos) {
+    return F.post('cred', Object.assign({ token: S.token, puerta: S.puerta, op: op }, datos || {})).catch(function (e) {
+      if (/^SESION: /.test(e.message)) { salir(e.message.replace(/^SESION: /, '')); throw new Error('_sesion'); }
+      throw e;
+    });
+  }
+  function fallo(e) { if (e && e.message === '_sesion') return; toast('⚠ ' + F.msg(e), true); }
+
+  // ── datos de cada persona ──
+  function nombreCred(c) { return String(c.nomCred || c.nombre || '').trim(); }
+  function empresaCred(c) { return String(c.empCred || c.empresaCompra || c.empresaFactura || '').trim(); }
+  function apellido(c) { var p = nombreCred(c).split(/\s+/); return (p.length > 1 ? p.slice(1).join(' ') : p[0]).toLowerCase(); }
+  function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  /** El lector USB escribe como un teclado: con teclado en español el guion puede salir como ' o ?. Nos quedamos con FZ + 10 caracteres. */
+  function codigoLeido(t) {
+    var s = String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    var m = s.match(/FZ([A-Z0-9]{10})/);
+    return m ? 'FZ-' + m[1] : '';
+  }
+  function buscarCod(cod) { return D.creds.find(function (c) { return c.cod === cod; }); }
+
+  // ── sesión ──
+  function leerS() { var s = leerJSON('cred_s'); if (!s || !s.token) return null; var v = Number(String(s.token).split('.')[0]); return v > Date.now() ? s : null; }
+  function entrar() {
+    var puerta = $('lPuerta').value.trim(), pin = $('lPin').value.trim();
+    if (puerta.length < 2) { $('lErr').textContent = 'Poné un nombre para esta compu.'; return; }
+    if (!pin) { $('lErr').textContent = 'Poné el PIN.'; return; }
+    $('lEntrar').disabled = true; $('lErr').textContent = '';
+    F.post('login', { puerta: puerta, pin: pin }, 60000).then(function (r) {
+      S = { token: r.token, puerta: r.puerta, evento: r.evento && r.evento.nombre };
+      guardarJSON('cred_s', S); try { localStorage.setItem('cred_puerta', r.puerta); } catch (e) { }
+      $('lPin').value = ''; iniciar();
+    }).catch(function (e) { $('lErr').textContent = F.msg(e); }).then(function () { $('lEntrar').disabled = false; });
+  }
+  function salir(msj) { try { localStorage.removeItem('cred_s'); } catch (e) { } S = null; $('vApp').classList.add('oculto'); $('vLogin').classList.remove('oculto'); $('lErr').textContent = msj || ''; try { $('lPuerta').value = localStorage.getItem('cred_puerta') || ''; } catch (e) { } }
+
+  function iniciar() {
+    $('vLogin').classList.add('oculto'); $('vApp').classList.remove('oculto');
+    $('hEvento').textContent = 'Credenciales · ' + (S.evento || ''); $('hPuerta').textContent = 'Puerta: ' + S.puerta;
+    cargar().then(function () { ir(vista); });
+    detectarImpresora();
+    clearInterval(iniciar.t);
+    iniciar.t = setInterval(function () { if (document.visibilityState === 'visible' && !imprimiendo) cargar(true); }, 60000);
+  }
+  function cargar(callado) {
+    return api('lista').then(function (r) {
+      D.creds = r.creds || []; D.roles = r.roles || []; D.sitio = r.sitio || location.origin;
+      if (actual) { var n = buscarCod(actual.cod); if (n) actual = Object.assign(n, { _edit: actual._edit }); }
+      cuenta(); if (vista === 'Tanda') pintarTanda();
+    }).catch(callado ? function () { } : fallo);
+  }
+  function cuenta() {
+    var val = D.creds.filter(function (c) { return c.estado === 'Válida'; }), imp = val.filter(function (c) { return c.veces > 0; }).length;
+    $('hCuenta').textContent = imp + ' / ' + val.length + ' stickers';
+  }
+  function ir(v) {
+    vista = v;
+    ['Puerta', 'Tanda', 'Impresora'].forEach(function (k) { $('v' + k).classList.toggle('oculto', k !== v); });
+    Array.prototype.forEach.call(document.querySelectorAll('nav button'), function (b) { b.classList.toggle('on', b.getAttribute('data-v') === v); });
+    if (v === 'Tanda') pintarTanda();
+    if (v === 'Puerta') { pintarEditor(); setTimeout(function () { $('pLector').focus(); }, 50); }
+    if (v === 'Impresora') pintarCfg();
+  }
+
+  // ── dibujo del sticker (igual al diseño aprobado: centrado, franja negra abajo) ──
+  var fuenteLista = null;
+  function fuente() {
+    if (!fuenteLista) fuenteLista = Promise.all(['800', '700', '500'].map(function (w) { return document.fonts.load(w + ' 60px "Barlow Condensed"'); })).catch(function () { });
+    return fuenteLista;
+  }
+  function ajustar(cx, texto, peso, max, ancho) {
+    var t = max;
+    for (; t > 20; t -= 2) { cx.font = peso + ' ' + t + 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif'; if (cx.measureText(texto).width <= ancho) break; }
+    return t;
+  }
+  function partir(cx, texto, ancho) {
+    var p = texto.split(/\s+/), mejor = null;
+    for (var i = 1; i < p.length; i++) {
+      var a = p.slice(0, i).join(' '), b = p.slice(i).join(' '), w = Math.max(cx.measureText(a).width, cx.measureText(b).width);
+      if (!mejor || w < mejor.w) mejor = { a: a, b: b, w: w };
+    }
+    return mejor;
+  }
+  function datosSticker(c) {
+    return { nombre: nombreCred(c).toUpperCase(), empresa: empresaCred(c), rubro: String(c.rubro || '').trim(), rol: String(c.rol || '').trim(), cargo: String(c.cargo || '').trim(),
+      qr: cfg.qr && c.hola ? (D.sitio || location.origin).replace(/\/+$/, '') + '/a?h=' + c.hola : '' };
+  }
+  function dibujar(canvas, d) {
+    canvas.width = ANCHO; canvas.height = ALTO;
+    var cx = canvas.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, ANCHO, ALTO);
+    cx.fillStyle = '#000'; cx.textBaseline = 'alphabetic'; cx.textAlign = 'center';
+    var banda = d.rol ? 92 : 0, margen = 24, qrLado = 0, qrX = 0;
+    // QR personal a la derecha del texto
+    if (d.qr && typeof qrcode === 'function') {
+      var q = qrcode(0, 'L'); q.addData(d.qr); q.make();
+      var n = q.getModuleCount(), m = 4, quiet = 2 * m; qrLado = n * m;
+      qrX = ANCHO - margen - qrLado; var qrY = Math.round((ALTO - banda - qrLado) / 2);
+      for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) cx.fillRect(qrX + k * m, qrY + r * m, m, m);
+      qrLado += quiet;
+    }
+    var izq = margen, der = qrLado ? qrX - 12 : ANCHO - margen, w = der - izq, centro = izq + w / 2;
+    // Nombre: hasta 100 px; si no entra, se achica; si sigue sin entrar (o es muy largo), dos renglones
+    var lineas = [d.nombre], tNom = ajustar(cx, d.nombre, 800, 100, w);
+    if (tNom < 72 && d.nombre.indexOf(' ') > 0) {
+      cx.font = '800 100px "Barlow Condensed"'; var pr = partir(cx, d.nombre, w);
+      if (pr) { var t2 = Math.min(ajustar(cx, pr.a, 800, 84, w), ajustar(cx, pr.b, 800, 84, w)); if (t2 > tNom) { lineas = [pr.a, pr.b]; tNom = t2; } }
+    }
+    var tEmp = d.empresa ? ajustar(cx, d.empresa, 700, 62, w) : 0, tRub = d.rubro ? ajustar(cx, d.rubro, 500, 44, w) : 0;
+    var alto = lineas.length * tNom * 0.95 + (tEmp ? 10 + tEmp : 0) + (tRub ? 4 + tRub : 0);
+    var y = Math.round((ALTO - banda - alto) / 2);
+    cx.font = '800 ' + tNom + 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif';
+    lineas.forEach(function (l) { y += tNom * 0.95; cx.fillText(l, centro, y - tNom * 0.17); });
+    if (tEmp) { y += 10 + tEmp; cx.font = '700 ' + tEmp + 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif'; cx.fillText(d.empresa, centro, y - tEmp * 0.17); }
+    if (tRub) { y += 4 + tRub; cx.font = '500 ' + tRub + 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif'; cx.fillText(d.rubro, centro, y - tRub * 0.17); }
+    // Franja negra con el rol (y el cargo)
+    if (banda) {
+      cx.fillRect(0, ALTO - banda, ANCHO, banda);
+      cx.fillStyle = '#fff';
+      var rol = d.rol.toUpperCase(), carg = d.cargo ? ' · ' + d.cargo : '', tB = 44;
+      for (; tB > 22; tB -= 2) {
+        cx.font = '800 ' + tB + 'px "Barlow Condensed"'; var a = cx.measureText(rol).width + (rol.length - 1) * 2;
+        cx.font = '600 ' + Math.round(tB * 0.86) + 'px "Barlow Condensed"'; var b = carg ? cx.measureText(carg).width : 0;
+        if (a + b <= ANCHO - 2 * margen) break;
+      }
+      cx.font = '800 ' + tB + 'px "Barlow Condensed"'; var aw = cx.measureText(rol).width + (rol.length - 1) * 2;
+      cx.font = '600 ' + Math.round(tB * 0.86) + 'px "Barlow Condensed"'; var bw = carg ? cx.measureText(carg).width : 0;
+      var x0 = (ANCHO - aw - bw) / 2, yb = ALTO - banda / 2 + tB * 0.34;
+      cx.textAlign = 'left'; cx.font = '800 ' + tB + 'px "Barlow Condensed"';
+      try { cx.letterSpacing = '2px'; } catch (e) { }
+      cx.fillText(rol, x0, yb);
+      try { cx.letterSpacing = '0px'; } catch (e) { }
+      if (carg) { cx.font = '600 ' + Math.round(tB * 0.86) + 'px "Barlow Condensed"'; cx.fillText(carg, x0 + aw, yb); }
+      cx.textAlign = 'center'; cx.fillStyle = '#000';
+    }
+    return canvas;
+  }
+
+  // ── salida a la impresora ──
+  /** Canvas → ZPL con la imagen en blanco y negro (^GFA). */
+  function zpl(canvas) {
+    var cx = canvas.getContext('2d'), px = cx.getImageData(0, 0, ANCHO, ALTO).data, bpr = ANCHO / 8, hex = [], HX = '0123456789ABCDEF';
+    for (var y = 0; y < ALTO; y++) {
+      for (var b = 0; b < bpr; b++) {
+        var v = 0;
+        for (var i = 0; i < 8; i++) { var o = (y * ANCHO + b * 8 + i) * 4, lum = px[o] * 0.299 + px[o + 1] * 0.587 + px[o + 2] * 0.114; if (lum < 140) v |= (128 >> i); }
+        hex.push(HX[v >> 4] + HX[v & 15]);
+      }
+    }
+    var total = bpr * ALTO, dx = Math.round((Number(cfg.dx) || 0) * 8), dy = Math.round((Number(cfg.dy) || 0) * 8), md = Math.max(-10, Math.min(10, Math.round(Number(cfg.oscuro) || 0)));
+    return '^XA^PW' + ANCHO + '^LL' + ALTO + '^MN' + 'Y' + '^MT' + (cfg.ribbon ? 'T' : 'D') + '^MD' + md + '^LH' + Math.max(0, dx) + ',' + Math.max(0, dy) +
+      '^FO' + Math.max(0, -dx) + ',' + Math.max(0, -dy) + '^GFA,' + total + ',' + total + ',' + bpr + ',' + hex.join('') + '^FS^PQ1^XZ';
+  }
+  // Zebra Browser Print (programa de Zebra en la Mac): http en 9100 o https en 9101
+  var BP = { base: null, disp: null };
+  function bpFetch(base, ruta, opciones) { return fetch(base + ruta, Object.assign({ mode: 'cors' }, opciones || {})); }
+  function detectarImpresora() {
+    if (cfg.modo === 'dialogo') { estadoImp('dialogo'); return Promise.resolve(false); }
+    estadoImp('buscando');
+    var bases = ['http://127.0.0.1:9100', 'https://127.0.0.1:9101'], i = 0;
+    function probar() {
+      if (i >= bases.length) { BP.base = null; BP.disp = null; estadoImp('no'); return false; }
+      var base = bases[i++];
+      return Promise.race([bpFetch(base, '/default?type=printer').then(function (r) { return r.text(); }), new Promise(function (ok, mal) { setTimeout(function () { mal(new Error('tiempo')); }, 3000); })])
+        .then(function (t) {
+          var d = null; try { d = t ? JSON.parse(t) : null; } catch (e) { }
+          if (d && d.uid) { BP.base = base; BP.disp = d; estadoImp('ok'); return true; }
+          return bpFetch(base, '/available').then(function (r) { return r.json(); }).then(function (j) {
+            var p = j && j.printer && j.printer[0];
+            if (p) { BP.base = base; BP.disp = p; estadoImp('ok'); return true; }
+            BP.base = base; BP.disp = null; estadoImp('sinzebra'); return false;
+          });
+        }).catch(probar);
+    }
+    return probar();
+  }
+  function estadoImp(e) {
+    var p = $('hImpresora'), s = $('iEstado'), nom = BP.disp ? (BP.disp.name || 'Zebra') : '';
+    var m = {
+      buscando: ['Impresora: buscando…', '', 'Buscando la Zebra…', 'info'],
+      ok: ['🖨️ ' + nom, 'ok', '✓ Conectada: ' + nom + '. Los stickers salen directo.', 'ok'],
+      no: ['Zebra no encontrada', 'mal', 'No encuentro Zebra Browser Print. ¿Está instalado y abierto en esta Mac? En Chrome, si pregunta por acceso a la red local, tocá Permitir. Si lo acabás de abrir, tocá "Buscar impresora". Mientras tanto podés usar el cuadro de impresión.', 'mal'],
+      sinzebra: ['Sin impresora', 'av', 'Browser Print está abierto pero no ve ninguna Zebra. Revisá que esté prendida y conectada por USB, y en el ícono de Browser Print elegila como predeterminada.', 'av'],
+      dialogo: ['🖨️ Cuadro de impresión', 'av', 'Modo cuadro de impresión: en cada impresión se abre el diálogo de la Mac. Elegí la Zebra, tamaño 80 × 50 mm y escala 100 %.', 'info']
+    }[e];
+    p.textContent = m[0]; p.className = 'pill ' + m[1]; s.textContent = m[2]; s.className = 'aviso ' + m[3];
+  }
+  function enviarZebra(datos) {
+    if (!BP.base || !BP.disp) return Promise.reject(new Error('La Zebra no está conectada (pestaña Impresora).'));
+    return bpFetch(BP.base, '/write', { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify({ device: BP.disp, data: datos }) })
+      .then(function (r) { if (!r.ok) throw new Error('La Zebra respondió ' + r.status); });
+  }
+  /** Imprime una lista de stickers. Zebra: uno por uno. Diálogo: todos juntos en una ventana. */
+  function imprimirStickers(lista, alAvanzar) {
+    if (cfg.modo === 'dialogo') return imprimirDialogo(lista);
+    var i = 0;
+    function sig() {
+      if (cancelar) return Promise.resolve(i);
+      if (i >= lista.length) return Promise.resolve(i);
+      var cv = dibujar(document.createElement('canvas'), datosSticker(lista[i]));
+      return enviarZebra(zpl(cv)).then(function () { i++; if (alAvanzar) alAvanzar(i, lista[i - 1]); return new Promise(function (ok) { setTimeout(ok, 150); }); }).then(sig);
+    }
+    return fuente().then(sig);
+  }
+  function imprimirDialogo(lista) {
+    return fuente().then(function () {
+      var imgs = lista.map(function (c) { return dibujar(document.createElement('canvas'), datosSticker(c)).toDataURL('image/png'); });
+      var w = window.open('', '_blank', 'width=500,height=400');
+      if (!w) throw new Error('El navegador bloqueó la ventana de impresión. Permití ventanas emergentes para este sitio.');
+      w.document.write('<!doctype html><html><head><title>Stickers</title><style>@page{size:80mm 50mm;margin:0}html,body{margin:0}img{display:block;width:80mm;height:50mm;page-break-after:always}</style></head><body>' +
+        imgs.map(function (s) { return '<img src="' + s + '">'; }).join('') + '</body></html>');
+      w.document.close();
+      return new Promise(function (ok) { w.onload = function () { w.focus(); w.print(); ok(lista.length); }; setTimeout(function () { try { w.focus(); w.print(); } catch (e) { } ok(lista.length); }, 1500); });
+    });
+  }
+
+  // ── puerta ──
+  function buscar(txt) {
+    var cod = codigoLeido(txt);
+    if (cod) {
+      var c = buscarCod(cod);
+      $('pLector').value = '';
+      if (!c) { // compra de último momento: se actualiza la lista sola y se vuelve a buscar
+        $('pResultados').innerHTML = '<div class="ayuda">Buscando ' + esc(cod) + ' en las compras más recientes…</div>'; actual = null; pintarEditor();
+        cargar(true).then(function () {
+          var c2 = buscarCod(cod);
+          if (!c2) { $('pResultados').innerHTML = '<div class="aviso mal">No encontré el ticket ' + esc(cod) + '. No es de este evento o el pago todavía no se acreditó.</div>'; return; }
+          $('pResultados').innerHTML = ''; elegir(c2, true);
+        });
+        return;
+      }
+      $('pResultados').innerHTML = ''; elegir(c, true); return;
+    }
+    var q = norm(txt).trim();
+    if (q.length < 2) { $('pResultados').innerHTML = ''; return; }
+    var dq = q.replace(/\D/g, '');
+    var r = D.creds.filter(function (c) {
+      return norm(nombreCred(c)).indexOf(q) >= 0 || norm(c.nombre).indexOf(q) >= 0 || norm(empresaCred(c)).indexOf(q) >= 0 || (dq.length >= 5 && c.dni.indexOf(dq) >= 0);
+    }).slice(0, 12);
+    $('pResultados').innerHTML = r.length ? r.map(function (c) {
+      return '<button class="res" data-cod="' + esc(c.cod) + '"><span><b>' + esc(nombreCred(c)) + '</b><br><small>' + esc([empresaCred(c), c.tipo, 'DNI ' + c.dni].filter(Boolean).join(' · ')) + '</small></span>' + chips(c) + '</button>';
+    }).join('') : '<div class="ayuda">No encontré a nadie con eso.</div>';
+  }
+  function chips(c) {
+    var h = '';
+    if (c.estado !== 'Válida') h += '<span class="chip mal">' + (c.estado === 'En revisión' ? 'Socio sin validar' : esc(c.estado)) + '</span> ';
+    if (c.veces) h += '<span class="chip ok">Sticker ✓</span> ';
+    if (c.ingreso) h += '<span class="chip az">Ingresó</span>';
+    return '<span>' + h + '</span>';
+  }
+  function elegir(c, desdeLector) {
+    actual = Object.assign({}, c, { _edit: { nomCred: c.nomCred || '', empCred: empresaCred(c), rubro: c.rubro || '', rol: c.rol || '', cargo: c.cargo || '' }, _lector: !!desdeLector });
+    pintarEditor();
+  }
+  function pintarEditor() {
+    var cv = $('pCanvas');
+    if (!actual) { $('pEditor').innerHTML = ''; fuente().then(function () { dibujar(cv, { nombre: 'NOMBRE APELLIDO', empresa: 'Empresa', rubro: 'Rubro', rol: '', cargo: '', qr: '' }); }); return; }
+    var c = actual, e = c._edit, bloqueo = c.estado !== 'Válida';
+    var avisos = '';
+    if (c.estado === 'En revisión') avisos += '<div class="aviso mal">Socio sin validar: todavía no tiene ticket válido. Validalo en el panel antes de darle la credencial.</div>';
+    else if (bloqueo) avisos += '<div class="aviso mal">Ticket ' + esc(c.estado) + ': no corresponde credencial.</div>';
+    var entregar = vista === 'Puerta' && c.veces && !bloqueo;
+    if (entregar) avisos += '<div class="aviso ok" style="font-size:18px;font-weight:800">🏷️ Credencial ya impresa (' + esc(c.impresa) + '): buscala en la caja y entregala.</div><div class="ayuda">Reimprimí solo si se le perdió o hay que corregir algo.</div>';
+    else if (c.veces) avisos += '<div class="aviso av">Ya tiene sticker (impreso ' + esc(c.impresa) + (c.veces > 1 ? ', ' + c.veces + ' veces' : '') + '). Imprimí de nuevo solo si se le perdió o salió mal.</div>';
+    if (c.ingreso) avisos += '<div class="aviso info">Ya ingresó a las ' + F.hora(c.ingreso) + (c.puerta ? ' (' + esc(c.puerta) + ')' : '') + '.</div>';
+    var roles = '<option value="">Asistente (sin franja)</option>' + D.roles.map(function (r) { return '<option' + (r === e.rol ? ' selected' : '') + '>' + esc(r) + '</option>'; }).join('');
+    $('pEditor').innerHTML = '<div style="margin-top: 16px; border-top: 1px solid var(--borde); padding-top: 12px">' +
+      '<div style="font-size: 20px; font-weight: 800">' + esc(c.nombre) + '</div><div class="ayuda" style="margin-top: 2px">' + esc(c.tipo) + ' · DNI ' + esc(c.dni) + ' · ' + esc(c.cod) + '</div>' + avisos +
+      '<div class="dos">' +
+      '<div><label class="et" for="eNom">Nombre en el sticker</label><input class="campo" id="eNom" maxlength="80" value="' + esc(e.nomCred) + '" placeholder="' + esc(c.nombre) + '"></div>' +
+      '<div><label class="et" for="eEmp">Empresa</label><input class="campo" id="eEmp" maxlength="80" value="' + esc(e.empCred) + '"></div>' +
+      '<div><label class="et" for="eRub">Rubro</label><input class="campo" id="eRub" maxlength="60" value="' + esc(e.rubro) + '" placeholder="Ej: Ambientación"></div>' +
+      '<div><label class="et" for="eRol">Rol</label><select class="campo" id="eRol">' + roles + '</select></div>' +
+      '<div><label class="et" for="eCar">Cargo (opcional)</label><input class="campo" id="eCar" maxlength="60" value="' + esc(e.cargo) + '" placeholder="Ej: Presidenta"></div>' +
+      '</div>' +
+      (vista === 'Puerta' ? '<label class="chk"><input type="checkbox" id="eIngreso"' + (c.ingreso ? '' : ' checked') + '> Marcar ingreso al imprimir</label>' : '') +
+      '<div class="acc">' + (entregar ? '<button class="b grande verde" id="eEntregar">✓ Entregada' + (c.ingreso ? '' : ' · marcar ingreso') + '</button><button class="b sec" id="eImprimir">🖨️ Reimprimir</button>' :
+      '<button class="b grande verde" id="eImprimir"' + (bloqueo ? ' disabled' : '') + '>🖨️ ' + (c.veces ? 'Reimprimir' : 'Imprimir') + ' sticker</button>') +
+      '<button class="b sec" id="eGuardar">Guardar sin imprimir</button><button class="b sec" id="eCerrar">Cerrar</button></div></div>';
+    ['eNom', 'eEmp', 'eRub', 'eRol', 'eCar'].forEach(function (id) { $(id).addEventListener('input', leerEditor); $(id).addEventListener('change', leerEditor); });
+    $('eImprimir').onclick = imprimirActual; if ($('eEntregar')) $('eEntregar').onclick = entregarActual; $('eGuardar').onclick = function () { guardarActual().then(function (ok) { if (ok) toast('✓ Guardado'); }).catch(fallo); };
+    $('eCerrar').onclick = function () { actual = null; pintarEditor(); if (vista === 'Puerta') $('pLector').focus(); };
+    previa();
+    if (c._lector && !bloqueo && vista === 'Puerta') (entregar ? $('eEntregar') : $('eImprimir')).focus();
+  }
+  function leerEditor() {
+    if (!actual) return;
+    actual._edit = { nomCred: $('eNom').value.trim(), empCred: $('eEmp').value.trim(), rubro: $('eRub').value.trim(), rol: $('eRol').value, cargo: $('eCar').value.trim() };
+    previa();
+  }
+  function conEdicion(c) { var e = c._edit || {}; return Object.assign({}, c, { nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo }); }
+  function previa() { if (!actual) return; fuente().then(function () { dibujar($('pCanvas'), datosSticker(conEdicion(actual))); }); }
+  function cambio(c) {
+    var e = c._edit; if (!e) return false;
+    return e.nomCred !== (c.nomCred || '') || e.empCred !== (c.empCred || empresaCred(c)) || e.rubro !== (c.rubro || '') || e.rol !== (c.rol || '') || e.cargo !== (c.cargo || '') ||
+      (e.empCred && !c.empCred);
+  }
+  function guardarActual() {
+    if (!actual) return Promise.resolve(false);
+    leerEditor();
+    if (!cambio(actual)) return Promise.resolve(true);
+    var e = actual._edit;
+    return api('guardar', { cod: actual.cod, nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo }).then(function (r) {
+      var i = D.creds.findIndex(function (x) { return x.cod === r.cred.cod; }); if (i >= 0) D.creds[i] = r.cred;
+      actual = Object.assign({}, r.cred, { _edit: e, _lector: actual._lector }); return true;
+    });
+  }
+  // Credencial preimpresa: solo se entrega y se marca el ingreso (no imprime nada)
+  function entregarActual() {
+    if (!actual) return;
+    var c = actual, b = $('eEntregar'); b.disabled = true;
+    var p = c.ingreso ? Promise.resolve() : F.post('sync', { puerta: S.puerta, token: S.token, desde: 0, eventos: [{ id: 'ent-' + c.cod + '-' + Date.now(), c: c.cod, ts: Date.now(), tipo: 'in' }] }, 60000);
+    p.then(function () {
+      toast('✓ Credencial entregada a ' + nombreCred(c));
+      actual = null; $('pResultados').innerHTML = ''; pintarEditor(); cargar(true); $('pLector').focus();
+    }).catch(function (e) { b.disabled = false; fallo(e); });
+  }
+  function imprimirActual() {
+    if (!actual || imprimiendo) return;
+    var b = $('eImprimir'), marcarIngreso = vista === 'Puerta' && $('eIngreso') && $('eIngreso').checked;
+    b.disabled = true; imprimiendo = true; cancelar = false;
+    guardarActual().then(function () {
+      var c = conEdicion(actual);
+      return imprimirStickers([c]).then(function () {
+        return api('impresa', { cods: [c.cod] }).then(function () {
+          if (marcarIngreso && !c.ingreso) return F.post('sync', { puerta: S.puerta, token: S.token, desde: 0, eventos: [{ id: 'cred-' + c.cod + '-' + Date.now(), c: c.cod, ts: Date.now(), tipo: 'in' }] }, 60000).catch(function () { toast('Sticker impreso, pero no se pudo marcar el ingreso. Hacelo desde el escáner.', true); });
+        });
+      }).then(function () {
+        toast('✓ Sticker de ' + nombreCred(c) + ' impreso');
+        actual = null; $('pResultados').innerHTML = ''; pintarEditor(); cargar(true);
+        if (vista === 'Puerta') $('pLector').focus(); else pintarTanda();
+      });
+    }).catch(fallo).then(function () { imprimiendo = false; if ($('eImprimir')) $('eImprimir').disabled = false; });
+  }
+
+  // ── tanda previa ──
+  var elegidos = {};
+  function filtrados() {
+    var f = $('tFiltro').value, q = norm($('tBuscar').value).trim();
+    var l = D.creds.filter(function (c) { return c.estado === 'Válida'; }).filter(function (c) {
+      if (f === 'sin' && c.veces) return false;
+      if (f === 'rol' && !c.rol) return false;
+      if (f === 'incompletos' && empresaCred(c) && c.rubro) return false;
+      if (q && norm(nombreCred(c) + ' ' + empresaCred(c) + ' ' + c.rubro + ' ' + c.dni).indexOf(q) < 0) return false;
+      return true;
+    });
+    var porApe = $('tOrden').value === 'apellido';
+    l.sort(function (a, b) { var x = porApe ? apellido(a) : norm(nombreCred(a)), y = porApe ? apellido(b) : norm(nombreCred(b)); return x.localeCompare(y, 'es'); });
+    return l;
+  }
+  function pintarTanda() {
+    var l = filtrados(), n = 0;
+    $('tLista').innerHTML = l.map(function (c) {
+      if (elegidos[c.cod]) n++;
+      return '<tr class="click" data-cod="' + esc(c.cod) + '"><td><input type="checkbox" data-chk="' + esc(c.cod) + '"' + (elegidos[c.cod] ? ' checked' : '') + ' aria-label="Elegir"></td>' +
+        '<td><b>' + esc(nombreCred(c)) + '</b>' + (c.nomCred && c.nomCred !== c.nombre ? '<br><small style="color: var(--gris)">' + esc(c.nombre) + '</small>' : '') + '</td>' +
+        '<td>' + (empresaCred(c) ? esc(empresaCred(c)) : '<span class="chip av">Falta</span>') + '</td><td>' + (c.rubro ? esc(c.rubro) : '<span class="chip av">Falta</span>') + '</td>' +
+        '<td>' + (c.rol ? '<span class="chip az">' + esc(c.rol) + (c.cargo ? ' · ' + esc(c.cargo) : '') + '</span>' : '') + '</td>' +
+        '<td>' + (c.veces ? '<span class="chip ok">✓ ' + esc(c.impresa) + '</span>' : '') + '</td></tr>';
+    }).join('') || '<tr><td colspan="6" class="ayuda">No hay nadie con ese filtro.</td></tr>';
+    var sel = Object.keys(elegidos).filter(function (k) { return elegidos[k]; }).length;
+    $('tResumen').textContent = l.length + ' en la lista · ' + sel + ' elegidos';
+    $('tImprimir').disabled = !sel || imprimiendo; $('tImprimir').textContent = '🖨️ Imprimir ' + (sel || '') + ' seleccionados';
+    $('tTodos').checked = l.length > 0 && l.every(function (c) { return elegidos[c.cod]; });
+  }
+  function imprimirTanda() {
+    var orden = filtrados().map(function (c) { return c.cod; });
+    var lista = D.creds.filter(function (c) { return elegidos[c.cod] && c.estado === 'Válida'; }).sort(function (a, b) { return orden.indexOf(a.cod) - orden.indexOf(b.cod); });
+    if (!lista.length) return;
+    var yaTienen = lista.filter(function (c) { return c.veces; }).length;
+    if (!confirm('¿Imprimir ' + lista.length + ' stickers' + (yaTienen ? ' (' + yaTienen + ' ya tenían uno)' : '') + '?\nVerificá que haya etiquetas suficientes en el rollo.')) return;
+    imprimiendo = true; cancelar = false; $('tProg').classList.remove('oculto'); $('tImprimir').disabled = true;
+    var pend = [];
+    function marcar(forzar) {
+      if (!pend.length || (!forzar && pend.length < 10)) return Promise.resolve();
+      var lote = pend.splice(0, pend.length);
+      return api('impresa', { cods: lote }).catch(function (e) { pend = lote.concat(pend); throw e; });
+    }
+    imprimirStickers(lista, function (i, c) {
+      $('tBarra').style.width = Math.round(100 * i / lista.length) + '%'; $('tEstado').textContent = i + ' de ' + lista.length + ' · ' + nombreCred(c);
+      pend.push(c.cod); elegidos[c.cod] = false; marcar(false).catch(fallo);
+    }).then(function (n) {
+      return marcar(true).then(function () {
+        toast(cancelar ? 'Detenido: se imprimieron ' + n + ' de ' + lista.length + '.' : (cfg.modo === 'dialogo' ? 'Se abrió el cuadro de impresión con ' + n + ' stickers.' : '✓ Listo: ' + n + ' stickers impresos.'));
+      });
+    }).catch(fallo).then(function () {
+      imprimiendo = false; $('tProg').classList.add('oculto'); $('tBarra').style.width = '0'; cargar(true).then(pintarTanda);
+    });
+  }
+
+  // ── impresora ──
+  function pintarCfg() {
+    $('iModo').value = cfg.modo; $('iQr').checked = !!cfg.qr; $('iRibbon').checked = !!cfg.ribbon;
+    $('iOscuro').value = cfg.oscuro; $('iDx').value = cfg.dx; $('iDy').value = cfg.dy;
+  }
+  function leerCfg() {
+    cfg = { modo: $('iModo').value, qr: $('iQr').checked, ribbon: $('iRibbon').checked, oscuro: Number($('iOscuro').value) || 0, dx: Number($('iDx').value) || 0, dy: Number($('iDy').value) || 0 };
+    guardarJSON('cred_cfg', cfg); previa();
+  }
+  var PRUEBA = { cod: 'FZ-PRUEBA0000', nombre: 'Adriana Fonzi', nomCred: '', empCred: 'Fonzi Events', rubro: 'Producción de eventos', rol: 'Comisión Directiva', cargo: 'Presidenta', hola: 'PRUEBA0000' };
+
+  // ── arranque ──
+  Array.prototype.forEach.call(document.querySelectorAll('nav button'), function (b) { b.onclick = function () { ir(b.getAttribute('data-v')); }; });
+  $('lEntrar').onclick = entrar; $('lPin').addEventListener('keydown', function (e) { if (e.key === 'Enter') entrar(); });
+  $('hSalir').onclick = function () { if (confirm('¿Cerrar sesión en esta compu?')) salir(); };
+  $('hRecargar').onclick = function () { cargar(false).then(function () { toast('✓ Lista actualizada'); }); detectarImpresora(); };
+  $('pLector').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); buscar(this.value); } });
+  $('pLector').addEventListener('input', function () { if (!codigoLeido(this.value) && this.value.trim().length >= 3) buscar(this.value); });
+  $('pResultados').addEventListener('click', function (e) { var b = e.target.closest('[data-cod]'); if (!b) return; var c = buscarCod(b.getAttribute('data-cod')); if (c) { $('pResultados').innerHTML = ''; $('pLector').value = ''; elegir(c, false); } });
+  ['tBuscar', 'tFiltro', 'tOrden'].forEach(function (id) { $(id).addEventListener('input', pintarTanda); $(id).addEventListener('change', pintarTanda); });
+  $('tTodos').onchange = function () { var on = this.checked; filtrados().forEach(function (c) { elegidos[c.cod] = on; }); pintarTanda(); };
+  $('tLista').addEventListener('click', function (e) {
+    var chk = e.target.closest('[data-chk]'); if (chk) { elegidos[chk.getAttribute('data-chk')] = chk.checked; pintarTanda(); return; }
+    var tr = e.target.closest('tr[data-cod]'); if (!tr) return;
+    var c = buscarCod(tr.getAttribute('data-cod')); if (!c) return;
+    elegir(c, false); ir('Puerta');
+  });
+  $('tImprimir').onclick = imprimirTanda; $('tCancelar').onclick = function () { cancelar = true; $('tEstado').textContent = 'Deteniendo…'; };
+  ['iModo', 'iQr', 'iRibbon', 'iOscuro', 'iDx', 'iDy'].forEach(function (id) { $(id).addEventListener('change', function () { leerCfg(); if (id === 'iModo') detectarImpresora(); }); });
+  $('iBuscar').onclick = function () { detectarImpresora().then(function (ok) { toast(ok ? '✓ Zebra encontrada' : 'No encontré la Zebra', !ok); }); };
+  $('iPrueba').onclick = function () {
+    var b = this; b.disabled = true;
+    imprimirStickers([PRUEBA]).then(function () { toast('✓ Sticker de prueba enviado'); }).catch(fallo).then(function () { b.disabled = false; });
+  };
+  $('iCalibrar').onclick = function () {
+    if (cfg.modo === 'dialogo') { toast('Para calibrar en modo cuadro de impresión: mantené apretado el botón de la Zebra hasta que parpadee 2 veces y soltalo.'); return; }
+    enviarZebra('~JC').then(function () { toast('✓ Calibrando: la Zebra va a pasar unas etiquetas en blanco.'); }).catch(fallo);
+  };
+  // ── Lector USB en la puerta: el escaneo siempre termina en el lector, esté donde esté el foco ──
+  // El lector "teclea" muy rápido (pocos ms entre teclas) y termina con Enter: así se distingue de una persona escribiendo.
+  var rafaga = { txt: '', t: 0, campo: null, antes: '' };
+  document.addEventListener('keydown', function (e) {
+    if (vista !== 'Puerta' || !S) return;
+    var t = e.target, lector = $('pLector');
+    if (e.key === 'Escape' && actual) { actual = null; pintarEditor(); lector.focus(); return; }
+    if (t === lector || e.ctrlKey || e.metaKey || e.altKey) return;
+    var ahora = Date.now(), escribible = t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && /^(text|search|)$/.test(t.type || '')));
+    if (e.key.length === 1) {
+      if (!escribible) { lector.value = ''; lector.focus(); return; } // foco en un botón, casilla o la página: el escaneo va al lector
+      if (ahora - rafaga.t > 60 || rafaga.campo !== t) rafaga = { txt: '', t: ahora, campo: t, antes: t.value };
+      rafaga.txt += e.key; rafaga.t = ahora;
+      return;
+    }
+    if (e.key === 'Enter' && escribible && rafaga.campo === t && ahora - rafaga.t < 120 && codigoLeido(rafaga.txt)) {
+      // escanearon con el cursor en un campo del editor: se deshace lo tecleado y se busca el ticket
+      e.preventDefault(); t.value = rafaga.antes; leerEditor();
+      var txt = rafaga.txt; rafaga = { txt: '', t: 0, campo: null, antes: '' };
+      lector.value = ''; lector.focus(); buscar(txt);
+    }
+  }, true);
+
+  try { $('lPuerta').value = localStorage.getItem('cred_puerta') || 'Acreditación'; } catch (e) { }
+  fuente().then(function () { if (!actual) pintarEditor(); });
+  S = leerS();
+  if (S) iniciar(); else salir();
+})();

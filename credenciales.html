@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credenciales · Eventos y Negocios</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0D2846">
+<link rel="icon" href="favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&display=swap">
+<style>
+  :root { --noche: #0D2846; --azul: #1E6FD9; --crema: #F8F0C8; --fondo: #EEF2F7; --tx: #13233A; --gris: #5F6B7D; --borde: #D9E2EC; --ok: #11663A; --okF: #D6F0DD; --mal: #B42318; --malF: #FBE0E0; --av: #8A5A00; --avF: #FFF1C2; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--fondo); color: var(--tx); font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 15px; }
+  .oculto { display: none !important; }
+  button, input, select { font: inherit; }
+  .b { border: 0; border-radius: 10px; padding: 11px 16px; font-weight: 700; cursor: pointer; background: var(--azul); color: #fff; }
+  .b:disabled { opacity: .5; cursor: default; }
+  .b.sec { background: #fff; color: var(--azul); border: 1.5px solid var(--azul); }
+  .b.grande { font-size: 18px; padding: 14px 22px; }
+  .b.verde { background: var(--ok); }
+  .campo { width: 100%; padding: 10px 12px; border: 1.5px solid var(--borde); border-radius: 9px; background: #fff; }
+  .campo:focus { outline: 2px solid var(--azul); border-color: var(--azul); }
+  label.et { display: block; font-size: 12px; font-weight: 700; color: var(--gris); margin: 12px 0 5px; text-transform: uppercase; letter-spacing: .5px; }
+  header { background: var(--noche); color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; }
+  header .sub { color: #BEE1FA; font-size: 13px; }
+  header .der { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .pill { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 20px; background: rgba(255,255,255,.12); color: #fff; }
+  .pill.ok { background: #1E9E57; } .pill.mal { background: #B42318; } .pill.av { background: #B7791F; }
+  nav { display: flex; gap: 6px; padding: 10px 20px 0; flex-wrap: wrap; }
+  nav button { border: 0; background: transparent; padding: 10px 16px; border-radius: 10px 10px 0 0; font-weight: 700; color: var(--gris); cursor: pointer; }
+  nav button.on { background: #fff; color: var(--noche); }
+  main { padding: 0 20px 40px; }
+  .hoja { background: #fff; border-radius: 0 12px 12px 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .fila { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  .col { flex: 1 1 340px; min-width: 0; }
+  .lector { font-size: 22px; padding: 16px 18px; font-weight: 700; }
+  .ayuda { font-size: 13px; color: var(--gris); margin-top: 6px; line-height: 1.45; }
+  .res { border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; margin-top: 8px; display: flex; justify-content: space-between; gap: 10px; align-items: center; cursor: pointer; background: #fff; width: 100%; text-align: left; }
+  .res:hover { border-color: var(--azul); background: #F5F9FF; }
+  .res small { color: var(--gris); }
+  .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 12px; background: #ECECEC; color: #555; white-space: nowrap; }
+  .chip.ok { background: var(--okF); color: var(--ok); } .chip.mal { background: var(--malF); color: var(--mal); } .chip.av { background: var(--avF); color: var(--av); } .chip.az { background: #DCE8F7; color: #1F4E8C; }
+  .aviso { border-radius: 10px; padding: 10px 14px; margin: 12px 0 0; font-weight: 700; }
+  .aviso.mal { background: var(--malF); color: var(--mal); } .aviso.av { background: var(--avF); color: var(--av); } .aviso.ok { background: var(--okF); color: var(--ok); } .aviso.info { background: #DCE8F7; color: #1F4E8C; }
+  .preview { background: #E9EEF5; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .preview canvas { width: 100%; max-width: 480px; height: auto; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.18); border-radius: 4px; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  .acc { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .chk { display: flex; gap: 8px; align-items: center; font-size: 14px; margin-top: 14px; }
+  .chk input { width: 18px; height: 18px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #EDF1F5; vertical-align: top; }
+  th { font-size: 12px; color: var(--gris); text-transform: uppercase; letter-spacing: .4px; position: sticky; top: 0; background: #fff; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: #F5F9FF; }
+  .tabla { max-height: 60vh; overflow: auto; border: 1px solid var(--borde); border-radius: 10px; margin-top: 12px; }
+  .barra { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .barra .campo { width: auto; }
+  .progreso { height: 10px; background: #E3EAF2; border-radius: 6px; overflow: hidden; margin-top: 10px; }
+  .progreso div { height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--noche); color: #fff; padding: 12px 18px; border-radius: 10px; font-weight: 700; z-index: 50; max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  .toast.err { background: var(--mal); }
+  .login { max-width: 380px; margin: 60px auto; background: #fff; border-radius: 14px; padding: 26px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+  .login h2 { margin: 0 0 4px; }
+  .err { color: var(--mal); font-weight: 700; margin-top: 10px; min-height: 20px; }
+  .kv { font-size: 14px; line-height: 1.6; }
+  .kv b { display: inline-block; min-width: 140px; color: var(--gris); font-weight: 600; }
+  @media (max-width: 640px) { .dos { grid-template-columns: 1fr; } header .der { margin-left: 0; } }
+</style>
+</head>
+<body>
+
+<div id="vLogin" class="login oculto">
+  <h2>Credenciales</h2>
+  <p class="ayuda" style="margin-top: 0">Impresión de stickers para la credencial. Entrá con el nombre de esta compu y el PIN del escáner.</p>
+  <label class="et" for="lPuerta">Nombre de esta compu / puerta</label>
+  <input class="campo" id="lPuerta" maxlength="30" placeholder="Ej: Acreditación 1" autocomplete="off">
+  <label class="et" for="lPin">PIN del escáner</label>
+  <input class="campo" id="lPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+  <div class="acc"><button class="b grande" id="lEntrar" style="width: 100%">Entrar</button></div>
+  <div class="err" id="lErr"></div>
+</div>
+
+<div id="vApp" class="oculto">
+  <header>
+    <div><h1 id="hEvento">Credenciales</h1><div class="sub" id="hPuerta"></div></div>
+    <div class="der">
+      <span class="pill" id="hImpresora">Impresora: buscando…</span>
+      <span class="pill" id="hCuenta"></span>
+      <button class="b sec" id="hRecargar" style="padding: 6px 12px">↻ Actualizar</button>
+      <button class="b sec" id="hSalir" style="padding: 6px 12px">Salir</button>
+    </div>
+  </header>
+  <nav>
+    <button data-v="Puerta" class="on">🚪 Puerta</button>
+    <button data-v="Tanda">📋 Tanda previa</button>
+    <button data-v="Impresora">🖨️ Impresora</button>
+  </nav>
+  <main>
+    <!-- PUERTA -->
+    <section id="vPuerta" class="hoja">
+      <div class="fila">
+        <div class="col">
+          <label class="et" for="pLector">Escaneá el QR del ticket o escribí el nombre</label>
+          <input class="campo lector" id="pLector" autocomplete="off" placeholder="Pasá el QR por el lector…" autofocus>
+          <div class="ayuda">El lector escribe el código y aprieta Enter solo. También podés buscar por nombre, DNI o empresa.</div>
+          <div id="pResultados"></div>
+          <div id="pEditor"></div>
+        </div>
+        <div class="col" style="flex-basis: 420px">
+          <div class="preview">
+            <canvas id="pCanvas" width="640" height="400" aria-label="Vista previa del sticker"></canvas>
+            <div class="ayuda" id="pTam">Vista previa · 80 × 50 mm · así sale en la Zebra</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TANDA -->
+    <section id="vTanda" class="hoja oculto">
+      <div class="barra">
+        <input class="campo" id="tBuscar" placeholder="Buscar…" style="flex: 1 1 200px">
+        <select class="campo" id="tFiltro">
+          <option value="sin">Sin sticker impreso</option>
+          <option value="todos">Todos</option>
+          <option value="rol">Solo con rol (speakers, producción…)</option>
+          <option value="incompletos">Sin empresa o rubro</option>
+        </select>
+        <select class="campo" id="tOrden">
+          <option value="apellido">Ordenar por apellido</option>
+          <option value="nombre">Ordenar por nombre</option>
+        </select>
+        <label class="chk" style="margin: 0"><input type="checkbox" id="tTodos"> Elegir todos</label>
+        <button class="b verde" id="tImprimir" disabled>🖨️ Imprimir seleccionados</button>
+      </div>
+      <div class="ayuda" id="tResumen"></div>
+      <div id="tProg" class="oculto">
+        <div class="progreso"><div id="tBarra"></div></div>
+        <div class="acc" style="margin-top: 8px"><span id="tEstado" style="font-weight: 700"></span><button class="b sec" id="tCancelar">Detener</button></div>
+      </div>
+      <div class="tabla"><table><thead><tr><th></th><th>Nombre</th><th>Empresa</th><th>Rubro</th><th>Rol</th><th>Sticker</th></tr></thead><tbody id="tLista"></tbody></table></div>
+      <div class="ayuda">Tocá una fila para editar los datos y ver el sticker. La tanda previa no marca el ingreso: eso pasa cuando la persona llega y se escanea en la puerta.</div>
+    </section>
+
+    <!-- IMPRESORA -->
+    <section id="vImpresora" class="hoja oculto">
+      <div class="fila">
+        <div class="col">
+          <label class="et" for="iModo">Cómo imprimir</label>
+          <select class="campo" id="iModo">
+            <option value="zebra">Zebra directo (Zebra Browser Print) · recomendado</option>
+            <option value="dialogo">Cuadro de impresión de la Mac</option>
+          </select>
+          <div id="iEstado" class="aviso info">Buscando la Zebra…</div>
+          <div class="acc">
+            <button class="b sec" id="iBuscar">🔎 Buscar impresora</button>
+            <button class="b" id="iPrueba">Imprimir sticker de prueba</button>
+            <button class="b sec" id="iCalibrar">Calibrar etiquetas</button>
+          </div>
+          <label class="chk"><input type="checkbox" id="iQr"> QR personal en el sticker (abre la agenda con "¡Hola, Nombre!")</label>
+          <label class="chk"><input type="checkbox" id="iRibbon"> Imprime con ribbon (transferencia térmica)</label>
+          <div class="dos">
+            <div><label class="et" for="iOscuro">Oscuridad (−10 a 10)</label><input class="campo" id="iOscuro" type="number" min="-10" max="10" step="1"></div>
+            <div><label class="et" for="iDx">Correr a la derecha (mm)</label><input class="campo" id="iDx" type="number" min="-5" max="5" step="0.5"></div>
+            <div><label class="et" for="iDy">Correr para abajo (mm)</label><input class="campo" id="iDy" type="number" min="-5" max="5" step="0.5"></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="kv">
+            <h3 style="margin-top: 0">Antes de imprimir</h3>
+            <ol class="ayuda" style="font-size: 14px; line-height: 1.6; padding-left: 18px">
+              <li>Zebra prendida y conectada por USB a esta Mac.</li>
+              <li>Programa <b style="min-width: 0; color: inherit">Zebra Browser Print</b> instalado y abierto (ícono en la barra de arriba).</li>
+              <li>Usar <b style="min-width: 0; color: inherit">Google Chrome</b>. Si Chrome pregunta por acceso a dispositivos de la red local, tocá <b style="min-width: 0; color: inherit">Permitir</b>.</li>
+              <li>Rollo de 80 × 50 y ribbon cargados. La primera vez: <b style="min-width: 0; color: inherit">Calibrar etiquetas</b>.</li>
+              <li>Imprimí un sticker de prueba y ajustá oscuridad o corrimiento si hace falta.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast oculto" role="status"></div>
+
+<script src="config.js"></script>
+<script src="comun.js"></script>
+<script src="lib/qrcode.js"></script>
+<script src="credenciales.js"></script>
+</body>
+</html>

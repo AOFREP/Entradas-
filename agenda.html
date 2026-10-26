@@ -4,40 +4,207 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agenda · Eventos y Negocios</title>
+<meta name="description" content="Agenda en vivo de Eventos y Negocios · AOFREP · 2 de noviembre en HIT Events Polo">
 <meta name="theme-color" content="#0D2846">
+<link rel="icon" href="favicon.ico">
 <style>
-  :root { --noche: #0D2846; --azul: #173D62; --acero: #2E6190; --celeste: #BEE1FA; --crema: #F8F0C8; }
+  :root { --noche: #0B2240; --azul: #173D62; --acero: #2E6190; --celeste: #BEE1FA; --crema: #F8F0C8; --blanco: #FFFFFF; --tenue: rgba(255,255,255,.72); --linea: rgba(190,225,250,.28); --vivo: #5BE39B; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; min-height: 100%; }
-  body {
-    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 40px 20px; text-align: center; color: #FFFFFF;
-    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    background: linear-gradient(170deg, var(--noche) 0%, var(--azul) 45%, var(--acero) 100%);
-  }
-  .aof { width: 130px; }
-  .pre { color: var(--crema); font-size: 12px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin: 12px 0 10px; }
-  .eyn { width: 220px; max-width: 70vw; }
-  .dato { margin-top: 18px; font-size: 15px; color: var(--celeste); }
-  .caja { margin-top: 30px; max-width: 360px; background: rgba(255,255,255,.08); border: 1px solid rgba(190,225,250,.35); border-radius: 16px; padding: 22px 20px; }
-  .caja h1 { margin: 0 0 8px; font-size: 22px; color: var(--crema); }
-  .caja p { margin: 0; font-size: 15px; line-height: 1.5; color: #E6F1FB; }
-  .btn { display: inline-block; margin-top: 18px; background: var(--crema); color: var(--noche); font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 10px; }
-  .sponsor { margin-top: 40px; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #DDEBF8; }
-  .hit { width: 150px; margin-top: 8px; }
+  html, body { margin: 0; }
+  html { background: #0B2240; }
+  body { min-height: 100vh; color: var(--blanco); font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: radial-gradient(ellipse 90% 45% at 15% 0%, rgba(120,180,235,.35), transparent 70%), radial-gradient(ellipse 80% 40% at 100% 60%, rgba(120,180,235,.22), transparent 70%), linear-gradient(170deg, var(--noche) 0%, var(--azul) 50%, var(--acero) 100%);
+    min-height: 100%; }
+  .envase { max-width: 560px; margin: 0 auto; padding: 28px 18px 48px; }
+  .cab { text-align: center; }
+  .aof { width: 118px; }
+  .pre { color: var(--crema); font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin: 10px 0 8px; }
+  .eyn { width: 210px; max-width: 64vw; }
+  .dato { margin-top: 12px; font-size: 14px; color: var(--celeste); }
+  .hola { margin: 22px 0 0; font-size: 26px; font-weight: 800; color: var(--crema); text-align: center; }
+  .hola small { display: block; font-size: 14px; font-weight: 500; color: var(--tenue); margin-top: 4px; }
+  .estado { margin: 22px 0 6px; background: rgba(255,255,255,.08); border: 1px solid var(--linea); border-radius: 16px; padding: 14px 16px; }
+  .estado .k { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--celeste); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .punto { width: 9px; height: 9px; border-radius: 50%; background: var(--vivo); box-shadow: 0 0 0 0 rgba(91,227,155,.7); animation: latido 1.6s infinite; }
+  @keyframes latido { 0% { box-shadow: 0 0 0 0 rgba(91,227,155,.7); } 70% { box-shadow: 0 0 0 9px rgba(91,227,155,0); } 100% { box-shadow: 0 0 0 0 rgba(91,227,155,0); } }
+  .estado .t { font-size: 19px; font-weight: 800; margin-top: 6px; }
+  .estado .s { font-size: 14px; color: var(--tenue); margin-top: 3px; }
+  h2 { font-size: 13px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--crema); margin: 28px 0 6px; }
+  .linea-t { position: relative; margin-top: 8px; }
+  .item { position: relative; display: grid; grid-template-columns: 58px 22px 1fr; align-items: stretch; }
+  .hora { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; color: var(--celeste); padding-top: 14px; }
+  .eje { position: relative; display: flex; justify-content: center; }
+  .eje::before { content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: var(--linea); }
+  .item:first-child .eje::before { top: 20px; } .item:last-child .eje::before { bottom: calc(100% - 20px); }
+  .nodo { position: relative; z-index: 1; width: 12px; height: 12px; border-radius: 50%; background: var(--noche); border: 2px solid var(--celeste); margin-top: 17px; }
+  .item.hecho .nodo { background: var(--celeste); }
+  .item.hecho .tarjeta { opacity: .55; }
+  .item.ahora .nodo { background: var(--vivo); border-color: var(--vivo); box-shadow: 0 0 0 4px rgba(91,227,155,.25); }
+  .item.ahora .tarjeta { border-color: rgba(91,227,155,.7); background: rgba(91,227,155,.10); }
+  .tarjeta { margin: 6px 0; padding: 11px 14px; border-radius: 14px; background: rgba(255,255,255,.07); border: 1px solid var(--linea); min-width: 0; }
+  .tarjeta.pausa { background: transparent; border-style: dashed; }
+  .tarjeta button { all: unset; display: flex; gap: 12px; align-items: center; width: 100%; cursor: pointer; }
+  .tarjeta button:focus-visible { outline: 2px solid var(--crema); outline-offset: 4px; border-radius: 8px; }
+  .foto { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--crema); flex: none; background: var(--azul); }
+  .ico { width: 48px; height: 48px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-size: 24px; background: rgba(255,255,255,.08); }
+  .txt { min-width: 0; flex: 1; }
+  .titulo { font-weight: 800; font-size: 16px; line-height: 1.2; }
+  .sub { font-size: 13px; color: var(--tenue); margin-top: 2px; line-height: 1.35; }
+  .chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: rgba(190,225,250,.16); color: var(--celeste); margin-top: 5px; }
+  .chip.vivo { background: var(--vivo); color: #08331C; }
+  .flecha { color: var(--celeste); font-size: 14px; transition: transform .2s; flex: none; }
+  .abierta .flecha { transform: rotate(90deg); }
+  .det { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linea); font-size: 14px; line-height: 1.5; color: #E6F1FB; }
+  .abierta .det { display: block; }
+  .det p { margin: 0 0 6px; }
+  .det .cuando { color: var(--tenue); font-size: 13px; }
+  .tema { display: block; font-size: 14px; font-weight: 600; color: #F8F0C8; margin-top: 4px; line-height: 1.3; }
+  .barra { height: 4px; border-radius: 3px; background: rgba(255,255,255,.15); margin-top: 8px; overflow: hidden; }
+  .barra div { height: 100%; background: var(--vivo); }
+  .marca { position: absolute; left: 0; width: 80px; height: 0; z-index: 2; pointer-events: none; border-top: 2px dashed rgba(91,227,155,.75); }
+  .marca span { position: absolute; left: 0; top: -10px; font-size: 10px; font-weight: 800; color: var(--vivo); background: var(--noche); padding: 1px 4px; border-radius: 4px; }
+  .info { margin-top: 26px; display: grid; gap: 10px; }
+  .info div { background: rgba(255,255,255,.07); border: 1px solid var(--linea); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #E6F1FB; }
+  .info b { color: var(--crema); }
+  .pie { margin-top: 34px; text-align: center; }
+  .pie .k { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #DDEBF8; }
+  .pie img { width: 150px; margin-top: 8px; }
+  .bCert { display: block; width: 100%; margin-top: 10px; border: 0; border-radius: 12px; padding: 13px; font: inherit; font-size: 16px; font-weight: 800; background: var(--crema); color: #0B2240; cursor: pointer; }
+  .bCert:disabled { opacity: .6; }
+  .info .cert-msj { margin-top: 8px; font-size: 13px; color: var(--tenue); background: none; border: 0; padding: 0; }
+  .lineaPie { width: 120px; height: 2px; margin: 0 auto 8px; background: linear-gradient(90deg, transparent, var(--crema), transparent); }
 </style>
 </head>
 <body>
-  <img class="aof" src="assets/logo-aofrep.png" alt="AOFREP">
-  <div class="pre">presenta</div>
-  <img class="eyn" src="assets/logo-eyn.png" alt="Eventos y Negocios">
-  <div class="dato">Lunes 2 de noviembre · HIT Events Polo</div>
-  <div class="caja">
-    <h1>Agenda en preparación</h1>
-    <p>Muy pronto vas a ver acá las charlas del día, quién las da y el almuerzo. Guardá este link: el día del evento se actualiza en vivo.</p>
-    <a class="btn" href="./">Ir al sitio del evento</a>
+<div class="envase">
+  <div class="cab">
+    <img class="aof" src="assets/logo-aofrep.png" alt="AOFREP">
+    <div class="pre">presenta</div>
+    <img class="eyn" src="assets/logo-eyn.png" alt="Eventos y Negocios">
+    <div class="dato">Lunes 2 de noviembre · HIT Events Polo · Dorrego 3562, CABA</div>
   </div>
-  <div class="sponsor">Main sponsor</div>
-  <img class="hit" src="assets/logo-hit.png" alt="HIT Events">
+  <div id="hola" class="hola" hidden></div>
+  <div id="estado" class="estado" aria-live="polite"></div>
+  <h2>Agenda del día</h2>
+  <div id="agenda" class="linea-t"></div>
+  <div class="info">
+    <div>☕ <b>Desayuno y coffee breaks</b> incluidos con tu ticket.</div>
+    <div id="cert">🎓 <b>Certificado de participación AOFREP</b>: te llega por mail después del evento.</div>
+  </div>
+  <div class="pie"><div class="lineaPie"></div><div class="k">Main sponsor</div><img src="assets/logo-hit.png" alt="HIT Events"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="comun.js"></script>
+<script>
+(function () {
+  // ── Agenda (hora de Buenos Aires). Para cambiar un horario el día del evento: editar acá y subir el archivo. ──
+  var FECHA = '2026-11-02';
+  var AGENDA = [
+    { ini: '09:30', fin: '10:15', tipo: 'pausa', ico: '☕', titulo: 'Acreditación y desayuno', sub: 'Retirá tu credencial en la entrada' },
+    { ini: '10:15', fin: '10:25', tipo: 'general', ico: '🎤', titulo: 'Bienvenida y presentación', sub: 'AOFREP abre la jornada' },
+    { ini: '10:25', fin: '11:15', tipo: 'charla', foto: 'dalto', titulo: 'Lucas Dalto', sub: 'Creador de Soy Dalto · Empresario y divulgador tecnológico', tema: 'Tecnología para potenciar tu negocio', desc: 'Herramientas e ideas para aprovechar la tecnología y potenciar nuestros negocios. Lucas es empresario, divulgador tecnológico y creador de Soy Dalto, con más de un millón de suscriptores en YouTube.', preguntas: 10 },
+    { ini: '11:15', fin: '11:35', tipo: 'pausa', ico: '☕', titulo: 'Coffee break', sub: '20 minutos para recargar' },
+    { ini: '11:35', fin: '12:25', tipo: 'charla', foto: 'sol', titulo: 'Sol Espasandín', sub: 'Diseñadora y ambientadora de eventos', tema: 'Conectar con el cliente y crear propuestas que se eligen', desc: 'Cómo conectar con el cliente, entender qué valora y transformar sus deseos en propuestas que se destaquen y sean elegidas. Sol se especializa en bodas, fiestas de 15 y celebraciones donde cada detalle refleja la identidad de sus clientes.', preguntas: 10 },
+    { ini: '12:25', fin: '13:15', tipo: 'charla', foto: 'bonetto', titulo: 'Daniela Bonetto', sub: 'CEO de Bonetto Sonido e Iluminación', tema: 'Cómo construir una empresa sólida que crezca y se sostenga', desc: 'Una charla sobre cómo construir una empresa sólida en una industria que cambia constantemente: la gestión, la formación de equipos y las decisiones que permiten sostener la calidad, adaptarse a nuevos desafíos y proyectar el negocio a largo plazo.', preguntas: 10 },
+    { ini: '13:15', fin: '14:45', tipo: 'pausa', ico: '🍽️', titulo: 'Break', sub: 'Volvemos a las 14:45' },
+    { ini: '14:45', fin: '15:45', tipo: 'charla', foto: 'piacentini', titulo: 'Elisabet Piacentini', sub: 'Contadora · CEO de Estudio Contable Piacentini', tema: 'Gestión, impuestos y finanzas de tu PyME', desc: 'Herramientas para analizar el contexto de las PyMEs, diagnosticar la situación de cada empresa, identificar mejoras fiscales y comprender el estado financiero del negocio. Elisabet dirige el área Mujeres Empresarias de FECOBA y preside la Comisión PyME del Consejo Profesional de Ciencias Económicas.', preguntas: 10 },
+    { ini: '15:45', fin: '16:05', tipo: 'pausa', ico: '☕', titulo: 'Coffee break', sub: '20 minutos para recargar' },
+    { ini: '16:05', fin: '16:55', tipo: 'charla', foto: 'natt', titulo: 'Natt La Regina', sub: 'Event Planner · Directora de Natt La Regina Planners', etiqueta: 'Entrevista', tema: 'El negocio detrás de los eventos', desc: 'Una entrevista sobre el lado del negocio que pocas veces se muestra: cómo se pasa de hacer todo a liderar un equipo, cómo se arma un presupuesto para que un evento sea rentable, qué tareas se pueden optimizar y cómo se sostiene la calidad cuando la empresa crece. Natt lleva 25 años construyendo una empresa de eventos sociales y corporativos.', preguntas: 10 },
+    { ini: '16:55', fin: '17:00', tipo: 'general', ico: '👏', titulo: 'Cierre', sub: 'Gracias por acompañarnos' }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  function ms(hhmm) { return new Date(FECHA + 'T' + hhmm + ':00-03:00').getTime(); }
+  function ahora() {
+    // ?hora=11:40 simula esa hora del día del evento (para probar)
+    var h = new URLSearchParams(location.search).get('hora');
+    return /^\d\d:\d\d$/.test(h || '') ? ms(h) : Date.now();
+  }
+  function dur(a, b) { var m = Math.round((ms(b) - ms(a)) / 60000); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; }
+
+  function pintar() {
+    var t = ahora(), abiertas = {};
+    Array.prototype.forEach.call(document.querySelectorAll('.tarjeta.abierta'), function (x) { abiertas[x.getAttribute('data-i')] = 1; });
+    $('agenda').innerHTML = AGENDA.map(function (a, i) {
+      var desde = ms(a.ini), hasta = ms(a.fin), est = t >= hasta ? 'hecho' : (t >= desde ? 'ahora' : '');
+      var cab = (a.foto ? '<img class="foto" src="assets/speakers/' + a.foto + '.jpg" alt="">' : '<span class="ico" aria-hidden="true">' + a.ico + '</span>') +
+        '<span class="txt"><span class="titulo">' + esc(a.titulo) + '</span><span class="sub" style="display:block">' + esc(a.sub) + '</span>' +
+        (a.tema ? '<span class="tema">' + esc(a.tema) + '</span>' : '') +
+        (est === 'ahora' ? '<span class="chip vivo">AHORA</span> ' : '') +
+        (a.tipo === 'charla' ? '<span class="chip">' + esc(a.etiqueta || 'Charla') + ' + preguntas</span>' : '<span class="chip">' + dur(a.ini, a.fin) + '</span>') + '</span>' +
+        (a.tipo === 'charla' ? '<span class="flecha" aria-hidden="true">›</span>' : '');
+      var prog = est === 'ahora' ? '<div class="barra"><div style="width:' + Math.round(100 * (t - desde) / (hasta - desde)) + '%"></div></div>' : '';
+      var det = a.tipo === 'charla' ? '<div class="det">' + (a.desc ? '<p>' + esc(a.desc) + '</p>' : '<p><b>' + esc(a.titulo) + '</b> · ' + esc(a.sub) + '</p>') + '<p class="cuando">' + esc(a.ini) + ' a ' + esc(a.fin) + ' hs · ' + esc(a.etiqueta || 'Charla') + ' de ' + dur(a.ini, a.fin) + ', con ' + a.preguntas + ' minutos de preguntas al final.</p></div>' : '';
+      return '<div class="item ' + est + '" data-i="' + i + '"><div class="hora">' + esc(a.ini) + '</div><div class="eje"><span class="nodo"></span></div>' +
+        '<div class="tarjeta' + (a.tipo === 'pausa' ? ' pausa' : '') + (abiertas[i] ? ' abierta' : '') + '" data-i="' + i + '">' +
+        (a.tipo === 'charla' ? '<button aria-expanded="' + (abiertas[i] ? 'true' : 'false') + '">' + cab + '</button>' : '<div style="display:flex;gap:12px;align-items:center">' + cab + '</div>') + prog + det + '</div></div>';
+    }).join('');
+    marca(t); estado(t);
+  }
+  /** Línea punteada que avanza por la agenda según la hora. */
+  function marca(t) {
+    var items = document.querySelectorAll('.item'), y = null;
+    for (var i = 0; i < AGENDA.length; i++) {
+      var d = ms(AGENDA[i].ini), h = ms(AGENDA[i].fin), el = items[i];
+      if (t >= d && t < h) { y = el.offsetTop + el.offsetHeight * (t - d) / (h - d); break; }
+    }
+    if (y == null) return;
+    var m = document.createElement('div'); m.className = 'marca'; m.style.top = y + 'px';
+    var f = new Date(t), hh = ('0' + ((f.getUTCHours() + 21) % 24)).slice(-2) + ':' + ('0' + f.getUTCMinutes()).slice(-2);
+    m.innerHTML = '<span>' + hh + '</span>'; $('agenda').appendChild(m);
+  }
+  function estado(t) {
+    var e = $('estado'), ini = ms('09:30'), fin = ms('17:00');
+    if (t < ini) {
+      var dias = Math.ceil((new Date(FECHA + 'T00:00:00-03:00').getTime() - t) / 86400000);
+      e.innerHTML = '<div class="k">Próximamente</div><div class="t">' + (dias > 1 ? 'Faltan ' + dias + ' días' : dias === 1 ? '¡Es mañana!' : '¡Es hoy!') + '</div><div class="s">Lunes 2 de noviembre · acreditación desde las 9:30</div>';
+      return;
+    }
+    if (t >= fin) { e.innerHTML = '<div class="k">Terminó la jornada</div><div class="t">¡Gracias por venir! 👏</div><div class="s">Tu certificado de participación te llega por mail.</div>'; return; }
+    var i = AGENDA.findIndex(function (a) { return t >= ms(a.ini) && t < ms(a.fin); }), a = AGENDA[i], sig = AGENDA[i + 1];
+    e.innerHTML = '<div class="k"><span class="punto"></span>En vivo</div><div class="t">' + esc(a.ico || '🎤') + ' ' + esc(a.titulo) + '</div>' +
+      '<div class="s">Hasta las ' + esc(a.fin) + (sig ? ' · Después: ' + esc(sig.titulo) + ' (' + esc(sig.ini) + ')' : '') + '</div>';
+  }
+  $('agenda').addEventListener('click', function (ev) {
+    var b = ev.target.closest('.tarjeta button'); if (!b) return;
+    var c = b.parentNode, ab = !c.classList.contains('abierta');
+    c.classList.toggle('abierta', ab); b.setAttribute('aria-expanded', ab ? 'true' : 'false');
+  });
+  pintar();
+  setInterval(pintar, 30000);
+  window.addEventListener('resize', function () { var m = document.querySelector('.marca'); if (m) m.remove(); marca(ahora()); });
+
+  // ── Saludo personal: viene del QR del sticker (?h=…) ──
+  var h = new URLSearchParams(location.search).get('h');
+  if (h && window.F && F.get) {
+    F.get('hola', { h: h }, 2).then(function (r) {
+      var el = $('hola'); el.hidden = false;
+      el.innerHTML = '¡Hola, ' + esc(r.nombre) + '! 👋<small>Esta es tu agenda para hoy</small>';
+      certificado(r.cert);
+    }).catch(function () { });
+  }
+
+  // ── Certificado: se descarga desde acá (solo entrando con el QR de la credencial) ──
+  function certificado(habilitado) {
+    var box = $('cert');
+    if (!habilitado) { box.innerHTML = '🎓 <b>Tu certificado de participación AOFREP</b> va a estar disponible acá al finalizar el evento. También te llega por mail.'; return; }
+    box.innerHTML = '🎓 <b>Tu certificado de participación AOFREP</b> ya está listo.<button class="bCert" id="bCert">Descargar mi certificado (PDF)</button><div class="cert-msj" id="certMsj"></div>';
+    $('bCert').onclick = function () {
+      var b = this; b.disabled = true; b.textContent = 'Preparando tu certificado…'; $('certMsj').textContent = '';
+      F.get('cert', { h: h }, 2).then(function (r) {
+        if (!r.listo) { $('certMsj').textContent = r.motivo === 'sin_ingreso' ? 'No encontramos tu ingreso registrado. Escribinos y lo revisamos.' : 'Todavía no está disponible. Probá más tarde.'; return; }
+        var bin = atob(r.pdf), u8 = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+        var url = URL.createObjectURL(new Blob([u8], { type: 'application/pdf' })), a = document.createElement('a');
+        a.href = url; a.download = String(r.archivo || 'Certificado.pdf').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w .-]/g, ''); document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+        $('certMsj').textContent = '✓ Listo. Si no se descargó, revisá las descargas de tu celular.';
+      }).catch(function (e) { $('certMsj').textContent = F.msg ? F.msg(e) : 'No se pudo descargar. Probá de nuevo.'; })
+        .then(function () { b.disabled = false; b.textContent = 'Descargar mi certificado (PDF)'; });
+    };
+  }
+})();
+</script>
 </body>
 </html>
