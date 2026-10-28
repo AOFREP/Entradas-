@@ -81,7 +81,7 @@
     <img class="aof" src="assets/logo-aofrep.png" alt="AOFREP">
     <div class="pre">presenta</div>
     <img class="eyn" src="assets/logo-eyn.png" alt="Eventos y Negocios">
-    <div class="dato">Lunes 2 de noviembre · HIT Events Polo · Dorrego 3562, CABA</div>
+    <div class="dato">Lunes 2 de noviembre · HIT Events Polo<br>Dorrego 3562, CABA</div>
   </div>
   <div id="hola" class="hola" hidden></div>
   <div id="estado" class="estado" aria-live="polite"></div>
@@ -89,7 +89,7 @@
   <div id="agenda" class="linea-t"></div>
   <div class="info">
     <div>☕ <b>Desayuno y coffee breaks</b> incluidos con tu ticket.</div>
-    <div id="cert">🎓 <b>Certificado de participación AOFREP</b>: te llega por mail después del evento.</div>
+    <div id="cert">🎓 <b>Certificado de participación AOFREP</b>: te llega por mail después del evento y también podés descargarlo escaneando el QR del frente de tu credencial.</div>
   </div>
   <div class="pie"><div class="lineaPie"></div><div class="k">Main sponsor</div><img src="assets/logo-hit.png" alt="HIT Events"></div>
 </div>
@@ -162,7 +162,7 @@
       e.innerHTML = '<div class="k">Próximamente</div><div class="t">' + (dias > 1 ? 'Faltan ' + dias + ' días' : dias === 1 ? '¡Es mañana!' : '¡Es hoy!') + '</div><div class="s">Lunes 2 de noviembre · acreditación desde las 9:30</div>';
       return;
     }
-    if (t >= fin) { e.innerHTML = '<div class="k">Terminó la jornada</div><div class="t">¡Gracias por venir! 👏</div><div class="s">Tu certificado de participación te llega por mail.</div>'; return; }
+    if (t >= fin) { e.innerHTML = '<div class="k">Terminó la jornada</div><div class="t">¡Gracias por venir! 👏</div><div class="s">Tu certificado te llega por mail y también lo podés descargar desde el QR del frente de tu credencial.</div>'; return; }
     var i = AGENDA.findIndex(function (a) { return t >= ms(a.ini) && t < ms(a.fin); }), a = AGENDA[i], sig = AGENDA[i + 1];
     e.innerHTML = '<div class="k"><span class="punto"></span>En vivo</div><div class="t">' + esc(a.ico || '🎤') + ' ' + esc(a.titulo) + '</div>' +
       '<div class="s">Hasta las ' + esc(a.fin) + (sig ? ' · Después: ' + esc(sig.titulo) + ' (' + esc(sig.ini) + ')' : '') + '</div>';
@@ -189,7 +189,7 @@
   // ── Certificado: se descarga desde acá (solo entrando con el QR de la credencial) ──
   function certificado(habilitado) {
     var box = $('cert');
-    if (!habilitado) { box.innerHTML = '🎓 <b>Tu certificado de participación AOFREP</b> va a estar disponible acá al finalizar el evento. También te llega por mail.'; return; }
+    if (!habilitado) { box.innerHTML = '🎓 <b>Tu certificado de participación AOFREP</b> te llega por mail después del evento y también vas a poder descargarlo desde acá al finalizar la jornada.'; return; }
     box.innerHTML = '🎓 <b>Tu certificado de participación AOFREP</b> ya está listo.<button class="bCert" id="bCert">Descargar mi certificado (PDF)</button><div class="cert-msj" id="certMsj"></div>';
     $('bCert').onclick = function () {
       var b = this; b.disabled = true; b.textContent = 'Preparando tu certificado…'; $('certMsj').textContent = '';

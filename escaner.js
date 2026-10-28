@@ -300,10 +300,12 @@
     }).catch(function (e) { $('lErr').textContent = F.msg(e); $('lErr').classList.remove('oculto'); }).then(function () { b.disabled = false; b.textContent = 'Entrar'; });
   };
   $('lPin').onkeydown = function (e) { if (e.key === 'Enter') $('lOk').click(); };
+  function adminConsola() { try { var c = JSON.parse(localStorage.getItem('cons_s') || 'null'); return !!(c && c.yo && c.yo.rol === 'admin' && Number(String(c.token).split('.')[0]) > Date.now()); } catch (e) { return false; } }
   function entrarApp() {
     $('login').classList.add('oculto'); $('app').classList.remove('oculto');
     $('tEv').textContent = (S.ses.evento && S.ses.evento.nombre) || 'Evento'; $('tPuerta').textContent = S.ses.puerta;
     $('avisoPrueba').classList.toggle('oculto', !(S.ses.evento && S.ses.evento.prueba));
+    $('tConsola').classList.toggle('oculto', !adminConsola()); // solo admins (Gero, Adri)
     contar(); pintarConflictos();
   }
 

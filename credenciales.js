@@ -31,6 +31,8 @@
   function buscarCod(cod) { return D.creds.find(function (c) { return c.cod === cod; }); }
 
   // ── sesión ──
+  // Volver a la consola: solo si en esta compu hay una sesión de admin abierta en la consola
+  function adminConsola() { try { var c = JSON.parse(localStorage.getItem('cons_s') || 'null'); return !!(c && c.yo && c.yo.rol === 'admin' && Number(String(c.token).split('.')[0]) > Date.now()); } catch (e) { return false; } }
   function leerS() { var s = leerJSON('cred_s'); if (!s || !s.token) return null; var v = Number(String(s.token).split('.')[0]); return v > Date.now() ? s : null; }
   function entrar() {
     var puerta = $('lPuerta').value.trim(), pin = $('lPin').value.trim();
@@ -48,7 +50,13 @@
   function iniciar() {
     $('vLogin').classList.add('oculto'); $('vApp').classList.remove('oculto');
     $('hEvento').textContent = 'Credenciales · ' + (S.evento || ''); $('hPuerta').textContent = 'Puerta: ' + S.puerta;
-    cargar().then(function () { ir(vista); });
+    $('hConsola').classList.toggle('oculto', !adminConsola());
+    cargar().then(function () {
+      ir(vista);
+      // credenciales.html?cod=FZ-… (viene de la consola): abre a esa persona lista para imprimir
+      var pc = codigoLeido(new URLSearchParams(location.search).get('cod'));
+      if (pc) { ir('Puerta'); var c = buscarCod(pc); if (c) elegir(c, false); try { history.replaceState(null, '', location.pathname); } catch (e) { } }
+    });
     detectarImpresora();
     clearInterval(iniciar.t);
     iniciar.t = setInterval(function () { if (document.visibilityState === 'visible' && !imprimiendo) cargar(true); }, 60000);
@@ -76,7 +84,7 @@
   // ── dibujo del sticker (igual al diseño aprobado: centrado, franja negra abajo) ──
   var fuenteLista = null;
   function fuente() {
-    if (!fuenteLista) fuenteLista = Promise.all(['800', '700', '500'].map(function (w) { return document.fonts.load(w + ' 60px "Barlow Condensed"'); })).catch(function () { });
+    if (!fuenteLista) fuenteLista = Promise.all(['800', '700', '600', '500'].map(function (w) { return document.fonts.load(w + ' 60px "Barlow Condensed", "Arial Narrow", Arial, sans-serif'); })).catch(function () { });
     return fuenteLista;
   }
   function ajustar(cx, texto, peso, max, ancho) {
@@ -93,57 +101,62 @@
     return mejor;
   }
   function datosSticker(c) {
-    return { nombre: nombreCred(c).toUpperCase(), empresa: empresaCred(c), rubro: String(c.rubro || '').trim(), rol: String(c.rol || '').trim(), cargo: String(c.cargo || '').trim(),
+    return { nombre: nombreCred(c).toUpperCase(), empresa: empresaCred(c), rubro: String(c.rubro || '').trim(), rol: String(c.rol || '').trim(), cargo: String(c.cargo || '').trim(), cargo2: String(c.cargo2 || '').trim(), empresa2: String(c.empCred2 || '').trim(),
       qr: cfg.qr && c.hola ? (D.sitio || location.origin).replace(/\/+$/, '') + '/a?h=' + c.hola : '' };
+  }
+  // Renglón con partes de distinto peso (ej: "Presidenta · " liviano + "AOFREP" negrita)
+  var FUENTE = 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif';
+  function anchoSeg(cx, segs, t) { return segs.reduce(function (a, g) { cx.font = g.peso + ' ' + t + FUENTE; return a + cx.measureText(g.txt).width; }, 0); }
+  function ajustarSeg(cx, segs, max, ancho) { var t = max; for (; t > 20; t -= 2) if (anchoSeg(cx, segs, t) <= ancho) break; return t; }
+  function lineaEmpresa(cargo, empresa) {
+    var segs = [];
+    if (cargo && empresa) segs.push({ txt: cargo + ' · ', peso: 500 });
+    else if (cargo) segs.push({ txt: cargo, peso: 600 });
+    if (empresa) segs.push({ txt: empresa, peso: 700 });
+    return segs;
   }
   function dibujar(canvas, d) {
     canvas.width = ANCHO; canvas.height = ALTO;
     var cx = canvas.getContext('2d');
     cx.fillStyle = '#fff'; cx.fillRect(0, 0, ANCHO, ALTO);
-    cx.fillStyle = '#000'; cx.textBaseline = 'alphabetic'; cx.textAlign = 'center';
-    var banda = d.rol ? 92 : 0, margen = 24, qrLado = 0, qrX = 0;
-    // QR personal a la derecha del texto
+    cx.fillStyle = '#000'; cx.textBaseline = 'alphabetic'; cx.textAlign = 'left';
+    var margen = 32, qrLado = 0, qrX = 0, qrY = 0;
+    // QR personal en la esquina inferior derecha, a 3,5 mm de los bordes (zona segura si la etiqueta se corre)
     if (d.qr && typeof qrcode === 'function') {
       var q = qrcode(0, 'L'); q.addData(d.qr); q.make();
-      var n = q.getModuleCount(), m = 4, quiet = 2 * m; qrLado = n * m;
-      qrX = ANCHO - margen - qrLado; var qrY = Math.round((ALTO - banda - qrLado) / 2);
+      var n = q.getModuleCount(), m = 3; qrLado = n * m;
+      qrX = ANCHO - 28 - qrLado; qrY = ALTO - 28 - qrLado;
       for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) cx.fillRect(qrX + k * m, qrY + r * m, m, m);
-      qrLado += quiet;
     }
-    var izq = margen, der = qrLado ? qrX - 12 : ANCHO - margen, w = der - izq, centro = izq + w / 2;
+    // Texto centrado en todo el ancho. Solo los renglones que bajan hasta la altura del QR se achican para no tocarlo.
+    var izqA = (window.STICKER_ALINEAR || 'centro') === 'izq';
+    var centro = izqA ? margen : ANCHO / 2, full = ANCHO - 2 * margen;
+    var angosto = qrLado ? (izqA ? qrX - 14 - margen : Math.max(220, 2 * (qrX - 14 - centro))) : full, qTop = qrLado ? qrY - 14 : Infinity;
     // Nombre: hasta 100 px; si no entra, se achica; si sigue sin entrar (o es muy largo), dos renglones
-    var lineas = [d.nombre], tNom = ajustar(cx, d.nombre, 800, 100, w);
+    cx.font = '800 100' + FUENTE;
+    var lineas = [d.nombre], tNom = ajustar(cx, d.nombre, 800, 100, full);
     if (tNom < 72 && d.nombre.indexOf(' ') > 0) {
-      cx.font = '800 100px "Barlow Condensed"'; var pr = partir(cx, d.nombre, w);
-      if (pr) { var t2 = Math.min(ajustar(cx, pr.a, 800, 84, w), ajustar(cx, pr.b, 800, 84, w)); if (t2 > tNom) { lineas = [pr.a, pr.b]; tNom = t2; } }
+      cx.font = '800 100' + FUENTE; var pr = partir(cx, d.nombre, full);
+      if (pr) { var t2 = Math.min(ajustar(cx, pr.a, 800, 84, full), ajustar(cx, pr.b, 800, 84, full)); if (t2 > tNom) { lineas = [pr.a, pr.b]; tNom = t2; } }
     }
-    var tEmp = d.empresa ? ajustar(cx, d.empresa, 700, 62, w) : 0, tRub = d.rubro ? ajustar(cx, d.rubro, 500, 44, w) : 0;
-    var alto = lineas.length * tNom * 0.95 + (tEmp ? 10 + tEmp : 0) + (tRub ? 4 + tRub : 0);
-    var y = Math.round((ALTO - banda - alto) / 2);
-    cx.font = '800 ' + tNom + 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif';
-    lineas.forEach(function (l) { y += tNom * 0.95; cx.fillText(l, centro, y - tNom * 0.17); });
-    if (tEmp) { y += 10 + tEmp; cx.font = '700 ' + tEmp + 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif'; cx.fillText(d.empresa, centro, y - tEmp * 0.17); }
-    if (tRub) { y += 4 + tRub; cx.font = '500 ' + tRub + 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif'; cx.fillText(d.rubro, centro, y - tRub * 0.17); }
-    // Franja negra con el rol (y el cargo)
-    if (banda) {
-      cx.fillRect(0, ALTO - banda, ANCHO, banda);
-      cx.fillStyle = '#fff';
-      var rol = d.rol.toUpperCase(), carg = d.cargo ? ' · ' + d.cargo : '', tB = 44;
-      for (; tB > 22; tB -= 2) {
-        cx.font = '800 ' + tB + 'px "Barlow Condensed"'; var a = cx.measureText(rol).width + (rol.length - 1) * 2;
-        cx.font = '600 ' + Math.round(tB * 0.86) + 'px "Barlow Condensed"'; var b = carg ? cx.measureText(carg).width : 0;
-        if (a + b <= ANCHO - 2 * margen) break;
-      }
-      cx.font = '800 ' + tB + 'px "Barlow Condensed"'; var aw = cx.measureText(rol).width + (rol.length - 1) * 2;
-      cx.font = '600 ' + Math.round(tB * 0.86) + 'px "Barlow Condensed"'; var bw = carg ? cx.measureText(carg).width : 0;
-      var x0 = (ANCHO - aw - bw) / 2, yb = ALTO - banda / 2 + tB * 0.34;
-      cx.textAlign = 'left'; cx.font = '800 ' + tB + 'px "Barlow Condensed"';
-      try { cx.letterSpacing = '2px'; } catch (e) { }
-      cx.fillText(rol, x0, yb);
-      try { cx.letterSpacing = '0px'; } catch (e) { }
-      if (carg) { cx.font = '600 ' + Math.round(tB * 0.86) + 'px "Barlow Condensed"'; cx.fillText(carg, x0 + aw, yb); }
-      cx.textAlign = 'center'; cx.fillStyle = '#000';
+    var e1 = lineaEmpresa(d.cargo, d.empresa), e2 = lineaEmpresa(d.cargo2, d.empresa2), dos = e1.length && e2.length;
+    var items = lineas.map(function (l) { return { segs: [{ txt: l, peso: 800 }], max: lineas.length > 1 ? 84 : 100, gap: 0, f: 0.95, nom: true, w: full }; });
+    if (e1.length) items.push({ segs: e1, max: dos ? 50 : 60, gap: 14, f: 1, w: full });
+    if (e2.length) items.push({ segs: e2, max: 50, gap: 6, f: 1, w: full });
+    if (d.rubro) items.push({ segs: [{ txt: d.rubro, peso: 500 }], max: dos ? 36 : 42, gap: 6, f: 1, w: full });
+    for (var vuelta = 0; vuelta < 5; vuelta++) {
+      items.forEach(function (it) { it.t = ajustarSeg(cx, it.segs, it.max, it.w); });
+      var tn = Math.min.apply(null, items.filter(function (it) { return it.nom; }).map(function (it) { return it.t; }));
+      items.forEach(function (it) { if (it.nom) it.t = tn; });
+      var alto = items.reduce(function (a, it) { return a + it.gap + it.t * it.f; }, 0);
+      var yy = Math.round((ALTO - alto) / 2), cambio = false;
+      items.forEach(function (it) { yy += it.gap + it.t * it.f; it.y = yy; if (yy - it.t * 0.17 > qTop && it.w !== angosto) { it.w = angosto; cambio = true; } });
+      if (!cambio) break;
     }
+    items.forEach(function (it) {
+      var w = anchoSeg(cx, it.segs, it.t), x = izqA ? margen : centro - w / 2, base = it.y - it.t * 0.17;
+      it.segs.forEach(function (g) { cx.font = g.peso + ' ' + it.t + FUENTE; cx.fillText(g.txt, x, base); x += cx.measureText(g.txt).width; });
+    });
     return canvas;
   }
 
@@ -260,12 +273,12 @@
     return '<span>' + h + '</span>';
   }
   function elegir(c, desdeLector) {
-    actual = Object.assign({}, c, { _edit: { nomCred: c.nomCred || '', empCred: empresaCred(c), rubro: c.rubro || '', rol: c.rol || '', cargo: c.cargo || '' }, _lector: !!desdeLector });
+    actual = Object.assign({}, c, { _edit: { nomCred: c.nomCred || '', empCred: empresaCred(c), rubro: c.rubro || '', rol: c.rol || '', cargo: c.cargo || '', cargo2: c.cargo2 || '', empCred2: c.empCred2 || '' }, _lector: !!desdeLector });
     pintarEditor();
   }
   function pintarEditor() {
     var cv = $('pCanvas');
-    if (!actual) { $('pEditor').innerHTML = ''; fuente().then(function () { dibujar(cv, { nombre: 'NOMBRE APELLIDO', empresa: 'Empresa', rubro: 'Rubro', rol: '', cargo: '', qr: '' }); }); return; }
+    if (!actual) { $('pEditor').innerHTML = ''; fuente().then(function () { dibujar(cv, { nombre: 'NOMBRE APELLIDO', empresa: 'Empresa', rubro: 'Rubro', rol: '', cargo: 'Cargo', qr: '' }); }); return; }
     var c = actual, e = c._edit, bloqueo = c.estado !== 'Válida';
     var avisos = '';
     if (c.estado === 'En revisión') avisos += '<div class="aviso mal">Socio sin validar: todavía no tiene ticket válido. Validalo en el panel antes de darle la credencial.</div>';
@@ -280,15 +293,17 @@
       '<div class="dos">' +
       '<div><label class="et" for="eNom">Nombre en el sticker</label><input class="campo" id="eNom" maxlength="80" value="' + esc(e.nomCred) + '" placeholder="' + esc(c.nombre) + '"></div>' +
       '<div><label class="et" for="eEmp">Empresa</label><input class="campo" id="eEmp" maxlength="80" value="' + esc(e.empCred) + '"></div>' +
+      '<div><label class="et" for="eCar">Cargo en esa empresa (opcional)</label><input class="campo" id="eCar" maxlength="60" value="' + esc(e.cargo) + '" placeholder="Ej: Presidenta"></div>' +
+      '<div><label class="et" for="eEmp2">2ª empresa (opcional)</label><input class="campo" id="eEmp2" maxlength="80" value="' + esc(e.empCred2) + '" placeholder="Ej: Fonzi Events"></div>' +
+      '<div><label class="et" for="eCar2">Cargo en la 2ª empresa</label><input class="campo" id="eCar2" maxlength="60" value="' + esc(e.cargo2) + '" placeholder="Ej: CEO"></div>' +
       '<div><label class="et" for="eRub">Rubro</label><input class="campo" id="eRub" maxlength="60" value="' + esc(e.rubro) + '" placeholder="Ej: Ambientación"></div>' +
-      '<div><label class="et" for="eRol">Rol</label><select class="campo" id="eRol">' + roles + '</select></div>' +
-      '<div><label class="et" for="eCar">Cargo (opcional)</label><input class="campo" id="eCar" maxlength="60" value="' + esc(e.cargo) + '" placeholder="Ej: Presidenta"></div>' +
+      '<div><label class="et" for="eRol">Rol (no se imprime)</label><select class="campo" id="eRol">' + roles + '</select></div>' +
       '</div>' +
       (vista === 'Puerta' ? '<label class="chk"><input type="checkbox" id="eIngreso"' + (c.ingreso ? '' : ' checked') + '> Marcar ingreso al imprimir</label>' : '') +
       '<div class="acc">' + (entregar ? '<button class="b grande verde" id="eEntregar">✓ Entregada' + (c.ingreso ? '' : ' · marcar ingreso') + '</button><button class="b sec" id="eImprimir">🖨️ Reimprimir</button>' :
       '<button class="b grande verde" id="eImprimir"' + (bloqueo ? ' disabled' : '') + '>🖨️ ' + (c.veces ? 'Reimprimir' : 'Imprimir') + ' sticker</button>') +
       '<button class="b sec" id="eGuardar">Guardar sin imprimir</button><button class="b sec" id="eCerrar">Cerrar</button></div></div>';
-    ['eNom', 'eEmp', 'eRub', 'eRol', 'eCar'].forEach(function (id) { $(id).addEventListener('input', leerEditor); $(id).addEventListener('change', leerEditor); });
+    ['eNom', 'eEmp', 'eRub', 'eRol', 'eCar', 'eEmp2', 'eCar2'].forEach(function (id) { $(id).addEventListener('input', leerEditor); $(id).addEventListener('change', leerEditor); });
     $('eImprimir').onclick = imprimirActual; if ($('eEntregar')) $('eEntregar').onclick = entregarActual; $('eGuardar').onclick = function () { guardarActual().then(function (ok) { if (ok) toast('✓ Guardado'); }).catch(fallo); };
     $('eCerrar').onclick = function () { actual = null; pintarEditor(); if (vista === 'Puerta') $('pLector').focus(); };
     previa();
@@ -296,14 +311,14 @@
   }
   function leerEditor() {
     if (!actual) return;
-    actual._edit = { nomCred: $('eNom').value.trim(), empCred: $('eEmp').value.trim(), rubro: $('eRub').value.trim(), rol: $('eRol').value, cargo: $('eCar').value.trim() };
+    actual._edit = { nomCred: $('eNom').value.trim(), empCred: $('eEmp').value.trim(), rubro: $('eRub').value.trim(), rol: $('eRol').value, cargo: $('eCar').value.trim(), empCred2: $('eEmp2').value.trim(), cargo2: $('eCar2').value.trim() };
     previa();
   }
-  function conEdicion(c) { var e = c._edit || {}; return Object.assign({}, c, { nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo }); }
+  function conEdicion(c) { var e = c._edit || {}; return Object.assign({}, c, { nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo, cargo2: e.cargo2, empCred2: e.empCred2 }); }
   function previa() { if (!actual) return; fuente().then(function () { dibujar($('pCanvas'), datosSticker(conEdicion(actual))); }); }
   function cambio(c) {
     var e = c._edit; if (!e) return false;
-    return e.nomCred !== (c.nomCred || '') || e.empCred !== (c.empCred || empresaCred(c)) || e.rubro !== (c.rubro || '') || e.rol !== (c.rol || '') || e.cargo !== (c.cargo || '') ||
+    return e.nomCred !== (c.nomCred || '') || e.empCred !== (c.empCred || empresaCred(c)) || e.rubro !== (c.rubro || '') || e.rol !== (c.rol || '') || e.cargo !== (c.cargo || '') || e.cargo2 !== (c.cargo2 || '') || e.empCred2 !== (c.empCred2 || '') ||
       (e.empCred && !c.empCred);
   }
   function guardarActual() {
@@ -311,7 +326,7 @@
     leerEditor();
     if (!cambio(actual)) return Promise.resolve(true);
     var e = actual._edit;
-    return api('guardar', { cod: actual.cod, nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo }).then(function (r) {
+    return api('guardar', { cod: actual.cod, nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo, cargo2: e.cargo2, empCred2: e.empCred2 }).then(function (r) {
       var i = D.creds.findIndex(function (x) { return x.cod === r.cred.cod; }); if (i >= 0) D.creds[i] = r.cred;
       actual = Object.assign({}, r.cred, { _edit: e, _lector: actual._lector }); return true;
     });
@@ -408,7 +423,7 @@
     cfg = { modo: $('iModo').value, qr: $('iQr').checked, ribbon: $('iRibbon').checked, oscuro: Number($('iOscuro').value) || 0, dx: Number($('iDx').value) || 0, dy: Number($('iDy').value) || 0 };
     guardarJSON('cred_cfg', cfg); previa();
   }
-  var PRUEBA = { cod: 'FZ-PRUEBA0000', nombre: 'Adriana Fonzi', nomCred: '', empCred: 'Fonzi Events', rubro: 'Producción de eventos', rol: 'Comisión Directiva', cargo: 'Presidenta', hola: 'PRUEBA0000' };
+  var PRUEBA = { cod: 'FZ-PRUEBA0000', nombre: 'Adriana Fonzi', nomCred: '', empCred: 'AOFREP', rubro: '', rol: 'Comisión Directiva', cargo: 'Presidenta', empCred2: 'Fonzi Events', cargo2: 'CEO', hola: 'PRUEBA0000' };
 
   // ── arranque ──
   Array.prototype.forEach.call(document.querySelectorAll('nav button'), function (b) { b.onclick = function () { ir(b.getAttribute('data-v')); }; });

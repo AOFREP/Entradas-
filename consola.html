@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consola · Eventos y Negocios</title>
+<meta name="theme-color" content="#071A33">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Consola EyN">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  :root { --lado: 236px; --ok: #11663A; --okF: #D6F0DD; --azF: #DCE8F7; --az: #1F4E8C; --nar: #8A3A00; --narF: #FFE3C7; }
+  body { background: var(--fondo); }
+  /* ── login ── */
+  #vLogin { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--marca); }
+  .loginCaja { width: 100%; max-width: 400px; background: #fff; border-radius: 18px; padding: 28px 24px; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .loginCaja .k { font-size: 11px; letter-spacing: 3px; font-weight: 800; color: var(--acento); }
+  .loginCaja h1 { margin: 6px 0 4px; font-size: 24px; }
+  .loginCaja p { color: var(--gris); font-size: 14px; margin: 0 0 6px; }
+  .b { border: 0; border-radius: 11px; padding: 11px 16px; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; white-space: nowrap; }
+  .b:disabled { opacity: .5; cursor: default; }
+  .b.pri { background: var(--acento); color: #fff; } .b.pri:hover { background: var(--acentoOsc); }
+  .b.ok { background: var(--ok); color: #fff; } .b.wa { background: #25D366; color: #fff; }
+  .b.sec { background: #fff; color: var(--texto); border: 1.5px solid var(--borde); } .b.sec:hover { border-color: var(--acento); color: var(--acento); }
+  .b.mal { background: #fff; color: var(--rojo); border: 1.5px solid #F1B5AF; } .b.mal:hover { background: var(--rojoF); }
+  .b.chico { padding: 7px 11px; font-size: 13px; border-radius: 9px; }
+  .b.ancho { width: 100%; padding: 14px; font-size: 16px; margin-top: 18px; }
+  .err { color: var(--rojo); font-weight: 700; font-size: 14px; margin-top: 10px; min-height: 1px; }
+  /* ── estructura ── */
+  #vApp { min-height: 100vh; }
+  .lado { position: fixed; top: 0; bottom: 0; left: 0; width: var(--lado); background: var(--marca); color: #fff; display: flex; flex-direction: column; z-index: 20; overflow-y: auto; }
+  .lado .marcaT { padding: 20px 18px 14px; } .lado .marcaT b { display: block; font-size: 16px; } .lado .marcaT small { opacity: .65; font-size: 12px; }
+  .lado nav { flex: 1; padding: 6px 10px; }
+  .lado nav button { width: 100%; display: flex; align-items: center; gap: 10px; background: none; border: 0; color: rgba(255,255,255,.78); font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 10px; border-radius: 9px; cursor: pointer; text-align: left; }
+  .lado nav button:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .lado nav button.on { background: rgba(255,255,255,.13); color: #fff; }
+  .lado nav button .i { width: 22px; text-align: center; font-size: 16px; }
+  .lado nav button .n { margin-left: auto; background: #F0B429; color: #3A2A00; font-size: 11px; font-weight: 800; border-radius: 10px; padding: 1px 7px; }
+  .lado nav .grupo { font-size: 10px; letter-spacing: 2px; font-weight: 800; opacity: .45; padding: 14px 10px 4px; }
+  .lado .yo { padding: 14px 18px; border-top: 1px solid rgba(255,255,255,.1); font-size: 13px; } .lado .yo b { display: block; }
+  .lado .yo button { background: none; border: 0; color: #9FC3F0; font-family: inherit; font-size: 13px; padding: 0; margin-top: 4px; cursor: pointer; margin-right: 12px; }
+  main { margin-left: var(--lado); padding: 26px 30px 60px; max-width: 1240px; }
+  .topM { display: none; }
+  .cab { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .cab h2 { margin: 0; font-size: 24px; flex: 1; min-width: 200px; }
+  .cab .sub { color: var(--gris); font-size: 13px; width: 100%; margin-top: -6px; }
+  .bannerP { background: var(--amarillo); color: var(--amarilloT); font-weight: 700; font-size: 13px; padding: 8px 14px; border-radius: 10px; margin-bottom: 14px; }
+  @media (max-width: 900px) {
+    .lado { transform: translateX(-100%); transition: transform .2s; width: 270px; box-shadow: 10px 0 40px rgba(0,0,0,.3); }
+    body.menu .lado { transform: none; }
+    body.menu::after { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 15; }
+    main { margin-left: 0; padding: 16px 14px 60px; }
+    .topM { display: flex; align-items: center; gap: 10px; background: var(--marca); color: #fff; padding: 10px 14px; padding-top: calc(10px + env(safe-area-inset-top)); position: sticky; top: 0; z-index: 10; }
+    .topM button { background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 9px; font-size: 20px; width: 40px; height: 38px; cursor: pointer; }
+    .topM b { flex: 1; font-size: 15px; }
+    .cab h2 { font-size: 21px; }
+  }
+  /* ── piezas ── */
+  .tarj { background: #fff; border: 1px solid var(--borde); border-radius: var(--radio); padding: 18px; box-shadow: 0 2px 10px rgba(7,26,51,.04); }
+  .tarj + .tarj, .grilla + .tarj, .tarj + .grilla { margin-top: 14px; }
+  .tarj h3 { margin: 0 0 10px; font-size: 16px; }
+  .grilla { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .kpi { background: #fff; border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px 16px; }
+  .kpi small { display: block; color: var(--gris); font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+  .kpi b { display: block; font-size: 26px; line-height: 1.2; margin-top: 3px; }
+  .kpi span { font-size: 12px; color: var(--suave); }
+  .kpi.alerta { background: #FFF8EF; border-color: #F5C58B; cursor: pointer; } .kpi.link { cursor: pointer; } .kpi.link:hover, .kpi.alerta:hover { border-color: var(--acento); }
+  .fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .fila > .crece { flex: 1; min-width: 180px; }
+  .campo2 { width: 100%; font-size: 15px; padding: 10px 12px; border: 1.5px solid var(--borde); border-radius: 10px; background: #fff; color: var(--texto); font-family: inherit; }
+  .campo2:focus { outline: none; border-color: var(--acento); box-shadow: 0 0 0 3px rgba(30,111,217,.15); }
+  textarea.campo2 { min-height: 80px; resize: vertical; }
+  label.et2 { display: block; font-size: 11px; font-weight: 800; color: var(--gris); margin: 12px 0 5px; text-transform: uppercase; letter-spacing: .5px; }
+  .form { display: grid; gap: 0 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .form .ancho { grid-column: 1 / -1; }
+  .chk2 { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 12px; user-select: none; }
+  .chk2 input { width: 18px; height: 18px; accent-color: var(--acento); }
+  .tabla { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .tabla th { text-align: left; font-size: 11px; color: var(--gris); text-transform: uppercase; letter-spacing: .4px; padding: 9px 10px; background: #F6F8FB; border-bottom: 1px solid var(--borde); white-space: nowrap; position: sticky; top: 0; }
+  .tabla td { padding: 10px; border-bottom: 1px solid #EEF2F6; vertical-align: top; }
+  .tabla tr.click { cursor: pointer; } .tabla tr.click:hover td { background: #F5F9FF; }
+  .tabla td small { display: block; color: var(--suave); font-size: 12px; }
+  .tabla .num { text-align: right; white-space: nowrap; }
+  .scroll { overflow-x: auto; border: 1px solid var(--borde); border-radius: var(--radio); background: #fff; max-height: 70vh; overflow-y: auto; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 12px; background: #ECEFF3; color: #4A5567; white-space: nowrap; }
+  .chip.ok { background: var(--okF); color: var(--ok); } .chip.mal { background: var(--rojoF); color: var(--rojo); } .chip.az { background: var(--azF); color: var(--az); } .chip.am { background: var(--amarillo); color: var(--amarilloT); } .chip.nar { background: var(--narF); color: var(--nar); }
+  .vacio { text-align: center; color: var(--suave); padding: 34px 10px; }
+  .cont { font-size: 13px; color: var(--gris); margin: 8px 2px; }
+  .sw { position: relative; display: inline-block; width: 46px; height: 26px; flex: none; } .sw input { opacity: 0; width: 0; height: 0; }
+  .sw span { position: absolute; inset: 0; background: #C8D1DC; border-radius: 26px; transition: .15s; cursor: pointer; }
+  .sw span::before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .sw input:checked + span { background: var(--ok); } .sw input:checked + span::before { transform: translateX(20px); }
+  .sw.rojo input:checked + span { background: var(--rojo); }
+  .interr { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #EEF2F6; } .interr:last-child { border-bottom: 0; }
+  .interr .t { flex: 1; } .interr .t b { display: block; font-size: 15px; } .interr .t small { color: var(--gris); font-size: 13px; }
+  .socio { border: 1px solid var(--borde); border-radius: 12px; padding: 14px; margin-top: 10px; background: #fff; }
+  .socio .emp { font-weight: 800; font-size: 17px; } .socio .l { font-size: 14px; color: #3B4A60; margin-top: 4px; }
+  .socio.dev { background: #FFF8EF; border-color: #F5C58B; }
+  .acc { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .seg { display: inline-flex; background: #E6EBF2; border-radius: 10px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+  .seg button { border: 0; background: none; padding: 7px 12px; border-radius: 8px; font-family: inherit; font-weight: 700; font-size: 13px; color: var(--gris); cursor: pointer; }
+  .seg button.on { background: #fff; color: var(--texto); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .tipoT .cabT { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .tipoT .cabT b { font-size: 17px; flex: 1; }
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--gris); margin-top: 6px; } .stats b { color: var(--texto); }
+  .gran { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .accion { background: #fff; border: 1.5px solid var(--borde); border-radius: 16px; padding: 22px 18px; cursor: pointer; text-align: left; font-family: inherit; color: var(--texto); }
+  .accion:hover { border-color: var(--acento); box-shadow: 0 6px 20px rgba(30,111,217,.12); }
+  .accion .i { font-size: 32px; } .accion b { display: block; font-size: 18px; margin-top: 8px; } .accion small { color: var(--gris); font-size: 13px; }
+  .diag div { padding: 8px 0; border-bottom: 1px solid #EEF2F6; font-size: 14px; }
+  /* ── ventana de detalle ── */
+  #modal { position: fixed; inset: 0; z-index: 50; background: rgba(7,26,51,.45); display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+  #modal .caja { background: #fff; border-radius: 18px; width: 100%; max-width: 760px; padding: 22px; box-shadow: 0 30px 80px rgba(0,0,0,.35); position: relative; }
+  #modal .cerrar { position: absolute; right: 14px; top: 12px; background: #EEF2F7; border: 0; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; }
+  #modal h3 { margin: 0 40px 2px 0; font-size: 21px; }
+  #modal .meta { color: var(--gris); font-size: 13px; }
+  .bloque { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--borde); }
+  .bloque h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--acento); }
+  .datos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; font-size: 14px; }
+  .datos div small { display: block; color: var(--suave); font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: .4px; }
+  @media (max-width: 600px) { #modal { padding: 0; } #modal .caja { border-radius: 0; min-height: 100vh; } }
+  #toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; background: #13233A; color: #fff; border-radius: 12px; padding: 12px 18px; font-weight: 700; z-index: 60; box-shadow: 0 10px 30px rgba(0,0,0,.3); max-width: calc(100% - 32px); font-size: 14px; }
+  #toast.err { background: var(--rojo); }
+  .cargandoV { padding: 40px; text-align: center; color: var(--suave); }
+</style>
+</head>
+<body>
+<section id="vLogin">
+  <div class="loginCaja">
+    <div class="k">EVENTOS Y NEGOCIOS · CONSOLA</div>
+    <div id="lForm">
+      <h1>Entrar</h1>
+      <p>Con tu usuario y contraseña.</p>
+      <label class="et2" for="lUsu">Usuario</label><input class="campo2" id="lUsu" autocomplete="username" autocapitalize="none" spellcheck="false">
+      <label class="et2" for="lClave">Contraseña</label><input class="campo2" id="lClave" type="password" autocomplete="current-password">
+      <button class="b pri ancho" id="lEntrar">Entrar</button>
+    </div>
+    <div id="lAlta" class="oculto">
+      <h1>Crear el primer usuario</h1>
+      <p>La consola todavía no tiene usuarios. Para crear el tuyo (admin) poné la <b>clave del panel del celular</b>.</p>
+      <label class="et2" for="aMaestra">Clave del panel del celular</label><input class="campo2" id="aMaestra" type="password" autocomplete="off">
+      <label class="et2" for="aNombre">Tu nombre</label><input class="campo2" id="aNombre" placeholder="Ej: Gero">
+      <label class="et2" for="aUsu">Usuario (sin espacios)</label><input class="campo2" id="aUsu" autocapitalize="none" placeholder="Ej: gero">
+      <label class="et2" for="aMail">Tu mail (para pruebas de mails)</label><input class="campo2" id="aMail" type="email">
+      <label class="et2" for="aClave">Contraseña (8+ con letras y números)</label><input class="campo2" id="aClave" type="password" autocomplete="new-password">
+      <button class="b pri ancho" id="aCrear">Crear y entrar</button>
+    </div>
+    <div class="err" id="lErr"></div>
+  </div>
+</section>
+
+<section id="vApp" class="oculto">
+  <aside class="lado">
+    <div class="marcaT"><b id="hEvento">Eventos y Negocios</b><small>Consola</small></div>
+    <nav id="nav"></nav>
+    <div class="yo"><b id="hYo"></b><span id="hRol" style="opacity:.6"></span><br><button id="bCuenta">Mi contraseña</button><button id="bSalir">Salir</button></div>
+  </aside>
+  <div class="topM"><button id="bMenu" aria-label="Menú">☰</button><b id="hTit">Consola</b></div>
+  <main id="main"></main>
+</section>
+
+<div id="modal" class="oculto"><div class="caja"><button class="cerrar" id="mCerrar" aria-label="Cerrar">✕</button><div id="mCont"></div></div></div>
+<div id="toast" class="oculto"></div>
+
+<script src="config.js"></script>
+<script src="comun.js"></script>
+<script src="consola.js"></script>
+</body>
+</html>
