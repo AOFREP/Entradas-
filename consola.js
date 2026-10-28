@@ -348,12 +348,34 @@
   }
 
   // ── Tipos ──
+  // v1.12: copiar al portapapeles con plan B (en algunos celulares el portapapeles falla)
+  function copiarTxt(txt, ok) {
+    var plan = function () { prompt('Copiá este texto:', txt); };
+    try { var pr = navigator.clipboard && navigator.clipboard.writeText(txt); if (pr && pr.then) pr.then(function () { toast(ok); }, plan); else plan(); } catch (e) { plan(); }
+  }
+  var ALFA_C = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  function generarCodigo(nombre) {
+    var pal = String(nombre || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(function (w) { return w.length >= 3 && ['BENEFICIO', 'ESPECIAL', 'INVITADOS', 'INVITADAS', 'TICKET', 'TICKETS', 'PARA', 'LOS', 'LAS', 'DEL', 'SOCIOS', 'MIEMBROS'].indexOf(w) < 0; });
+    var base = (pal.length ? pal[pal.length - 1] : 'EYN').slice(0, 10), r = '';
+    var a = new Uint32Array(4); try { crypto.getRandomValues(a); } catch (e) { for (var j = 0; j < 4; j++) a[j] = Math.floor(Math.random() * 1e9); }
+    for (var i = 0; i < 4; i++) r += ALFA_C[a[i] % ALFA_C.length];
+    return base + '-' + r;
+  }
+  function linkBenef(cod) { return (S.sitio || location.origin).replace(/\/$/, '') + '/?codigo=' + encodeURIComponent(cod); }
+  function mensajeBenef(t) {
+    var ev = S.evento || {}, donde = [ev.fecha, ev.lugar].filter(Boolean).join(' · ');
+    return '¡Hola! 🎟️ Tenés un *beneficio especial* para *' + (ev.nombre || 'el evento') + '*' + (donde ? ' (' + donde + ')' : '') + '.\n\n' +
+      'Tu ticket a *' + F.plata(t.precio) + '*' + (t.tachado > t.precio ? ' en lugar de ~' + F.plata(t.tachado) + '~' : '') + '.\n\n' +
+      'Entrá acá y ya te aparece desbloqueado:\n' + linkBenef(t.codigo) + '\n\nSi te lo pide, tu código es: *' + t.codigo + '*';
+  }
   V.tipos = function () {
     api('tipos').then(function (r) {
+      var general = 0; r.tipos.forEach(function (t) { if (!t.codigo && !t.cort && t.estadoWeb === 'venta' && t.precio > general) general = t.precio; });
+      var porId = {}; r.tipos.forEach(function (t) { porId[t.id] = t; });
       var est = { venta: ['ok', 'En venta'], agotado: ['mal', 'Agotado'], finalizado: ['', 'Terminó'], proximamente: ['az', 'Próximamente'], reservado: ['am', 'Reservado'], oculto: ['', 'Oculto'] };
       var tarjeta = function (t) {
         var e = est[t.estadoWeb] || ['', t.estadoWeb];
-        return '<div class="tarj tipoT" data-id="' + esc(t.id || '') + '"><div class="cabT"><b>' + esc(t.nombre || 'Tipo nuevo') + '</b>' + (t.id ? '<span class="chip ' + e[0] + '">' + e[1] + '</span>' : '') + '</div>' +
+        return '<div class="tarj tipoT' + (t.codigo ? ' conCod' : '') + '" data-id="' + esc(t.id || '') + '"><div class="cabT"><b>' + esc(t.nombre || 'Tipo nuevo') + '</b>' + (t.codigo ? '<span class="chip am">⭐ Beneficio con código</span>' : '') + (t.id ? '<span class="chip ' + e[0] + '">' + e[1] + '</span>' : '') + '</div>' +
           (t.id ? '<div class="stats"><span>Vendidas <b>' + t.vendidas + '</b></span><span>Reservadas <b>' + t.reservadas + '</b></span><span>Disponibles <b>' + (t.disp == null ? '—' : t.disp) + '</b></span><span style="font-family:monospace">' + esc(t.id) + '</span></div>' : '') +
           '<div class="form"><div><label class="et2">Nombre</label><input class="campo2" data-k="nombre" value="' + esc(t.nombre || '') + '"></div>' +
           '<div><label class="et2">Precio</label><input class="campo2" data-k="precio" type="number" min="0" step="500" value="' + esc(t.precio == null ? '' : t.precio) + '"></div>' +
@@ -364,14 +386,29 @@
           '<div class="fila" style="gap:18px"><label class="chk2"><input type="checkbox" data-k="activo"' + (t.activo ? ' checked' : '') + '> Activo (se ve en la tienda)</label>' +
           '<label class="chk2"><input type="checkbox" data-k="cort"' + (t.cort ? ' checked' : '') + '> Socio (se valida)</label>' +
           '<label class="chk2"><input type="checkbox" data-k="agotado"' + (t.agotado ? ' checked' : '') + '> Agotado</label></div>' +
+          '<div class="benefB"><div class="benefT">⭐ Beneficio con código <small>Opcional. Si ponés un código, en la web este ticket aparece con candado y solo se puede comprar con el código (sirve para todas las compras que quieras; el tope es el cupo).</small></div>' +
+          '<div class="form"><div class="ancho" style="max-width:460px"><label class="et2">Código de acceso</label><div class="fila" style="gap:6px;flex-wrap:nowrap"><input class="campo2" data-k="codigo" value="' + esc(t.codigo || '') + '" placeholder="Vacío = ticket normal" style="text-transform:uppercase;font-family:monospace;font-weight:700"><button class="b sec" type="button" data-gen title="Inventa un código difícil de adivinar">Generar</button></div></div>' +
+          '<div><label class="et2">Precio tachado</label><input class="campo2" data-k="tachado" type="number" min="0" step="500" value="' + esc(t.tachado || '') + '" placeholder="Ej: ' + (general || 90000) + '">' + (general ? '<small class="cont">Precio general hoy: ' + F.plata(general) + ' · <a href="" data-usar="' + general + '">usar</a></small>' : '') + '</div></div>' +
+          (t.id && t.codigo ? '<div class="comp"><div class="cont">Link para compartir (entra con el beneficio ya desbloqueado):</div><div class="lnk">' + esc(linkBenef(t.codigo)) + '</div>' +
+            '<div class="acc"><button class="b sec" type="button" data-cl="' + esc(t.id) + '">🔗 Copiar link</button><button class="b sec" type="button" data-cm="' + esc(t.id) + '">💬 Copiar mensaje</button>' +
+            '<a class="b wa" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(mensajeBenef(t)) + '">WhatsApp</a><a class="b sec" target="_blank" rel="noopener" href="' + esc(linkBenef(t.codigo)) + '">Probar ↗</a></div>' +
+            '<div class="cont" style="margin-top:8px">Vendidas con el código: <b>' + t.vendidas + '</b>' + (t.cupo ? ' de ' + t.cupo : '') + (t.reservadas ? ' · ' + t.reservadas + ' pagando ahora' : '') + '</div></div>' : '') +
+          '</div>' +
           '<div class="acc"><button class="b pri" data-guardar>Guardar</button></div></div>';
       };
       $('main').innerHTML = cab('Tipos y precios', 'Los cambios se ven en la tienda en el momento. El tope real del salón es el "Cupo total" de Ajustes.', '<button class="b sec" id="bNuevoT">＋ Tipo nuevo</button>') + r.tipos.map(tarjeta).join('') + '<div id="tNuevo"></div>';
       $('bNuevoT').onclick = function () { $('tNuevo').innerHTML = tarjeta({ nombre: '', precio: 0, cupo: 0, activo: false }); $('tNuevo').scrollIntoView({ behavior: 'smooth' }); };
       $('main').onclick = function (e) {
+        var u = e.target.closest('[data-usar]'); if (u) { e.preventDefault(); u.closest('.tipoT').querySelector('[data-k="tachado"]').value = u.getAttribute('data-usar'); return; }
+        var g = e.target.closest('button[data-gen]');
+        if (g) { var cd = g.closest('.tipoT'), ic = cd.querySelector('[data-k="codigo"]'); if (ic.value.trim() && !confirm('¿Reemplazar el código actual? El link y el código viejos van a dejar de funcionar (los tickets ya vendidos siguen valiendo).')) return; ic.value = generarCodigo(cd.querySelector('[data-k="nombre"]').value); return; }
+        var cl = e.target.closest('button[data-cl]'); if (cl) { copiarTxt(linkBenef(porId[cl.getAttribute('data-cl')].codigo), '✓ Link copiado'); return; }
+        var cm = e.target.closest('button[data-cm]'); if (cm) { copiarTxt(mensajeBenef(porId[cm.getAttribute('data-cm')]), '✓ Mensaje copiado: pegalo en WhatsApp'); return; }
         var b = e.target.closest('button[data-guardar]'); if (!b) return;
         var card = b.closest('.tipoT'), d = {};
         Array.prototype.forEach.call(card.querySelectorAll('[data-k]'), function (i) { d[i.getAttribute('data-k')] = i.type === 'checkbox' ? i.checked : i.value; });
+        var antes = porId[card.getAttribute('data-id')];
+        if (antes && antes.codigo && String(d.codigo || '').trim().toUpperCase().replace(/\s+/g, '-') !== antes.codigo && !confirm(d.codigo ? '¿Cambiar el código? El link y el código viejos dejan de funcionar (los tickets ya vendidos siguen valiendo).' : '¿Sacar el código? El ticket pasa a verse y venderse como uno normal para todo el público.')) return;
         boton(b, api('tipoGuardar', { tipoId: card.getAttribute('data-id'), datos: d })).then(function (r2) { toast(r2.msj); V.tipos(); }).catch(fallo);
       };
     }).catch(fallo);

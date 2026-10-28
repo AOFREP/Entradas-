@@ -15,6 +15,31 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="estilos.css">
+<style>
+/* v1.12 · beneficio especial con código */
+.tipo .tach { color: var(--suave); font-weight: 600; font-size: 15px; text-decoration: line-through; text-decoration-thickness: 2px; margin-right: 6px; }
+.tipo .ahorro { display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 800; color: #0B6B3A; background: #E3F6EA; padding: 2px 8px; border-radius: 20px; margin-left: 6px; vertical-align: 2px; }
+.tipo.benef { margin: 10px -12px; padding: 14px 12px; border: 2px solid #E8C766; border-radius: 14px; background: linear-gradient(180deg, #FFFBEA, #FFFFFF 70%); }
+.tipo.benef + .tipo { border-top: 0; }
+.tipo.benef.abierto { border-color: #2E9E5B; background: linear-gradient(180deg, #EEFAF2, #FFFFFF 70%); }
+.benefTag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #7A5200; background: #FFF0B8; border-radius: 20px; padding: 3px 9px; margin-bottom: 6px; }
+.abierto .benefTag { color: #0B6B3A; background: #D7F2E1; }
+.codForm { display: flex; gap: 8px; margin-top: 10px; }
+.codForm input { flex: 1; min-width: 0; font: inherit; font-size: 16px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 11px 12px; border: 2px solid var(--borde); border-radius: 12px; background: #fff; color: var(--texto); }
+.codForm input::placeholder { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--suave); }
+.codForm input:focus { outline: none; border-color: var(--acento); }
+.codForm input.mal { border-color: #B42318; animation: sacude .3s; }
+.codForm button { border: 0; border-radius: 12px; background: var(--acento); color: #fff; font: inherit; font-weight: 800; font-size: 15px; padding: 0 16px; cursor: pointer; white-space: nowrap; }
+.codForm button:disabled { opacity: .6; cursor: default; }
+.codMsg { font-size: 13px; margin-top: 6px; min-height: 0; }
+.codMsg.mal { color: #B42318; font-weight: 600; }
+.codOk { font-size: 13px; font-weight: 700; color: #0B6B3A; margin-top: 6px; }
+.candado { font-size: 13px; color: var(--gris); margin-top: 8px; }
+.resumen .lin span:last-child { white-space: nowrap; padding-left: 12px; }
+.nowrap { white-space: nowrap; }
+.resumen .benefNota { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #E3F6EA; color: #0B6B3A; font-weight: 700; font-size: 14px; }
+@keyframes sacude { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+</style>
 </head>
 <body>
 <div id="bPrueba" class="prueba oculto">🧪 MODO PRUEBA — las compras no son reales</div>
@@ -111,7 +136,7 @@
 <script src="comun.js"></script>
 <script>
 (function () {
-  var $ = F.$, D = null, cant = {}, paso = 1;
+  var $ = F.$, D = null, cant = {}, paso = 1, abiertos = {}; // abiertos: tipoId → código que lo desbloqueó (v1.12)
   $('verFlyer').onclick = function () { $('flyerVer').classList.remove('oculto'); };
   $('flyerVer').onclick = function () { this.classList.add('oculto'); };
   function cargar() {
@@ -136,7 +161,7 @@
       }
       if (!d.abierta) { $('cerrada').classList.remove('oculto'); return; }
       pintarTipos(); $('p1').classList.remove('oculto'); $('barra').classList.remove('oculto'); actualizar();
-      ultimaCompra();
+      ultimaCompra(); codigosGuardados();
     }).catch(function (e) {
       $('cargando').classList.add('oculto'); $('falla').innerHTML = 'No pudimos cargar la inscripción: ' + F.esc(F.msg(e)) + ' <a href="" onclick="location.reload();return false">Reintentar</a>'; $('falla').classList.remove('oculto');
     });
@@ -146,10 +171,16 @@
     $('cuitEmpMsg').innerHTML = c.length < 11 ? '' : F.cuitOk(c) ? '<div class="okCampo">✓ CUIT válido</div>' : '<div class="malCampo">Ese CUIT no es válido, revisalo.</div>';
   };
   // Orden: primero los de no socio (en el orden de la planilla) y al final los de socio
-  function visibles() { return D.tipos.filter(function (t) { return !t.cort; }).concat(D.tipos.filter(function (t) { return t.cort; })); }
+  // v1.12: los beneficios con código desbloqueados van primero; los bloqueados, al final
+  function bloqueado(t) { return t.bloq && !abiertos[t.id]; }
+  function visibles() {
+    var ab = D.tipos.filter(function (t) { return t.bloq && abiertos[t.id]; }), bl = D.tipos.filter(function (t) { return bloqueado(t); });
+    var resto = D.tipos.filter(function (t) { return !t.bloq; });
+    return ab.concat(resto.filter(function (t) { return !t.cort; }), resto.filter(function (t) { return t.cort; }), bl);
+  }
   function totalCant() { var t = 0; for (var k in cant) t += cant[k]; return t; }
   function cantCort() { var t = 0; D.tipos.forEach(function (x) { if (x.cort) t += cant[x.id] || 0; }); return t; }
-  function maxPara(t) { var m = t.disp; if (t.cort && D.cortMax > 0) m = Math.min(m, D.cortMax - (cantCort() - (cant[t.id] || 0))); return m; }
+  function maxPara(t) { if (bloqueado(t)) return 0; var m = t.disp; if (t.cort && D.cortMax > 0) m = Math.min(m, D.cortMax - (cantCort() - (cant[t.id] || 0))); return m; }
   function pintarTipos() {
     var h = visibles().map(function (t) {
       var on = t.estado === 'venta', est = '';
@@ -158,17 +189,70 @@
       else if (t.estado === 'proximamente') est = '<span class="est">Desde el ' + (t.desde ? new Date(t.desde).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' }) : '') + '</span>';
       else if (t.estado === 'finalizado') est = '<span class="est agot">Agotado</span>';
       else if (t.disp <= 15) est = '<span class="est pocas">¡Últimos ' + t.disp + ' lugares!</span>';
-      var pre = t.precio > 0 ? '<div class="pre">' + F.plata(t.precio) + '</div>' : '<div class="pre gratis">Sin cargo</div>';
-      var desc = t.desc;
-      if (t.estado === 'agotado' || t.estado === 'finalizado') desc = '';
       var agot = t.estado === 'agotado' || t.estado === 'finalizado';
-      return '<div class="tipo' + (on ? '' : ' apagado') + (agot ? ' agot' : '') + '"><div class="info"><div class="nom">' + F.esc(t.nombre) + '</div>' + (desc ? '<div class="des">' + F.esc(desc) + '</div>' : '') + pre + est + '</div>' +
-        (on ? '<div class="paso"><button data-m="' + F.esc(t.id) + '" aria-label="Menos">−</button><span class="cant" id="q_' + F.esc(t.id) + '">0</span><button data-p="' + F.esc(t.id) + '" aria-label="Más">+</button></div>' : '') + '</div>';
+      var tach = t.tachado > t.precio ? '<s class="tach">' + F.plata(t.tachado) + '</s>' : '';
+      var ahorro = tach && !agot ? '<span class="ahorro">Ahorrás ' + F.plata(t.tachado - t.precio) + '</span>' : '';
+      var pre = t.precio > 0 ? '<div class="pre">' + tach + F.plata(t.precio) + ahorro + '</div>' : '<div class="pre gratis">' + tach + 'Sin cargo</div>';
+      var desc = t.desc;
+      if (agot) desc = '';
+      var cod = '';
+      if (t.bloq) {
+        if (abiertos[t.id]) cod = '<div class="codOk">🔓 Código aplicado: ' + F.esc(abiertos[t.id]) + '</div>';
+        else if (!agot) cod = '<div class="candado">🔒 Para sumarlo necesitás el código del beneficio.</div><div class="codForm"><input id="cod_' + F.esc(t.id) + '" data-codin="' + F.esc(t.id) + '" placeholder="Ingresá tu código" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go"><button type="button" data-cod="' + F.esc(t.id) + '">Desbloquear</button></div><div class="codMsg" id="codMsg_' + F.esc(t.id) + '"></div>';
+      }
+      var on2 = on && !bloqueado(t);
+      return '<div class="tipo' + (on ? '' : ' apagado') + (agot ? ' agot' : '') + (t.bloq ? ' benef' + (abiertos[t.id] ? ' abierto' : '') : '') + '"><div class="info">' + (t.bloq ? '<div class="benefTag">⭐ Beneficio especial</div>' : '') + '<div class="nom">' + F.esc(t.nombre) + '</div>' + (desc ? '<div class="des">' + F.esc(desc) + '</div>' : '') + pre + est + cod + '</div>' +
+        (on2 ? '<div class="paso"><button data-m="' + F.esc(t.id) + '" aria-label="Menos">−</button><span class="cant" id="q_' + F.esc(t.id) + '">0</span><button data-p="' + F.esc(t.id) + '" aria-label="Más">+</button></div>' : '') + '</div>';
     }).join('');
     $('tipos').innerHTML = h || '<div style="padding:16px;color:var(--gris)">Todavía no hay tickets disponibles.</div>';
   }
+  // ── v1.12 · desbloquear con código ──
+  function normCod(c) { return String(c || '').trim().toUpperCase().replace(/\s+/g, '-').slice(0, 40); }
+  function guardarCodigos() { try { var l = []; for (var k in abiertos) if (l.indexOf(abiertos[k]) < 0) l.push(abiertos[k]); sessionStorage.setItem('fz_cod', JSON.stringify(l)); } catch (e) { } }
+  function abrirCon(codigo, ids) {
+    var nuevos = 0;
+    ids.forEach(function (id) { if (D.tipos.some(function (t) { return t.id === id; }) && !abiertos[id]) { abiertos[id] = codigo; nuevos++; } });
+    guardarCodigos(); pintarTipos(); actualizar(); return nuevos;
+  }
+  function probarCodigo(id) {
+    var inp = $('cod_' + id), msg = $('codMsg_' + id), btn = document.querySelector('[data-cod="' + id + '"]');
+    var c = normCod(inp && inp.value);
+    if (c.replace(/[^A-Z0-9]/g, '').length < 4) { msg.className = 'codMsg mal'; msg.textContent = 'Escribí el código completo.'; inp.classList.add('mal'); setTimeout(function () { inp.classList.remove('mal'); }, 600); inp.focus(); return; }
+    btn.disabled = true; btn.textContent = 'Validando…'; msg.className = 'codMsg'; msg.textContent = '';
+    F.get('codigo', { codigo: c }).then(function (r) {
+      if (!abrirCon(c, r.tipos || [])) { msg.className = 'codMsg mal'; msg.textContent = 'Ese código es de otro beneficio.'; btn.disabled = false; btn.textContent = 'Desbloquear'; return; }
+      var t = D.tipos.filter(function (x) { return abiertos[x.id] === c && x.estado === 'venta'; })[0];
+      if (t && !cant[t.id] && maxPara(t) > 0 && totalCant() < D.max) { cant[t.id] = 1; actualizar(); }
+      window.scrollTo({ top: $('tipos').offsetTop - 70, behavior: 'smooth' });
+    }).catch(function (e) {
+      btn.disabled = false; btn.textContent = 'Desbloquear';
+      msg.className = 'codMsg mal'; msg.textContent = F.esRed(e) ? 'Se cortó la conexión. Probá de nuevo.' : F.msg(e);
+      inp.classList.add('mal'); setTimeout(function () { inp.classList.remove('mal'); }, 600); inp.focus(); inp.select();
+    });
+  }
+  /** Códigos que llegan por el link (?codigo=…) o que ya se usaron en esta pestaña. */
+  function codigosGuardados() {
+    var l = []; try { l = JSON.parse(sessionStorage.getItem('fz_cod') || '[]') || []; } catch (e) { }
+    var u = normCod(F.param('codigo') || F.param('c')); if (u && l.indexOf(u) < 0) l.unshift(u);
+    if (!l.length || !D.tipos.some(function (t) { return t.bloq; })) return;
+    l.slice(0, 3).forEach(function (c, i) {
+      F.get('codigo', { codigo: c }).then(function (r) {
+        if (abrirCon(c, r.tipos || []) && c === u) {
+          var t = D.tipos.filter(function (x) { return abiertos[x.id] === c && x.estado === 'venta'; })[0];
+          if (t && !totalCant() && maxPara(t) > 0) { cant[t.id] = 1; actualizar(); }
+        }
+      }).catch(function (e) {
+        if (c !== u) return; // uno viejo que ya no sirve: en silencio
+        var t = D.tipos.filter(function (x) { return bloqueado(x); })[0]; if (!t) return;
+        var inp = $('cod_' + t.id), msg = $('codMsg_' + t.id); if (inp) inp.value = c;
+        if (msg) { msg.className = 'codMsg mal'; msg.textContent = F.esRed(e) ? 'No pudimos validar el código del link. Tocá Desbloquear.' : 'El código del link no es válido. Revisalo o pedí uno nuevo.'; }
+      });
+    });
+  }
+  $('tipos').onkeydown = function (e) { var id = e.target.getAttribute && e.target.getAttribute('data-codin'); if (id && e.key === 'Enter') { e.preventDefault(); probarCodigo(id); } };
   $('tipos').onclick = function (e) {
     var b = e.target.closest('button'); if (!b) return;
+    if (b.getAttribute('data-cod')) { probarCodigo(b.getAttribute('data-cod')); return; }
     var id = b.getAttribute('data-p') || b.getAttribute('data-m'), t = D.tipos.filter(function (x) { return x.id === id; })[0]; if (!t) return;
     var q = cant[id] || 0;
     if (b.getAttribute('data-p')) { if (q < maxPara(t) && totalCant() < D.max) q++; } else if (q > 0) q--;
@@ -209,6 +293,8 @@
     });
     if (cargo) lineas.push('<div class="lin"><span>Cargo por servicio</span><span>' + F.plata(cargo) + '</span></div>');
     lineas.push('<div class="lin tot"><span>Total a pagar</span><span>' + F.plata(sub + cargo) + '</span></div>');
+    var ahorro = 0; D.tipos.forEach(function (t) { if (cant[t.id] && t.tachado > t.precio) ahorro += cant[t.id] * (t.tachado - t.precio); });
+    if (ahorro > 0) lineas.push('<div class="benefNota">🎉 Con tu beneficio especial ahorrás <span class="nowrap">' + F.plata(ahorro) + '</span></div>');
     if (cantCort()) lineas.push('<div class="nota" style="margin-top:10px">Después del pago verificamos que <b>' + F.esc($('cEmpresa').value.trim()) + '</b> tenga la <b>membresía al día</b> y te mandamos ' + (cantCort() > 1 ? 'los tickets de socio' : 'el ticket de socio') + ' por mail. Si registrara cuotas pendientes, te avisamos y <b>te devolvemos ese importe</b> por el mismo medio de pago.' + (cantCort() < totalCant() ? ' Los demás tickets te llegan apenas se aprueba el pago.' : '') + '</div>');
     $('resumen').innerHTML = lineas.join('');
     $('bloqueFac').classList.toggle('oculto', !(sub > 0));
@@ -280,6 +366,7 @@
     var items = D.tipos.filter(function (t) { return cant[t.id]; }).map(function (t) { return { t: t.id, q: cant[t.id] }; });
     var b = $('seguir'); b.disabled = true; b.textContent = 'Reservando…'; $('err2').classList.add('oculto');
     F.post('orden', { nombre: nombre, dni: dni, mail: mail, tel: $('cTel').value.trim(), acepta: true, items: items, asistentes: asis.map(function (a) { return { t: a.t, n: a.n, d: a.d }; }),
+      codigos: (function () { var l = []; items.forEach(function (x) { var c = abiertos[x.t]; if (c && l.indexOf(c) < 0) l.push(c); }); return l; })(),
       empresa: cantCort() ? $('cEmpresa').value.trim() : '', cuitEmpresa: cantCort() ? $('cCuitEmp').value.replace(/\D/g, '') : '', facturacion: fac }, 45000)
       .then(function (r) {
         try { localStorage.setItem('fz_ultima', JSON.stringify({ o: r.orden, k: r.clave, ts: Date.now() })); } catch (e) { }
@@ -289,7 +376,11 @@
         b.disabled = false; actualizar();
         if (F.esRed(e)) error2('Se cortó la conexión. No se cobró nada. Probá de nuevo en unos segundos.');
         else error2(F.msg(e));
-        if (/agotad|quedan|disponible|habilitada|socio/i.test(F.msg(e))) F.get('evento').then(function (d) { D.tipos = d.tipos; pintarTipos(); });
+        if (/código/i.test(F.msg(e))) { // el código cambió o se dio de baja: se vuelve a pedir
+          D.tipos.forEach(function (t) { if (t.bloq && abiertos[t.id]) { delete abiertos[t.id]; delete cant[t.id]; } }); guardarCodigos();
+          irPaso(1); alerta(F.msg(e));
+        }
+        if (/agotad|quedan|disponible|habilitada|socio|código/i.test(F.msg(e))) F.get('evento').then(function (d) { D.tipos = d.tipos; pintarTipos(); actualizar(); });
         ultimaCompra();
       });
   };
