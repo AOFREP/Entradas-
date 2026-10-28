@@ -58,6 +58,42 @@
   .abierta .det { display: block; }
   .det p { margin: 0 0 6px; }
   .det .cuando { color: var(--tenue); font-size: 13px; }
+  /* v1.11 · página personal */
+  .aviso { margin: 18px 0 0; background: var(--crema); color: #0B2240; border-radius: 14px; padding: 12px 14px; font-weight: 700; font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+  .caja { margin-top: 18px; background: rgba(255,255,255,.08); border: 1px solid var(--linea); border-radius: 16px; padding: 16px; }
+  .caja h3 { margin: 0 0 4px; font-size: 17px; color: var(--crema); }
+  .caja p { margin: 4px 0 0; font-size: 14px; color: var(--tenue); line-height: 1.45; }
+  .caja label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .4px; color: var(--celeste); margin: 12px 0 5px; text-transform: uppercase; }
+  .caja input[type=text], .caja input[type=email], .caja input[type=url], .caja select, .caja textarea { width: 100%; font: inherit; font-size: 16px; padding: 11px 12px; border-radius: 11px; border: 1px solid var(--linea); background: rgba(11,34,64,.55); color: #fff; }
+  .caja textarea { min-height: 86px; resize: vertical; }
+  .caja input:focus, .caja select:focus, .caja textarea:focus { outline: 2px solid var(--crema); outline-offset: 1px; }
+  .caja select option { color: #0B2240; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; padding: 12px 16px; font: inherit; font-weight: 800; font-size: 15px; cursor: pointer; background: var(--crema); color: #0B2240; margin-top: 12px; }
+  .btn.sec { background: rgba(255,255,255,.12); color: #fff; border: 1px solid var(--linea); }
+  .btn:disabled { opacity: .6; }
+  .btn.ancho { width: 100%; }
+  .msj { font-size: 14px; margin-top: 10px; color: var(--crema); min-height: 1px; }
+  .chk { display: flex !important; gap: 10px; align-items: center; text-transform: none !important; letter-spacing: 0 !important; font-size: 15px !important; color: #fff !important; font-weight: 600 !important; cursor: pointer; }
+  .chk input { width: 20px; height: 20px; accent-color: var(--vivo); }
+  .seg2 { display: flex; gap: 8px; margin-top: 10px; }
+  .seg2 button { flex: 1; border: 1px solid var(--linea); background: rgba(255,255,255,.06); color: #fff; border-radius: 12px; padding: 12px; font: inherit; font-weight: 800; cursor: pointer; }
+  .seg2 button.on { background: var(--vivo); color: #08331C; border-color: var(--vivo); }
+  .contacto { padding: 12px 0; border-top: 1px solid var(--linea); }
+  .contacto b { display: block; font-size: 15px; } .contacto small { color: var(--tenue); font-size: 13px; }
+  .contacto .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .contacto .links a, .contacto .links span { font-size: 13px; color: var(--celeste); text-decoration: none; background: rgba(190,225,250,.12); padding: 4px 9px; border-radius: 9px; word-break: break-all; }
+  .estrellas { display: flex; gap: 6px; }
+  .estrellas button { all: unset; cursor: pointer; font-size: 30px; line-height: 1; color: rgba(255,255,255,.3); }
+  .estrellas button.on { color: #FFD35A; }
+  .estrellas button:focus-visible { outline: 2px solid var(--crema); border-radius: 6px; }
+  .ops { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ops button { border: 1px solid var(--linea); background: rgba(255,255,255,.06); color: #fff; border-radius: 10px; padding: 9px 13px; font: inherit; font-weight: 700; cursor: pointer; }
+  .ops button.on { background: var(--crema); color: #0B2240; }
+  .wifi { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .wifi code { font-family: ui-monospace, Menlo, monospace; background: rgba(11,34,64,.5); padding: 3px 8px; border-radius: 7px; color: #fff; font-size: 14px; }
+  .wifi button { border: 1px solid var(--linea); background: rgba(255,255,255,.08); color: #fff; border-radius: 9px; padding: 5px 10px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .info a { color: var(--crema); }
+
   .tema { display: block; font-size: 14px; font-weight: 600; color: #F8F0C8; margin-top: 4px; line-height: 1.3; }
   .barra { height: 4px; border-radius: 3px; background: rgba(255,255,255,.15); margin-top: 8px; overflow: hidden; }
   .barra div { height: 100%; background: var(--vivo); }
@@ -84,10 +120,16 @@
     <div class="dato">Lunes 2 de noviembre · HIT Events Polo<br>Dorrego 3562, CABA</div>
   </div>
   <div id="hola" class="hola" hidden></div>
+  <div id="aviso" class="aviso" hidden></div>
   <div id="estado" class="estado" aria-live="polite"></div>
+  <div id="secPreg" hidden></div>
   <h2>Agenda del día</h2>
   <div id="agenda" class="linea-t"></div>
+  <div id="secEnc" hidden></div>
+  <div id="secNet" hidden></div>
   <div class="info">
+    <div id="wifi" hidden></div>
+    <div id="llegar">📍 <b>HIT Events Polo</b> · Dorrego 3562, CABA · <a href="https://www.google.com/maps/search/?api=1&amp;query=HIT%20Events%20Polo%2C%20Dorrego%203562%2C%20CABA" target="_blank" rel="noopener">Cómo llegar</a></div>
     <div>☕ <b>Desayuno y coffee breaks</b> incluidos con tu ticket.</div>
     <div id="cert">🎓 <b>Certificado de participación AOFREP</b>: te llega por mail después del evento y también podés descargarlo escaneando el QR del frente de tu credencial.</div>
   </div>
@@ -176,14 +218,124 @@
   setInterval(pintar, 30000);
   window.addEventListener('resize', function () { var m = document.querySelector('.marca'); if (m) m.remove(); marca(ahora()); });
 
-  // ── Saludo personal: viene del QR del sticker (?h=…) ──
-  var h = new URLSearchParams(location.search).get('h');
+  // ── Info para todos: aviso del organizador, wifi y cómo llegar ──
+  var INFO = null;
+  function pintarInfo(i) {
+    INFO = i;
+    if (i.aviso) { $('aviso').hidden = false; $('aviso').innerHTML = '<span aria-hidden="true">📣</span><span>' + esc(i.aviso) + '</span>'; } else $('aviso').hidden = true;
+    if (i.wifi && i.wifi.red) {
+      $('wifi').hidden = false;
+      $('wifi').innerHTML = '📶 <b>Wifi</b><div class="wifi" style="margin-top:6px">Red <code>' + esc(i.wifi.red) + '</code>' + (i.wifi.clave ? ' Clave <code id="wClave">' + esc(i.wifi.clave) + '</code><button id="wCopiar">Copiar clave</button>' : '') + '</div>';
+      if ($('wCopiar')) $('wCopiar').onclick = function () { var b = this; try { navigator.clipboard.writeText(i.wifi.clave).then(function () { b.textContent = '✓ Copiada'; }, function () { b.textContent = 'Mantené apretado para copiar'; }); } catch (e) { b.textContent = 'Mantené apretado para copiar'; } };
+    }
+    if (i.mapa) { var a = document.querySelector('#llegar a'); if (a) a.href = i.mapa; }
+  }
+  if (window.F && F.get) F.get('info', {}, 2).then(pintarInfo).catch(function () { });
+
+  // ── Página personal: viene del QR del sticker (?h=…) ──
+  var h = new URLSearchParams(location.search).get('h'), PERFIL = null;
   if (h && window.F && F.get) {
-    F.get('hola', { h: h }, 2).then(function (r) {
-      var el = $('hola'); el.hidden = false;
-      el.innerHTML = '¡Hola, ' + esc(r.nombre) + '! 👋<small>Esta es tu agenda para hoy</small>';
-      certificado(r.cert);
-    }).catch(function () { });
+    F.get('perfil', { h: h }, 2).then(function (r) {
+      PERFIL = r; saludo(r.nombre); certificado(r.cert); if (r.info) pintarInfo(r.info);
+      if (r.info && r.info.preguntas) preguntas();
+      if (r.net) networking(r.net);
+      if (r.encuesta) encuesta(r.encuesta);
+    }).catch(function () {
+      // por si el sistema todavía no tiene la versión nueva: solo el saludo
+      F.get('hola', { h: h }, 2).then(function (r) { saludo(r.nombre); certificado(r.cert); }).catch(function () { });
+    });
+  }
+  function saludo(n) { var el = $('hola'); el.hidden = false; el.innerHTML = '¡Hola, ' + esc(n) + '! 👋<small>Esta es tu agenda para hoy</small>'; }
+  function enviar(boton, prom, msjEl, ok) {
+    var t = boton.textContent; boton.disabled = true; boton.textContent = 'Enviando…'; msjEl.textContent = '';
+    return prom.then(function (r) { msjEl.textContent = r.msj || '✓ Listo'; if (ok) ok(r); }).catch(function (e) { msjEl.textContent = '⚠ ' + (F.msg ? F.msg(e) : e.message); })
+      .then(function () { boton.disabled = false; boton.textContent = t; });
+  }
+
+  // Preguntas a la charla (se elige a quién; por defecto la que está en curso o la próxima)
+  function preguntas() {
+    var box = $('secPreg'), charlas = AGENDA.filter(function (a) { return a.tipo === 'charla'; });
+    var t = ahora(), actual = charlas.find(function (a) { return t >= ms(a.ini) && t < ms(a.fin); }) || charlas.find(function (a) { return t < ms(a.fin); }) || charlas[charlas.length - 1];
+    box.hidden = false;
+    box.innerHTML = '<div class="caja"><h3>🎤 Hacé tu pregunta</h3><p>Llega a la moderación y se la leen al speaker en el espacio de preguntas.</p>' +
+      '<label for="pCharla">¿Para quién?</label><select id="pCharla">' + charlas.map(function (a) { return '<option' + (a === actual ? ' selected' : '') + '>' + esc(a.titulo) + '</option>'; }).join('') + '</select>' +
+      '<label for="pTexto">Tu pregunta</label><textarea id="pTexto" maxlength="400" placeholder="Escribila acá"></textarea>' +
+      '<label class="chk"><input type="checkbox" id="pAnon"> Enviar sin mi nombre</label>' +
+      '<button class="btn ancho" id="pEnviar">Enviar pregunta</button><div class="msj" id="pMsj" aria-live="polite"></div></div>';
+    $('pEnviar').onclick = function () {
+      var tx = $('pTexto').value.trim(); if (tx.length < 5) { $('pMsj').textContent = 'Escribí tu pregunta.'; return; }
+      enviar(this, F.post('pregunta', { h: h, charla: $('pCharla').value, texto: tx, anonima: $('pAnon').checked }), $('pMsj'), function () { $('pTexto').value = ''; });
+    };
+  }
+
+  // Networking: compartir mi contacto y ver el de quienes también comparten
+  function networking(n) {
+    var box = $('secNet'); box.hidden = false;
+    var comparte = n.comparte === 'Sí';
+    box.innerHTML = '<h2>Networking</h2><div class="caja"><h3>🤝 Conectá con otros asistentes</h3><p>Si compartís tu contacto, ves el de todos los que también lo comparten. Podés cambiarlo cuando quieras.</p>' +
+      '<div class="seg2" role="group" aria-label="Compartir mi contacto"><button id="nSi"' + (comparte ? ' class="on"' : '') + '>Compartir mi contacto</button><button id="nNo"' + (n.comparte === 'No' ? ' class="on"' : '') + '>No compartir</button></div>' +
+      '<div id="nCampos"' + (comparte ? '' : ' hidden') + '>' +
+      '<label for="nIg">Instagram</label><input type="text" id="nIg" placeholder="@tucuenta" value="' + esc(n.ig) + '" autocapitalize="none">' +
+      '<label for="nLi">LinkedIn</label><input type="url" id="nLi" placeholder="linkedin.com/in/…" value="' + esc(n.li) + '" autocapitalize="none">' +
+      '<label for="nWeb">Web</label><input type="url" id="nWeb" placeholder="tuempresa.com" value="' + esc(n.web) + '" autocapitalize="none">' +
+      '<label for="nMail">Mail de contacto</label><input type="email" id="nMail" placeholder="opcional" value="' + esc(n.mail) + '" autocapitalize="none">' +
+      '<button class="btn ancho" id="nGuardar">Guardar mi contacto</button></div><div class="msj" id="nMsj" aria-live="polite"></div>' +
+      '<div id="nLista"></div></div>';
+    var guardar = function (si, boton) {
+      enviar(boton, F.post('netGuardar', { h: h, comparte: si, ig: si ? $('nIg').value : '', li: si ? $('nLi').value : '', web: si ? $('nWeb').value : '', mail: si ? $('nMail').value : '' }), $('nMsj'), function (r) {
+        $('nSi').classList.toggle('on', si); $('nNo').classList.toggle('on', !si); $('nCampos').hidden = !si;
+        if (si) lista(); else $('nLista').innerHTML = '';
+      });
+    };
+    $('nSi').onclick = function () { $('nCampos').hidden = false; $('nSi').classList.add('on'); $('nNo').classList.remove('on'); if (n.comparte !== 'Sí') guardar(true, this); };
+    $('nNo').onclick = function () { guardar(false, this); };
+    $('nGuardar').onclick = function () { guardar(true, this); };
+    if (comparte) lista();
+  }
+  function lista() {
+    var box = $('nLista'); box.innerHTML = '<p>Cargando contactos…</p>';
+    F.post('netLista', { h: h }).then(function (r) {
+      var c = r.contactos;
+      var limpio = function (u) { return String(u).replace(/^https?:\/\//, ''); };
+      var url = function (u) { return /^https?:\/\//.test(u) ? u : 'https://' + u; };
+      box.innerHTML = '<label for="nBuscar" style="margin-top:16px">Contactos (' + c.length + ')</label>' + (c.length ? '<input type="text" id="nBuscar" placeholder="Buscar por nombre, empresa o rubro">' : '<p>Todavía nadie más compartió su contacto. Volvé más tarde.</p>') + '<div id="nItems"></div>';
+      var pintar = function (q) {
+        q = (q || '').toLowerCase();
+        $('nItems').innerHTML = c.filter(function (x) { return !q || (x.nombre + ' ' + x.empresa + ' ' + x.rubro).toLowerCase().indexOf(q) >= 0; }).map(function (x) {
+          var l = [];
+          if (x.ig) l.push('<a href="https://instagram.com/' + encodeURIComponent(x.ig) + '" target="_blank" rel="noopener">@' + esc(x.ig) + '</a>');
+          if (x.li) l.push('<a href="' + esc(url(x.li)) + '" target="_blank" rel="noopener">LinkedIn</a>');
+          if (x.web) l.push('<a href="' + esc(url(x.web)) + '" target="_blank" rel="noopener">' + esc(limpio(x.web)) + '</a>');
+          if (x.mail) l.push('<span>' + esc(x.mail) + '</span>');
+          return '<div class="contacto"><b>' + esc(x.nombre) + '</b><small>' + esc([x.empresa, x.rubro].filter(Boolean).join(' · ')) + '</small>' + (l.length ? '<div class="links">' + l.join('') + '</div>' : '') + '</div>';
+        }).join('');
+      };
+      pintar(''); if ($('nBuscar')) $('nBuscar').oninput = function () { pintar(this.value); };
+    }).catch(function (e) { box.innerHTML = '<p>⚠ ' + esc(F.msg ? F.msg(e) : e.message) + '</p>'; });
+  }
+
+  // Encuesta de satisfacción (las preguntas las arman en la consola)
+  function encuesta(en) {
+    var box = $('secEnc'); box.hidden = false;
+    if (en.respondida) { box.innerHTML = '<div class="caja"><h3>⭐ Encuesta</h3><p>¡Gracias por responder! Nos ayuda a mejorar la próxima.</p></div>'; return; }
+    var resp = {};
+    box.innerHTML = '<div class="caja"><h3>⭐ ¿Qué te pareció?</h3><p>Son un par de preguntas. Nos ayuda a mejorar la próxima edición.</p>' + en.preguntas.map(function (q, i) {
+      var c = '<label>' + esc(q.texto) + '</label>';
+      if (q.tipo === 'estrellas') c += '<div class="estrellas" data-q="' + esc(q.id) + '">' + [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-v="' + n + '" aria-label="' + n + ' de 5">★</button>'; }).join('') + '</div>';
+      else if (q.tipo === 'opciones') c += '<div class="ops" data-q="' + esc(q.id) + '">' + q.opciones.map(function (o) { return '<button type="button" data-v="' + esc(o) + '">' + esc(o) + '</button>'; }).join('') + '</div>';
+      else c += '<textarea data-q="' + esc(q.id) + '" maxlength="800"></textarea>';
+      return c;
+    }).join('') + '<button class="btn ancho" id="eEnviar">Enviar respuestas</button><div class="msj" id="eMsj" aria-live="polite"></div></div>';
+    box.onclick = function (ev) {
+      var b = ev.target.closest('.estrellas button, .ops button'); if (!b) return;
+      var g = b.parentNode, v = b.getAttribute('data-v'); resp[g.getAttribute('data-q')] = g.classList.contains('estrellas') ? Number(v) : v;
+      Array.prototype.forEach.call(g.children, function (x) { x.classList.toggle('on', g.classList.contains('estrellas') ? Number(x.getAttribute('data-v')) <= Number(v) : x === b); });
+    };
+    $('eEnviar').onclick = function () {
+      Array.prototype.forEach.call(box.querySelectorAll('textarea[data-q]'), function (t) { if (t.value.trim()) resp[t.getAttribute('data-q')] = t.value.trim(); });
+      if (!Object.keys(resp).length) { $('eMsj').textContent = 'Respondé al menos una pregunta.'; return; }
+      enviar(this, F.post('encResponder', { h: h, respuestas: resp }), $('eMsj'), function () { encuesta({ respondida: true }); });
+    };
   }
 
   // ── Certificado: se descarga desde acá (solo entrando con el QR de la credencial) ──

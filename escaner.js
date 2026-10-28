@@ -24,12 +24,13 @@
     var pend = {}; S.cola.forEach(function (ev) { if (ev.tipo === 'in') pend[ev.c] = ev; if (ev.tipo === 'undo') delete pend[ev.c]; });
     if (completa) {
       var nuevo = {};
-      lista.forEach(function (r) { nuevo[r[0]] = [r[1], r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8] || '', r[9] ? 1 : 0]; });
+      lista.forEach(function (r) { nuevo[r[0]] = [r[1], r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8] || '', r[9] ? 1 : 0, r[10] || '']; });
       Object.keys(pend).forEach(function (c) { if (nuevo[c] && !nuevo[c][4]) { nuevo[c][4] = pend[c].ts; nuevo[c][5] = S.ses.puerta; } });
       S.m = nuevo;
     } else {
       lista.forEach(function (r) {
-        var c = r[0], loc = S.m[c], fila = [r[1], r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8] || '', r[9] ? 1 : 0];
+        var c = r[0], loc = S.m[c], fila = [r[1], r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8] || '', r[9] ? 1 : 0, r[10] || ''];
+        if (loc && loc[9] && !fila[9]) fila[9] = loc[9]; // respuesta de networking tomada acá y todavía no subida
         if (!r[5] && pend[c] && loc && loc[4]) { fila[4] = loc[4]; fila[5] = loc[5]; } // ingreso local aún no subido: se respeta
         S.m[c] = fila;
       });
@@ -81,6 +82,19 @@
     pintar(); timerCuenta = setInterval(pintar, 500);
     timerRes = setTimeout(function () { ocultarRes(); irInicio(); }, pref.durRes);
   }
+  // ── Networking: en la puerta se pregunta si comparte su contacto (solo si está habilitado y no respondió) ──
+  function preguntarNet(c, r) {
+    var box = $('rNet'); box.classList.add('oculto'); box.innerHTML = '';
+    if (!S.ses || !S.ses.netOn || r[9]) return;
+    box.innerHTML = '<div class="q">¿Quiere compartir su contacto con otros asistentes?</div><div class="bs"><button data-v="Sí">🤝 Sí, comparte</button><button data-v="No">No</button></div>';
+    box.classList.remove('oculto');
+    box.onclick = function (e) {
+      var b = e.target.closest('button[data-v]'); if (!b) return;
+      var v = b.getAttribute('data-v'); r[9] = v; guardarLista();
+      encolar({ tipo: 'net', c: c, valor: v }); sincronizarPronto(400);
+      box.innerHTML = '<div class="q">' + (v === 'Sí' ? '✓ Comparte su contacto' : '✓ No comparte su contacto') + '</div>';
+    };
+  }
   function ocultarRes() { clearTimeout(timerRes); clearInterval(timerCuenta); $('res').className = 'oculto'; S.mostrando = false; }
   $('rOtro').onclick = function () { ocultarRes(); abrirCamara(); };
   $('rListo').onclick = function () { ocultarRes(); irInicio(); };
@@ -113,6 +127,7 @@
     encolar({ tipo: 'in', c: c, ts: ahora });
     guardarLista(); contar();
     var det = (r[6] ? r[6] + ' · ' : '') + r[2] + dniTxt;
+    preguntarNet(c, r);
     if (!S.conCred) mostrar('v', '✓', 'PASA', r[0], det);
     else if (r[8]) mostrar('v', '✓', 'PASA', r[0], det, '🏷️ CREDENCIAL IMPRESA · buscala en la caja');
     else mostrar('a', '🖨️', 'PASA · A LA COMPU', r[0], det, 'No tiene credencial impresa: mandalo a la compu');
@@ -147,6 +162,7 @@
       var ap = {}; (r.aplicados || []).forEach(function (id) { ap[id] = 1; });
       S.cola = S.cola.filter(function (ev) { return !ap[ev.id]; }); guardarCola();
       if (r.version > S.version) S.version = r.version;
+      if (typeof r.netOn === 'boolean' && S.ses.netOn !== r.netOn) { S.ses.netOn = r.netOn; guardar(K.ses, S.ses); }
       if (r.completa) S.ultCompleta = Date.now();
       aplicarLista(r.lista || [], !!r.completa); guardarLista();
       (r.conflictos || []).forEach(function (x) {
@@ -294,7 +310,7 @@
     b.disabled = true; b.textContent = 'Descargando lista…'; $('lErr').classList.add('oculto');
     audio();
     F.post('login', { puerta: puerta, pin: pin }, 45000).then(function (r) {
-      S.ses = { token: r.token, puerta: r.puerta, evento: r.evento }; guardar(K.ses, S.ses); guardar('fz_esc_ultpuerta', r.puerta);
+      S.ses = { token: r.token, puerta: r.puerta, evento: r.evento, netOn: !!r.netOn }; guardar(K.ses, S.ses); guardar('fz_esc_ultpuerta', r.puerta);
       S.version = r.version || 0; S.ultCompleta = Date.now(); aplicarLista(r.lista || [], true); guardarLista();
       $('lPin').value = ''; entrarApp(); sincronizarPronto(500);
     }).catch(function (e) { $('lErr').textContent = F.msg(e); $('lErr').classList.remove('oculto'); }).then(function () { b.disabled = false; b.textContent = 'Entrar'; });

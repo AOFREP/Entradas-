@@ -44,6 +44,8 @@
   .res small { color: var(--gris); }
   .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 12px; background: #ECECEC; color: #555; white-space: nowrap; }
   .chip.ok { background: var(--okF); color: var(--ok); } .chip.mal { background: var(--malF); color: var(--mal); } .chip.av { background: var(--avF); color: var(--av); } .chip.az { background: #DCE8F7; color: #1F4E8C; }
+  .netQ { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; background: #E6F5EF; border-radius: 10px; padding: 10px 12px; font-weight: 700; color: #0E5C49; }
+  .netQ span { flex: 1; min-width: 200px; } .netQ button { border: 1.5px solid #0E7C66; background: #fff; color: #0E7C66; border-radius: 9px; padding: 7px 16px; font-weight: 800; font-family: inherit; cursor: pointer; } .netQ button.on { background: #0E7C66; color: #fff; }
   .aviso { border-radius: 10px; padding: 10px 14px; margin: 12px 0 0; font-weight: 700; }
   .aviso.mal { background: var(--malF); color: var(--mal); } .aviso.av { background: var(--avF); color: var(--av); } .aviso.ok { background: var(--okF); color: var(--ok); } .aviso.info { background: #DCE8F7; color: #1F4E8C; }
   .preview { background: #E9EEF5; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -108,6 +110,7 @@
           <label class="et" for="pLector">Escaneá el QR del ticket o escribí el nombre</label>
           <input class="campo lector" id="pLector" autocomplete="off" placeholder="Pasá el QR por el lector…" autofocus>
           <div class="ayuda">El lector escribe el código y aprieta Enter solo. También podés buscar por nombre, DNI o empresa.</div>
+          <button class="b sec" id="pManual" style="margin-top: 10px">✏️ Sticker manual (sin ticket)</button>
           <div id="pResultados"></div>
           <div id="pEditor"></div>
         </div>

@@ -63,7 +63,7 @@
   }
   function cargar(callado) {
     return api('lista').then(function (r) {
-      D.creds = r.creds || []; D.roles = r.roles || []; D.sitio = r.sitio || location.origin;
+      D.creds = r.creds || []; D.roles = r.roles || []; D.netOn = !!r.netOn; D.sitio = r.sitio || location.origin;
       if (actual) { var n = buscarCod(actual.cod); if (n) actual = Object.assign(n, { _edit: actual._edit }); }
       cuenta(); if (vista === 'Tanda') pintarTanda();
     }).catch(callado ? function () { } : fallo);
@@ -273,7 +273,7 @@
     return '<span>' + h + '</span>';
   }
   function elegir(c, desdeLector) {
-    actual = Object.assign({}, c, { _edit: { nomCred: c.nomCred || '', empCred: empresaCred(c), rubro: c.rubro || '', rol: c.rol || '', cargo: c.cargo || '', cargo2: c.cargo2 || '', empCred2: c.empCred2 || '' }, _lector: !!desdeLector });
+    actual = Object.assign({}, c, { _edit: { nomCred: c.nomCred || '', empCred: empresaCred(c), rubro: c.rubro || '', rol: c.rol || '', cargo: c.cargo || '', cargo2: c.cargo2 || '', empCred2: c.empCred2 || '', net: c.net || '' }, _lector: !!desdeLector });
     pintarEditor();
   }
   function pintarEditor() {
@@ -299,10 +299,12 @@
       '<div><label class="et" for="eRub">Rubro</label><input class="campo" id="eRub" maxlength="60" value="' + esc(e.rubro) + '" placeholder="Ej: Ambientación"></div>' +
       '<div><label class="et" for="eRol">Rol (no se imprime)</label><select class="campo" id="eRol">' + roles + '</select></div>' +
       '</div>' +
+      (D.netOn ? '<div class="netQ" id="eNet" data-v="' + esc(e.net || '') + '"><span>🤝 ¿Comparte su contacto con otros asistentes?</span><button type="button" data-n="Sí"' + (e.net === 'Sí' ? ' class="on"' : '') + '>Sí</button><button type="button" data-n="No"' + (e.net === 'No' ? ' class="on"' : '') + '>No</button></div>' : '') +
       (vista === 'Puerta' ? '<label class="chk"><input type="checkbox" id="eIngreso"' + (c.ingreso ? '' : ' checked') + '> Marcar ingreso al imprimir</label>' : '') +
       '<div class="acc">' + (entregar ? '<button class="b grande verde" id="eEntregar">✓ Entregada' + (c.ingreso ? '' : ' · marcar ingreso') + '</button><button class="b sec" id="eImprimir">🖨️ Reimprimir</button>' :
       '<button class="b grande verde" id="eImprimir"' + (bloqueo ? ' disabled' : '') + '>🖨️ ' + (c.veces ? 'Reimprimir' : 'Imprimir') + ' sticker</button>') +
       '<button class="b sec" id="eGuardar">Guardar sin imprimir</button><button class="b sec" id="eCerrar">Cerrar</button></div></div>';
+    if ($('eNet')) $('eNet').onclick = function (ev) { var b = ev.target.closest('button[data-n]'); if (!b) return; var v = b.getAttribute('data-n'); this.setAttribute('data-v', v); Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) { x.classList.toggle('on', x === b); }); leerEditor(); };
     ['eNom', 'eEmp', 'eRub', 'eRol', 'eCar', 'eEmp2', 'eCar2'].forEach(function (id) { $(id).addEventListener('input', leerEditor); $(id).addEventListener('change', leerEditor); });
     $('eImprimir').onclick = imprimirActual; if ($('eEntregar')) $('eEntregar').onclick = entregarActual; $('eGuardar').onclick = function () { guardarActual().then(function (ok) { if (ok) toast('✓ Guardado'); }).catch(fallo); };
     $('eCerrar').onclick = function () { actual = null; pintarEditor(); if (vista === 'Puerta') $('pLector').focus(); };
@@ -311,14 +313,14 @@
   }
   function leerEditor() {
     if (!actual) return;
-    actual._edit = { nomCred: $('eNom').value.trim(), empCred: $('eEmp').value.trim(), rubro: $('eRub').value.trim(), rol: $('eRol').value, cargo: $('eCar').value.trim(), empCred2: $('eEmp2').value.trim(), cargo2: $('eCar2').value.trim() };
+    actual._edit = { nomCred: $('eNom').value.trim(), empCred: $('eEmp').value.trim(), rubro: $('eRub').value.trim(), rol: $('eRol').value, cargo: $('eCar').value.trim(), empCred2: $('eEmp2').value.trim(), cargo2: $('eCar2').value.trim(), net: $('eNet') ? $('eNet').getAttribute('data-v') || '' : (actual._edit.net || '') };
     previa();
   }
   function conEdicion(c) { var e = c._edit || {}; return Object.assign({}, c, { nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo, cargo2: e.cargo2, empCred2: e.empCred2 }); }
   function previa() { if (!actual) return; fuente().then(function () { dibujar($('pCanvas'), datosSticker(conEdicion(actual))); }); }
   function cambio(c) {
     var e = c._edit; if (!e) return false;
-    return e.nomCred !== (c.nomCred || '') || e.empCred !== (c.empCred || empresaCred(c)) || e.rubro !== (c.rubro || '') || e.rol !== (c.rol || '') || e.cargo !== (c.cargo || '') || e.cargo2 !== (c.cargo2 || '') || e.empCred2 !== (c.empCred2 || '') ||
+    return e.nomCred !== (c.nomCred || '') || e.empCred !== (c.empCred || empresaCred(c)) || e.rubro !== (c.rubro || '') || e.rol !== (c.rol || '') || e.cargo !== (c.cargo || '') || e.cargo2 !== (c.cargo2 || '') || e.empCred2 !== (c.empCred2 || '') || (e.net || '') !== (c.net || '') ||
       (e.empCred && !c.empCred);
   }
   function guardarActual() {
@@ -326,7 +328,7 @@
     leerEditor();
     if (!cambio(actual)) return Promise.resolve(true);
     var e = actual._edit;
-    return api('guardar', { cod: actual.cod, nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo, cargo2: e.cargo2, empCred2: e.empCred2 }).then(function (r) {
+    return api('guardar', { cod: actual.cod, nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo, cargo2: e.cargo2, empCred2: e.empCred2, net: e.net }).then(function (r) {
       var i = D.creds.findIndex(function (x) { return x.cod === r.cred.cod; }); if (i >= 0) D.creds[i] = r.cred;
       actual = Object.assign({}, r.cred, { _edit: e, _lector: actual._lector }); return true;
     });
@@ -335,7 +337,7 @@
   function entregarActual() {
     if (!actual) return;
     var c = actual, b = $('eEntregar'); b.disabled = true;
-    var p = c.ingreso ? Promise.resolve() : F.post('sync', { puerta: S.puerta, token: S.token, desde: 0, eventos: [{ id: 'ent-' + c.cod + '-' + Date.now(), c: c.cod, ts: Date.now(), tipo: 'in' }] }, 60000);
+    var p = guardarActual().then(function () { return c.ingreso ? null : F.post('sync', { puerta: S.puerta, token: S.token, desde: 0, eventos: [{ id: 'ent-' + c.cod + '-' + Date.now(), c: c.cod, ts: Date.now(), tipo: 'in' }] }, 60000); });
     p.then(function () {
       toast('✓ Credencial entregada a ' + nombreCred(c));
       actual = null; $('pResultados').innerHTML = ''; pintarEditor(); cargar(true); $('pLector').focus();
@@ -444,6 +446,34 @@
   $('tImprimir').onclick = imprimirTanda; $('tCancelar').onclick = function () { cancelar = true; $('tEstado').textContent = 'Deteniendo…'; };
   ['iModo', 'iQr', 'iRibbon', 'iOscuro', 'iDx', 'iDy'].forEach(function (id) { $(id).addEventListener('change', function () { leerCfg(); if (id === 'iModo') detectarImpresora(); }); });
   $('iBuscar').onclick = function () { detectarImpresora().then(function (ok) { toast(ok ? '✓ Zebra encontrada' : 'No encontré la Zebra', !ok); }); };
+
+  // ── Sticker manual: para alguien sin ticket (producción, acompañante de un speaker…). No crea cortesía ni marca ingreso. ──
+  function stickerManual() {
+    actual = null; $('pResultados').innerHTML = ''; $('pLector').value = '';
+    var campo = function (id, et, ph) { return '<div><label class="et" for="' + id + '">' + et + '</label><input class="campo" id="' + id + '" maxlength="80" placeholder="' + esc(ph || '') + '"></div>'; };
+    $('pEditor').innerHTML = '<div style="margin-top: 16px; border-top: 1px solid var(--borde); padding-top: 12px">' +
+      '<div style="font-size: 20px; font-weight: 800">✏️ Sticker manual</div><div class="ayuda" style="margin-top: 2px">Sin ticket: no queda como cortesía ni marca ingreso, y sale sin QR personal. Queda anotado en Escaneos.</div>' +
+      '<div class="dos">' + campo('mNom', 'Nombre y apellido', 'Ej: Juan Pérez') + campo('mEmp', 'Empresa', 'Ej: Fonzi Events') + campo('mCar', 'Cargo en esa empresa (opcional)', 'Ej: Producción') +
+      campo('mEmp2', '2ª empresa (opcional)', '') + campo('mCar2', 'Cargo en la 2ª empresa', '') + campo('mRub', 'Rubro (opcional)', 'Ej: Acompañante') +
+      '<div><label class="et" for="mCant">Cantidad</label><select class="campo" id="mCant"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div></div>' +
+      '<div class="acc"><button class="b grande verde" id="mImprimir">🖨️ Imprimir sticker</button><button class="b sec" id="mCerrar">Cerrar</button></div></div>';
+    var datos = function () { var n = $('mNom').value.trim(); return { nombre: n, nomCred: n, empCred: $('mEmp').value.trim(), cargo: $('mCar').value.trim(), empCred2: $('mEmp2').value.trim(), cargo2: $('mCar2').value.trim(), rubro: $('mRub').value.trim(), hola: '' }; };
+    var previaM = function () { var d = datos(); fuente().then(function () { dibujar($('pCanvas'), datosSticker(d.nombre ? d : Object.assign({}, d, { nombre: 'NOMBRE APELLIDO', nomCred: 'NOMBRE APELLIDO' }))); }); };
+    ['mNom', 'mEmp', 'mCar', 'mEmp2', 'mCar2', 'mRub'].forEach(function (id) { $(id).addEventListener('input', previaM); });
+    $('mCerrar').onclick = function () { pintarEditor(); $('pLector').focus(); };
+    $('mImprimir').onclick = function () {
+      var d = datos(), n = Number($('mCant').value) || 1, b = this;
+      if (d.nombre.length < 2) { toast('Poné el nombre.', true); $('mNom').focus(); return; }
+      if (imprimiendo) return; imprimiendo = true; cancelar = false; b.disabled = true;
+      imprimirStickers(Array.apply(null, Array(n)).map(function () { return d; })).then(function () {
+        toast('✓ Sticker manual de ' + d.nombre + ' impreso');
+        F.post('sync', { puerta: S.puerta, token: S.token, desde: Date.now(), eventos: [{ id: 'man-' + Date.now(), tipo: 'log', c: 'MANUAL', res: ('Sticker manual: ' + d.nombre).slice(0, 40), ts: Date.now() }] }, 30000).catch(function () { });
+        $('mNom').value = ''; $('mEmp').value = ''; $('mCar').value = ''; $('mEmp2').value = ''; $('mCar2').value = ''; $('mRub').value = ''; previaM(); $('mNom').focus();
+      }).catch(fallo).then(function () { imprimiendo = false; b.disabled = false; });
+    };
+    previaM(); $('mNom').focus();
+  }
+  $('pManual').onclick = stickerManual;
   $('iPrueba').onclick = function () {
     var b = this; b.disabled = true;
     imprimirStickers([PRUEBA]).then(function () { toast('✓ Sticker de prueba enviado'); }).catch(fallo).then(function () { b.disabled = false; });

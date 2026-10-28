@@ -50,6 +50,7 @@
     { id: 'tipos', i: '🏷️', t: 'Tipos y precios', admin: true },
     { id: 'facturar', i: '💼', t: 'Facturación', admin: true },
     { g: 'Evento', admin: true },
+    { id: 'personal', i: '📱', t: 'Página personal', admin: true },
     { id: 'comunicacion', i: '✉️', t: 'Mails y certificados', admin: true },
     { id: 'actividad', i: '🕑', t: 'Actividad', admin: true },
     { id: 'ajustes', i: '⚙️', t: 'Ajustes', admin: true },
@@ -237,6 +238,7 @@
         '<div class="bloque"><h4>Credencial</h4><div class="form">' + campo('xNomC', 'Nombre en la credencial', x.nomCred, x.nombre) + campo('xEmpC', 'Empresa en la credencial', x.empCred, x.empresa) + campo('xCar', 'Cargo en esa empresa', x.cargo, 'Ej: Presidenta') + campo('xEmpC2', '2ª empresa (opcional)', x.empCred2, 'Ej: Fonzi Events') + campo('xCar2', 'Cargo en la 2ª empresa', x.cargo2, 'Ej: CEO') + campo('xRub', 'Rubro', x.rubro) +
         '<div><label class="et2" for="xRol">Rol (no se imprime)</label><select class="campo2" id="xRol"><option value="">Asistente (sin franja)</option>' + roles.map(function (k) { return '<option' + (k === x.rol ? ' selected' : '') + '>' + esc(k) + '</option>'; }).join('') + '</select></div></div>' +
         (x.veces ? '<div class="cont">🏷️ Sticker impreso ' + esc(x.impresa) + (x.veces > 1 ? ' (' + x.veces + ' veces)' : '') + '</div>' : '') + '</div>' +
+        '<div class="bloque"><h4>Networking</h4><div class="form"><div><label class="et2" for="xNet">Comparte su contacto</label><select class="campo2" id="xNet"><option value="">Sin respuesta</option><option' + (x.net === 'Sí' ? ' selected' : '') + '>Sí</option><option' + (x.net === 'No' ? ' selected' : '') + '>No</option></select></div>' + campo('xIg', 'Instagram', x.ig, '@cuenta') + campo('xLi', 'LinkedIn', x.li) + campo('xWeb', 'Web', x.web) + campo('xNmail', 'Mail de contacto', x.nmail) + '</div>' + '</div>' +
         '<div class="acc"><button class="b pri" id="xGuardar">Guardar cambios</button></div>' +
         '<div class="bloque"><h4>Compra</h4><div class="datos"><div><small>Comprador</small>' + esc(x.comprador) + '</div><div><small>Mail de la compra</small>' + esc(x.mailCompra) + '</div><div><small>Teléfono</small>' + esc(x.tel) + '</div><div><small>Emitido</small>' + esc(x.emitida) + '</div><div><small>Precio</small>' + plata(x.precio) + '</div><div><small>Estado de la orden</small>' + esc(x.estadoOrden) + '</div></div></div>' +
         '<div class="bloque"><h4>Historial</h4>' + (x.historial.length ? x.historial.map(function (h) { return '<div class="cont">' + fecha(h.fecha) + ' · <b>' + esc(h.res) + '</b> · ' + esc(h.puerta) + '</div>'; }).join('') : '<div class="cont">Sin movimientos.</div>') + '</div>' +
@@ -254,12 +256,12 @@
       };
       if ($('xOrden')) $('xOrden').onclick = function () { verOrden(x.orden); };
       if ($('xImp')) $('xImp').onclick = function () { // guarda lo que se haya cambiado y abre la página de credenciales con esta persona
-        var d = { nombre: $('xNom').value, dni: $('xDni').value, mail: $('xMail').value, empresa: $('xEmp').value, nomCred: $('xNomC').value, empCred: $('xEmpC').value, rubro: $('xRub').value, rol: $('xRol').value, cargo: $('xCar').value, cargo2: $('xCar2').value, empCred2: $('xEmpC2').value };
+        var d = { nombre: $('xNom').value, dni: $('xDni').value, mail: $('xMail').value, empresa: $('xEmp').value, nomCred: $('xNomC').value, empCred: $('xEmpC').value, rubro: $('xRub').value, rol: $('xRol').value, cargo: $('xCar').value, cargo2: $('xCar2').value, empCred2: $('xEmpC2').value, net: $('xNet').value, ig: $('xIg').value, li: $('xLi').value, web: $('xWeb').value, nmail: $('xNmail').value };
         boton(this, api('ticketGuardar', { cod: cod, datos: d })).then(function () { abrirEn('credenciales.html?cod=' + encodeURIComponent(cod), 'cred_s', { token: S.escaner && S.escaner.token, puerta: S.escaner && S.escaner.puerta, evento: S.evento && S.evento.nombre }); }).catch(fallo);
       };
       if ($('xAnular')) $('xAnular').onclick = function () { if (!confirm('¿Anular el ticket de ' + x.nombre + '? El escáner lo va a rechazar.')) return; boton(this, api('anular', { ref: cod })).then(function (r2) { toast(r2.msj); recargar(); }).catch(fallo); };
       $('xGuardar').onclick = function () {
-        var d = { nombre: $('xNom').value, dni: $('xDni').value, mail: $('xMail').value, empresa: $('xEmp').value, nomCred: $('xNomC').value, empCred: $('xEmpC').value, rubro: $('xRub').value, rol: $('xRol').value, cargo: $('xCar').value, cargo2: $('xCar2').value, empCred2: $('xEmpC2').value };
+        var d = { nombre: $('xNom').value, dni: $('xDni').value, mail: $('xMail').value, empresa: $('xEmp').value, nomCred: $('xNomC').value, empCred: $('xEmpC').value, rubro: $('xRub').value, rol: $('xRol').value, cargo: $('xCar').value, cargo2: $('xCar2').value, empCred2: $('xEmpC2').value, net: $('xNet').value, ig: $('xIg').value, li: $('xLi').value, web: $('xWeb').value, nmail: $('xNmail').value };
         boton(this, api('ticketGuardar', { cod: cod, datos: d })).then(function (r2) { toast(r2.msj); recargar(); }).catch(fallo);
       };
     }).catch(function (e) { cerrarModal(); fallo(e); });
@@ -403,6 +405,82 @@
     }).join('') || '<tr><td colspan="8" class="vacio">' + (fF === 'pend' ? 'Todo facturado 🎉' : 'Sin compras todavía.') + '</td></tr>';
   }
 
+
+  // ── Página personal (lo que abre el QR del sticker) ──
+  var tPreg = null, fP = { charla: '', estado: 'activas' };
+  V.personal = function () {
+    clearInterval(tPreg);
+    api('personal').then(function (r) { pintarPersonal(r.personal); tPreg = setInterval(function () { if (vista !== 'personal') { clearInterval(tPreg); return; } if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; api('personal').then(function (r2) { cache.personal = r2.personal; pintarPreguntas(); }).catch(function () { }); }, 20000); }).catch(fallo);
+  };
+  function pintarPersonal(P) {
+    cache.personal = P; var a = P.ajustes;
+    var sw = function (k, t, sub) { return '<div class="interr"><div class="t"><b>' + t + '</b><small>' + sub + '</small></div><label class="sw"><input type="checkbox" data-aj="' + k + '"' + (a[k] ? ' checked' : '') + '><span></span></label></div>'; };
+    $('main').innerHTML = cab('Página personal', 'Lo que ve cada asistente al escanear el QR de su sticker. Se prende y se apaga desde acá.') +
+      '<div class="tarj"><h3>Qué se muestra</h3>' + sw('PREG_ON', 'Preguntas a las charlas', 'Mandan preguntas al speaker desde el celular. Las moderás abajo.') + sw('NET_ON', 'Networking', 'Comparten su contacto y ven a quienes también comparten. En la puerta se les pregunta.') + sw('ENC_ON', 'Encuesta de satisfacción', 'Prendela al final de la jornada.') + '</div>' +
+      '<div class="tarj"><h3>Wifi y aviso</h3><div class="form"><div><label class="et2" for="aWr">Red wifi</label><div class="fila"><input class="campo2 crece" id="aWr" value="' + esc(a.WIFI_RED) + '" placeholder="Nombre de la red"><button class="b sec chico" data-g="WIFI_RED" data-i="aWr">Guardar</button></div></div>' +
+      '<div><label class="et2" for="aWc">Clave wifi</label><div class="fila"><input class="campo2 crece" id="aWc" value="' + esc(a.WIFI_CLAVE) + '" placeholder="Contraseña"><button class="b sec chico" data-g="WIFI_CLAVE" data-i="aWc">Guardar</button></div></div>' +
+      '<div class="ancho"><label class="et2" for="aAv">Aviso arriba de la agenda</label><div class="fila"><input class="campo2 crece" id="aAv" value="' + esc(a.AVISO) + '" placeholder="Ej: Empezamos 10 minutos tarde"><button class="b sec chico" data-g="AVISO" data-i="aAv">Guardar</button></div><div class="cont">Lo ven todos (QR del dorso y del sticker). Borralo y guardá para sacarlo.</div></div></div></div>' +
+      '<div class="tarj"><div class="fila"><h3 class="crece" style="margin:0">🎤 Preguntas</h3><select class="campo2" id="pfCharla" style="width:auto"></select><div class="seg" id="pfEst"><button data-v="activas"' + (fP.estado === 'activas' ? ' class="on"' : '') + '>Para moderar</button><button data-v="Elegida"' + (fP.estado === 'Elegida' ? ' class="on"' : '') + '>Elegidas</button><button data-v="todas"' + (fP.estado === 'todas' ? ' class="on"' : '') + '>Todas</button></div></div><div class="cont">Se actualiza sola cada 20 segundos.</div><div id="pfLista"></div></div>' +
+      '<div class="tarj"><h3>⭐ Encuesta</h3><div class="cont">' + P.encuesta.respuestas + ' persona(s) respondieron.</div><div id="encRes"></div><h3 style="margin-top:18px">Preguntas de la encuesta</h3><div id="encEd"></div><div class="acc"><button class="b sec" id="encMas">＋ Agregar pregunta</button><button class="b pri" id="encGuardar">Guardar preguntas</button></div></div>' +
+      '<div class="tarj"><h3>🤝 Networking</h3><div class="grilla"><div class="kpi"><small>Comparten</small><b>' + P.net.comparten + '</b></div><div class="kpi"><small>No comparten</small><b>' + P.net.noComparten + '</b></div><div class="kpi"><small>Sin responder</small><b>' + P.net.sinRespuesta + '</b></div></div></div>';
+    $('main').onchange = function (e) {
+      var i = e.target; if (!i.hasAttribute('data-aj')) return; var k = i.getAttribute('data-aj'), v = i.checked;
+      api('personalAjuste', { clave: k, valor: v }).then(function () { toast(v ? '✓ Prendido' : '✓ Apagado'); }).catch(function (e2) { i.checked = !v; fallo(e2); });
+    };
+    $('main').onclick = function (e) {
+      var b = e.target.closest('button[data-g]'); if (b) { boton(b, api('personalAjuste', { clave: b.getAttribute('data-g'), valor: $(b.getAttribute('data-i')).value })).then(function () { toast('✓ Guardado'); }).catch(fallo); return; }
+      var pe = e.target.closest('button[data-pf]'); if (pe) { boton(pe, api('pregEstado', { fila: pe.getAttribute('data-pf'), estado: pe.getAttribute('data-e') })).then(function (r) { cache.personal = r.personal; pintarPreguntas(); }).catch(fallo); return; }
+    };
+    $('pfEst').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; fP.estado = b.getAttribute('data-v'); Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); }); pintarPreguntas(); };
+    $('pfCharla').onchange = function () { fP.charla = this.value; pintarPreguntas(); };
+    pintarPreguntas(); pintarEncuesta();
+  }
+  function pintarPreguntas() {
+    var P = cache.personal, ch = {}; P.preguntas.forEach(function (q) { ch[q.charla] = (ch[q.charla] || 0) + (q.estado === 'Nueva' ? 1 : 0); });
+    var sel = $('pfCharla'); if (!sel) return;
+    sel.innerHTML = '<option value="">Todas las charlas</option>' + Object.keys(ch).map(function (c) { return '<option value="' + esc(c) + '"' + (fP.charla === c ? ' selected' : '') + '>' + esc(c) + (ch[c] ? ' (' + ch[c] + ' nuevas)' : '') + '</option>'; }).join('');
+    var l = P.preguntas.filter(function (q) { return (!fP.charla || q.charla === fP.charla) && (fP.estado === 'todas' || (fP.estado === 'activas' ? (q.estado === 'Nueva' || q.estado === 'Elegida') : q.estado === fP.estado)); });
+    var col = { 'Nueva': '', 'Elegida': 'ok', 'Respondida': 'az', 'Oculta': 'mal' };
+    $('pfLista').innerHTML = l.length ? '<div class="scroll" style="margin-top:10px;max-height:60vh"><table class="tabla"><tbody>' + l.map(function (q) {
+      var bs = ['Elegida', 'Respondida', 'Oculta'].filter(function (e) { return e !== q.estado; }).map(function (e) { return '<button class="b sec chico" data-pf="' + q.fila + '" data-e="' + e + '">' + { Elegida: '⭐ Elegir', Respondida: '✓ Respondida', Oculta: 'Ocultar' }[e] + '</button>'; }).join(' ');
+      return '<tr><td style="width:60%"><b style="font-size:15px">' + esc(q.texto) + '</b><small>' + esc(q.nombre ? q.nombre + (q.empresa ? ' · ' + q.empresa : '') : 'Anónima') + ' · ' + esc(q.charla) + ' · ' + F.hora(q.fecha) + '</small></td><td><span class="chip ' + col[q.estado] + '">' + esc(q.estado) + '</span></td><td class="num">' + bs + '</td></tr>';
+    }).join('') + '</tbody></table></div>' : '<div class="vacio">' + (P.preguntas.length ? 'No hay preguntas con este filtro.' : 'Todavía no llegaron preguntas.') + '</div>';
+  }
+  function pintarEncuesta() {
+    var E = cache.personal.encuesta, ed = E.preguntas.map(function (q) { return { id: q.id, tipo: q.tipo, texto: q.texto, opciones: (q.opciones || []).join(', ') }; });
+    $('encRes').innerHTML = E.resultados.length ? E.resultados.map(function (r) {
+      var c = '<div class="socio"><b>' + esc(r.texto) + '</b> <span class="cont">(' + r.n + ' respuestas)</span>';
+      if (r.tipo === 'estrellas') c += '<div style="font-size:22px;margin-top:4px">' + (r.promedio == null ? '—' : r.promedio + ' ★') + '</div><div class="cont">' + r.dist.map(function (n, i) { return (i + 1) + '★: ' + n; }).join(' · ') + '</div>';
+      else if (r.tipo === 'opciones') c += '<div class="cont">' + r.dist.map(function (d) { return esc(d.op) + ': <b>' + d.n + '</b>'; }).join(' · ') + '</div>';
+      else c += r.textos.length ? '<div style="max-height:200px;overflow:auto;margin-top:6px">' + r.textos.map(function (t) { return '<div class="cont">“' + esc(t) + '”</div>'; }).join('') + '</div>' : '<div class="cont">Sin respuestas todavía.</div>';
+      return c + '</div>';
+    }).join('') + '<div class="acc"><button class="b sec chico" id="encCsv">⬇︎ Exportar textos y puntajes</button></div>' : '<div class="cont">Todavía no armaste preguntas.</div>';
+    if ($('encCsv')) $('encCsv').onclick = function () { csv('encuesta', [['Pregunta', 'Tipo', 'Respuestas', 'Promedio / detalle']].concat(E.resultados.map(function (r) { return [r.texto, r.tipo, r.n, r.tipo === 'estrellas' ? r.promedio : r.tipo === 'opciones' ? r.dist.map(function (d) { return d.op + ': ' + d.n; }).join(' | ') : r.textos.join(' | ')]; }))); };
+    function pintarEd() {
+      $('encEd').innerHTML = ed.map(function (q, i) {
+        return '<div class="socio" data-i="' + i + '"><div class="fila"><select class="campo2" data-k="tipo" style="width:auto"><option value="estrellas"' + (q.tipo === 'estrellas' ? ' selected' : '') + '>Estrellas (1 a 5)</option><option value="opciones"' + (q.tipo === 'opciones' ? ' selected' : '') + '>Opciones</option><option value="texto"' + (q.tipo === 'texto' ? ' selected' : '') + '>Texto libre</option></select>' +
+          '<input class="campo2 crece" data-k="texto" value="' + esc(q.texto) + '" placeholder="Ej: ¿Qué te pareció la jornada?"><button class="b sec chico" data-sub="' + i + '" title="Subir">↑</button><button class="b mal chico" data-del="' + i + '">Quitar</button></div>' +
+          (q.tipo === 'opciones' ? '<input class="campo2" data-k="opciones" style="margin-top:8px" value="' + esc(q.opciones) + '" placeholder="Opciones separadas por coma: Sí, No, Tal vez">' : '') + '</div>';
+      }).join('') || '<div class="cont">Sin preguntas. Agregá la primera.</div>';
+    }
+    function leerEd() { Array.prototype.forEach.call($('encEd').querySelectorAll('[data-i]'), function (box) { var q = ed[Number(box.getAttribute('data-i'))]; Array.prototype.forEach.call(box.querySelectorAll('[data-k]'), function (i) { q[i.getAttribute('data-k')] = i.value; }); }); }
+    pintarEd();
+    $('encEd').onchange = function (e) { if (e.target.getAttribute('data-k') === 'tipo') { leerEd(); pintarEd(); } };
+    $('encEd').onclick = function (e) {
+      var d = e.target.closest('[data-del]'), u = e.target.closest('[data-sub]'); if (!d && !u) return; leerEd();
+      if (d) ed.splice(Number(d.getAttribute('data-del')), 1);
+      if (u) { var i = Number(u.getAttribute('data-sub')); if (i > 0) { var x = ed[i]; ed[i] = ed[i - 1]; ed[i - 1] = x; } }
+      pintarEd();
+    };
+    $('encMas').onclick = function () { leerEd(); ed.push({ tipo: 'estrellas', texto: '', opciones: '' }); pintarEd(); };
+    $('encGuardar').onclick = function () {
+      leerEd();
+      var out = ed.filter(function (q) { return q.texto.trim(); }).map(function (q) { return { id: q.id, tipo: q.tipo, texto: q.texto, opciones: q.tipo === 'opciones' ? q.opciones.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : [] }; });
+      if (E.respuestas && !confirm('Ya hay respuestas. Si cambiás el texto de una pregunta, sus respuestas viejas quedan aparte. ¿Guardar igual?')) return;
+      boton(this, api('encGuardar', { preguntas: out })).then(function (r) { toast(r.msj); cache.personal = r.personal; pintarEncuesta(); }).catch(fallo);
+    };
+  }
+
   // ── Mails y certificados ──
   V.comunicacion = function () {
     api('comunicacion').then(function (r) {
@@ -453,6 +531,7 @@
     ['Socios', ['CORT_TEXTO', 'CORT_MAX', 'ASOCIARSE_WA', 'ASOCIARSE_LINK']],
     ['Mails', ['REMITENTE', 'RESPONDER_A', 'AVISO_VENTAS', 'BREVO_FROM']],
     ['Certificados', ['CERT_FIRMA', 'CERT_WEB']],
+    ['Página personal', ['NET_ON', 'PREG_ON', 'ENC_ON', 'WIFI_RED', 'WIFI_CLAVE', 'AVISO']],
     ['Sistema', ['SITIO', 'API']]
   ];
   V.ajustes = function () {
