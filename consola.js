@@ -364,6 +364,8 @@
   function linkBenef(cod) { return (S.sitio || location.origin).replace(/\/$/, '') + '/?codigo=' + encodeURIComponent(cod); }
   function mensajeBenef(t) {
     var ev = S.evento || {}, donde = [ev.fecha, ev.lugar].filter(Boolean).join(' · ');
+    if (!(t.precio > 0)) return '¡Hola! 🎟️ Tenés una *invitación sin cargo* para *' + (ev.nombre || 'el evento') + '*' + (donde ? ' (' + donde + ')' : '') + '.\n\n' +
+      'Entrá acá, completá tus datos y te llega tu QR al instante:\n' + linkBenef(t.codigo) + '\n\nSi te lo pide, tu código es: *' + t.codigo + '*';
     return '¡Hola! 🎟️ Tenés un *beneficio especial* para *' + (ev.nombre || 'el evento') + '*' + (donde ? ' (' + donde + ')' : '') + '.\n\n' +
       'Tu ticket a *' + F.plata(t.precio) + '*' + (t.tachado > t.precio ? ' en lugar de ~' + F.plata(t.tachado) + '~' : '') + '.\n\n' +
       'Entrá acá y ya te aparece desbloqueado:\n' + linkBenef(t.codigo) + '\n\nSi te lo pide, tu código es: *' + t.codigo + '*';
@@ -375,7 +377,7 @@
       var est = { venta: ['ok', 'En venta'], agotado: ['mal', 'Agotado'], finalizado: ['', 'Terminó'], proximamente: ['az', 'Próximamente'], reservado: ['am', 'Reservado'], oculto: ['', 'Oculto'] };
       var tarjeta = function (t) {
         var e = est[t.estadoWeb] || ['', t.estadoWeb];
-        return '<div class="tarj tipoT' + (t.codigo ? ' conCod' : '') + '" data-id="' + esc(t.id || '') + '"><div class="cabT"><b>' + esc(t.nombre || 'Tipo nuevo') + '</b>' + (t.codigo ? '<span class="chip am">⭐ Beneficio con código</span>' : '') + (t.id ? '<span class="chip ' + e[0] + '">' + e[1] + '</span>' : '') + '</div>' +
+        return '<div class="tarj tipoT' + (t.codigo ? ' conCod' : '') + '" data-id="' + esc(t.id || '') + '"><div class="cabT"><b>' + esc(t.nombre || 'Tipo nuevo') + '</b>' + (t.codigo ? '<span class="chip am">' + (t.precio > 0 ? '⭐ Beneficio con código' : '🎟️ Invitación con código') + '</span>' : '') + (t.credTexto ? '<span class="chip az">🏷️ ' + esc(t.credTexto) + '</span>' : '') + (t.id ? '<span class="chip ' + e[0] + '">' + e[1] + '</span>' : '') + '</div>' +
           (t.id ? '<div class="stats"><span>Vendidas <b>' + t.vendidas + '</b></span><span>Reservadas <b>' + t.reservadas + '</b></span><span>Disponibles <b>' + (t.disp == null ? '—' : t.disp) + '</b></span><span style="font-family:monospace">' + esc(t.id) + '</span></div>' : '') +
           '<div class="form"><div><label class="et2">Nombre</label><input class="campo2" data-k="nombre" value="' + esc(t.nombre || '') + '"></div>' +
           '<div><label class="et2">Precio</label><input class="campo2" data-k="precio" type="number" min="0" step="500" value="' + esc(t.precio == null ? '' : t.precio) + '"></div>' +
@@ -386,6 +388,7 @@
           '<div class="fila" style="gap:18px"><label class="chk2"><input type="checkbox" data-k="activo"' + (t.activo ? ' checked' : '') + '> Activo (se ve en la tienda)</label>' +
           '<label class="chk2"><input type="checkbox" data-k="cort"' + (t.cort ? ' checked' : '') + '> Socio (se valida)</label>' +
           '<label class="chk2"><input type="checkbox" data-k="agotado"' + (t.agotado ? ' checked' : '') + '> Agotado</label></div>' +
+          '<div class="form" style="margin-top:8px"><div class="ancho" style="max-width:460px"><label class="et2">Credencial: texto en vez de la empresa (opcional)</label><input class="campo2" data-k="credTexto" value="' + esc(t.credTexto || '') + '" placeholder="Ej: Prensa · Eventos y Negocios"><small class="cont">Para prensa, producción o redes: al inscribirse se les pide su empresa o medio (queda guardada), pero en el sticker sale este texto.</small></div></div>' +
           '<div class="benefB"><div class="benefT">⭐ Beneficio con código <small>Opcional. Si ponés un código, en la web este ticket aparece con candado y solo se puede comprar con el código (sirve para todas las compras que quieras; el tope es el cupo).</small></div>' +
           '<div class="form"><div class="ancho" style="max-width:460px"><label class="et2">Código de acceso</label><div class="fila" style="gap:6px;flex-wrap:nowrap"><input class="campo2" data-k="codigo" value="' + esc(t.codigo || '') + '" placeholder="Vacío = ticket normal" style="text-transform:uppercase;font-family:monospace;font-weight:700"><button class="b sec" type="button" data-gen title="Inventa un código difícil de adivinar">Generar</button></div></div>' +
           '<div><label class="et2">Precio tachado</label><input class="campo2" data-k="tachado" type="number" min="0" step="500" value="' + esc(t.tachado || '') + '" placeholder="Ej: ' + (general || 90000) + '">' + (general ? '<small class="cont">Precio general hoy: ' + F.plata(general) + ' · <a href="" data-usar="' + general + '">usar</a></small>' : '') + '</div></div>' +

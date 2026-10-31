@@ -19,7 +19,7 @@
 
   // ── datos de cada persona ──
   function nombreCred(c) { return String(c.nomCred || c.nombre || '').trim(); }
-  function empresaCred(c) { return String(c.empCred || c.empresaCompra || c.empresaFactura || '').trim(); }
+  function empresaCred(c) { return String(c.empCred || c.credFija || c.empresaCompra || c.empresaFactura || '').trim(); } // v1.14: credFija = texto fijo del tipo (prensa, producción)
   function apellido(c) { var p = nombreCred(c).split(/\s+/); return (p.length > 1 ? p.slice(1).join(' ') : p[0]).toLowerCase(); }
   function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
   /** El lector USB escribe como un teclado: con teclado en español el guion puede salir como ' o ?. Nos quedamos con FZ + 10 caracteres. */
@@ -278,7 +278,7 @@
     if (q.length < 2) { $('pResultados').innerHTML = ''; return; }
     var dq = q.replace(/\D/g, '');
     var r = D.creds.filter(function (c) {
-      return norm(nombreCred(c)).indexOf(q) >= 0 || norm(c.nombre).indexOf(q) >= 0 || norm(empresaCred(c)).indexOf(q) >= 0 || (dq.length >= 5 && c.dni.indexOf(dq) >= 0);
+      return norm(nombreCred(c)).indexOf(q) >= 0 || norm(c.nombre).indexOf(q) >= 0 || norm(empresaCred(c) + ' ' + (c.empresaCompra || '')).indexOf(q) >= 0 || (dq.length >= 5 && c.dni.indexOf(dq) >= 0);
     }).slice(0, 12);
     $('pResultados').innerHTML = r.length ? r.map(function (c) {
       return '<button class="res" data-cod="' + esc(c.cod) + '"><span><b>' + esc(nombreCred(c)) + '</b><br><small>' + esc([empresaCred(c), c.tipo, 'DNI ' + c.dni].filter(Boolean).join(' · ')) + '</small></span>' + chips(c) + '</button>';

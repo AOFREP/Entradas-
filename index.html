@@ -41,6 +41,7 @@
 .codRow .codT { font-weight: 800; font-size: 15px; }
 .resumen .lin span:last-child { white-space: nowrap; padding-left: 12px; }
 .nowrap { white-space: nowrap; }
+#tot { white-space: nowrap; }
 .resumen .benefNota { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #E3F6EA; color: #0B6B3A; font-weight: 700; font-size: 14px; }
 @keyframes sacude { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 </style>
@@ -99,6 +100,7 @@
       <input class="campo" id="cMail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Ahí te llegan los tickets">
       <label class="et">Repetí el mail</label>
       <input class="campo" id="cMail2" type="email" inputmode="email" autocomplete="off" autocapitalize="none" placeholder="Para evitar errores">
+      <div id="bloqueEmpTrab" class="oculto"><label class="et">Empresa o medio</label><input class="campo" id="cEmpTrab" autocomplete="organization" placeholder="Dónde trabajás"></div>
     </div>
     <div id="bloqueAsis" class="oculto">
       <div class="seccion">¿Quién va a usar cada ticket?</div>
@@ -184,7 +186,13 @@
   }
   function totalCant() { var t = 0; for (var k in cant) t += cant[k]; return t; }
   function cantCort() { var t = 0; D.tipos.forEach(function (x) { if (x.cort) t += cant[x.id] || 0; }); return t; }
-  function maxPara(t) { if (bloqueado(t)) return 0; var m = t.disp; if (t.cort && D.cortMax > 0) m = Math.min(m, D.cortMax - (cantCort() - (cant[t.id] || 0))); return m; }
+  // v1.13: invitaciones sin cargo (precio 0): hasta D.gratisMax y sin mezclar con tickets pagos
+  function pideEmp() { return D.tipos.some(function (t) { return t.pideEmp && cant[t.id]; }); } // v1.14
+  function esGratis(t) { return t.precio <= 0 && !t.cort; }
+  function cantDe(f) { var n = 0; D.tipos.forEach(function (x) { if (f(x)) n += cant[x.id] || 0; }); return n; }
+  function maxPara(t) { if (bloqueado(t)) return 0; var m = t.disp;
+    if (esGratis(t)) { if (cantDe(function (x) { return !esGratis(x); })) return 0; m = Math.min(m, (D.gratisMax || 2) - (cantDe(esGratis) - (cant[t.id] || 0))); }
+    else if (cantDe(esGratis)) return 0; if (t.cort && D.cortMax > 0) m = Math.min(m, D.cortMax - (cantCort() - (cant[t.id] || 0))); return m; }
   function filaCodigo() {
     if (!D.tipos.some(bloqueado)) return '';
     if (!codVis) return '<div class="tipo codRow"><div class="info"><button type="button" class="codLink" data-vercod>🎟️ Tengo un código</button></div></div>';
@@ -210,7 +218,7 @@
         if (abiertos[t.id]) cod = '<div class="codOk">🔓 Código aplicado: ' + F.esc(abiertos[t.id]) + '</div>';
       }
       var on2 = on && !bloqueado(t);
-      return '<div class="tipo' + (on ? '' : ' apagado') + (agot ? ' agot' : '') + (t.bloq ? ' benef' + (abiertos[t.id] ? ' abierto' : '') : '') + '"><div class="info">' + (t.bloq ? '<div class="benefTag">⭐ Beneficio especial</div>' : '') + '<div class="nom">' + F.esc(t.nombre) + '</div>' + (desc ? '<div class="des">' + F.esc(desc) + '</div>' : '') + pre + est + cod + '</div>' +
+      return '<div class="tipo' + (on ? '' : ' apagado') + (agot ? ' agot' : '') + (t.bloq ? ' benef' + (abiertos[t.id] ? ' abierto' : '') : '') + '"><div class="info">' + (t.bloq ? '<div class="benefTag">' + (t.precio > 0 ? '⭐ Beneficio especial' : '🎟️ Invitación') + '</div>' : '') + '<div class="nom">' + F.esc(t.nombre) + '</div>' + (desc ? '<div class="des">' + F.esc(desc) + '</div>' : '') + pre + est + cod + '</div>' +
         (on2 ? '<div class="paso"><button data-m="' + F.esc(t.id) + '" aria-label="Menos">−</button><span class="cant" id="q_' + F.esc(t.id) + '">0</span><button data-p="' + F.esc(t.id) + '" aria-label="Más">+</button></div>' : '') + '</div>';
     }).join('');
     var fc = filaCodigo();
@@ -281,11 +289,11 @@
       var mas = document.querySelector('[data-p="' + t.id + '"]'), menos = document.querySelector('[data-m="' + t.id + '"]');
       if (mas) mas.disabled = (cant[t.id] || 0) >= maxPara(t) || n >= D.max; if (menos) menos.disabled = !(cant[t.id] > 0);
     });
-    $('tot').textContent = F.plata(tot);
+    $('tot').textContent = n && !(tot > 0) ? 'Sin cargo' : F.plata(tot);
     $('bloqueSocio').classList.toggle('oculto', !nc);
     $('totTxt').textContent = n ? n + (n === 1 ? ' ticket' : ' tickets') + (nc && nc < n ? ' · ' + nc + ' de socio' : nc ? ' de socio' : '') : 'Elegí la cantidad (máx. ' + D.max + ')';
     if (paso === 1) { $('seguir').disabled = !n; $('seguir').textContent = 'Continuar'; }
-    else { $('seguir').disabled = false; $('seguir').textContent = 'Ir a pagar'; }
+    else { $('seguir').disabled = false; $('seguir').textContent = total() > 0 ? 'Ir a pagar' : 'Confirmar inscripción'; }
   }
   function irPaso(p) {
     if (p === 2 && cantCort()) {
@@ -303,15 +311,17 @@
     var sub = subtotal(), cargo = Math.round(sub * (D.cargo || 0)) / 100, lineas = [];
     visibles().forEach(function (t) {
       if (!cant[t.id]) return;
-      lineas.push('<div class="lin"><span>' + cant[t.id] + ' × ' + F.esc(t.nombre) + '</span><span>' + F.plata(cant[t.id] * t.precio) + '</span></div>');
+      lineas.push('<div class="lin"><span>' + cant[t.id] + ' × ' + F.esc(t.nombre) + '</span><span>' + (t.precio > 0 ? F.plata(cant[t.id] * t.precio) : 'Sin cargo') + '</span></div>');
     });
     if (cargo) lineas.push('<div class="lin"><span>Cargo por servicio</span><span>' + F.plata(cargo) + '</span></div>');
-    lineas.push('<div class="lin tot"><span>Total a pagar</span><span>' + F.plata(sub + cargo) + '</span></div>');
+    if (sub + cargo > 0) lineas.push('<div class="lin tot"><span>Total a pagar</span><span>' + F.plata(sub + cargo) + '</span></div>');
+    else lineas.push('<div class="lin tot"><span>Total</span><span>Sin cargo</span></div>', '<div class="benefNota">🎟️ Es una invitación sin cargo: al confirmar te mostramos tu QR y te lo mandamos por mail.</div>');
     var ahorro = 0; D.tipos.forEach(function (t) { if (cant[t.id] && t.tachado > t.precio) ahorro += cant[t.id] * (t.tachado - t.precio); });
     if (ahorro > 0) lineas.push('<div class="benefNota">🎉 Con tu beneficio especial ahorrás <span class="nowrap">' + F.plata(ahorro) + '</span></div>');
     if (cantCort()) lineas.push('<div class="nota" style="margin-top:10px">Después del pago verificamos que <b>' + F.esc($('cEmpresa').value.trim()) + '</b> tenga la <b>membresía al día</b> y te mandamos ' + (cantCort() > 1 ? 'los tickets de socio' : 'el ticket de socio') + ' por mail. Si registrara cuotas pendientes, te avisamos y <b>te devolvemos ese importe</b> por el mismo medio de pago.' + (cantCort() < totalCant() ? ' Los demás tickets te llegan apenas se aprueba el pago.' : '') + '</div>');
     $('resumen').innerHTML = lineas.join('');
     $('bloqueFac').classList.toggle('oculto', !(sub > 0));
+    $('bloqueEmpTrab').classList.toggle('oculto', !pideEmp());
     actualizarFac();
     if (!D.nominal) { $('bloqueAsis').classList.add('oculto'); return; }
     var previos = leerAsis(), h = '', i = 0;
@@ -362,6 +372,7 @@
     if (dni.length < 7) return error2('Revisá el DNI.', $('cDni'));
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(mail)) return error2('Revisá el mail: ahí te llegan los tickets.', $('cMail'));
     if (mail !== mail2) return error2('Los mails no coinciden.', $('cMail2'));
+    if (pideEmp() && $('cEmpTrab').value.trim().length < 2) return error2('Indicá tu empresa o medio.', $('cEmpTrab'));
     var asis = [];
     if (D.nominal) {
       copiarYo(); asis = leerAsis();
@@ -378,8 +389,9 @@
     }
     if (!$('acepto').checked) return error2('Tenés que aceptar las condiciones.');
     var items = D.tipos.filter(function (t) { return cant[t.id]; }).map(function (t) { return { t: t.id, q: cant[t.id] }; });
-    var b = $('seguir'); b.disabled = true; b.textContent = 'Reservando…'; $('err2').classList.add('oculto');
+    var b = $('seguir'); b.disabled = true; b.textContent = total() > 0 ? 'Reservando…' : 'Confirmando…'; $('err2').classList.add('oculto');
     F.post('orden', { nombre: nombre, dni: dni, mail: mail, tel: $('cTel').value.trim(), acepta: true, items: items, asistentes: asis.map(function (a) { return { t: a.t, n: a.n, d: a.d }; }),
+      empresaTrabajo: pideEmp() ? $('cEmpTrab').value.trim() : '',
       codigos: (function () { var l = []; items.forEach(function (x) { var c = abiertos[x.t]; if (c && l.indexOf(c) < 0) l.push(c); }); return l; })(),
       empresa: cantCort() ? $('cEmpresa').value.trim() : '', cuitEmpresa: cantCort() ? $('cCuitEmp').value.replace(/\D/g, '') : '', facturacion: fac }, 45000)
       .then(function (r) {
