@@ -15,7 +15,7 @@
       throw e;
     });
   }
-  function fallo(e) { if (e && e.message === '_sesion') return; toast('⚠ ' + F.msg(e), true); }
+  function fallo(e) { if (e && e.message === '_sesion') return; var m = F.msg(e); toast('⚠ ' + (m && m !== 'undefined' ? m : 'Algo falló, probá de nuevo.'), true); try { console.error('[credenciales]', e); } catch (x) { } }
 
   // ── datos de cada persona ──
   function nombreCred(c) { return String(c.nomCred || c.nombre || '').trim(); }
@@ -185,13 +185,19 @@
     function probar() {
       if (i >= bases.length) { BP.base = null; BP.disp = null; estadoImp('no'); return false; }
       var base = bases[i++];
-      return Promise.race([bpFetch(base, '/default?type=printer').then(function (r) { return r.text(); }), new Promise(function (ok, mal) { setTimeout(function () { mal(new Error('tiempo')); }, 3000); })])
-        .then(function (t) {
-          var d = null; try { d = t ? JSON.parse(t) : null; } catch (e) { }
-          if (d && d.uid) { BP.base = base; BP.disp = d; estadoImp('ok'); return true; }
-          return bpFetch(base, '/available').then(function (r) { return r.json(); }).then(function (j) {
-            var p = j && j.printer && j.printer[0];
-            if (p) { BP.base = base; BP.disp = p; estadoImp('ok'); return true; }
+      // v1.12.2: primero la lista REAL de impresoras conectadas (/available). La "predeterminada" (/default) puede tener
+      // guardada una dirección USB vieja (cambia si se desenchufa o se cambia de puerto) y ahí no imprime nada.
+      var tiempo = function (pr) { return Promise.race([pr, new Promise(function (ok, mal) { setTimeout(function () { mal(new Error('tiempo')); }, 4000); })]); };
+      return tiempo(bpFetch(base, '/available').then(function (r) { return r.json(); }))
+        .then(function (j) {
+          var lista = ((j && j.printer) || []).filter(function (x) { return x && x.uid; });
+          var zebra = lista.filter(function (x) { return /zebra|zd2|zpl/i.test((x.manufacturer || '') + ' ' + (x.name || '') + ' ' + x.uid); });
+          var p = (zebra.length ? zebra : lista)[0];
+          if (p) { BP.base = base; BP.disp = p; estadoImp('ok'); return true; }
+          // sin lista: probamos la predeterminada
+          return tiempo(bpFetch(base, '/default?type=printer').then(function (r) { return r.text(); })).then(function (t) {
+            var d = null; try { d = t ? JSON.parse(t) : null; } catch (e) { }
+            if (d && d.uid) { BP.base = base; BP.disp = d; estadoImp('ok'); return true; }
             BP.base = base; BP.disp = null; estadoImp('sinzebra'); return false;
           });
         }).catch(probar);
@@ -209,10 +215,23 @@
     }[e];
     p.textContent = m[0]; p.className = 'pill ' + m[1]; s.textContent = m[2]; s.className = 'aviso ' + m[3];
   }
-  function enviarZebra(datos) {
-    if (!BP.base || !BP.disp) return Promise.reject(new Error('La Zebra no está conectada (pestaña Impresora).'));
+  function enviarZebra1(datos) {
     return bpFetch(BP.base, '/write', { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify({ device: BP.disp, data: datos }) })
-      .then(function (r) { if (!r.ok) throw new Error('La Zebra respondió ' + r.status); });
+      .then(function (r) { if (!r.ok) return r.text().catch(function () { return ''; }).then(function (t) { throw new Error('Browser Print respondió ' + r.status + (t ? ': ' + String(t).slice(0, 120) : '')); }); },
+        function () { throw new Error('No hubo respuesta de Browser Print'); });
+  }
+  /** Si falla (ej: se desenchufó la Zebra y cambió su dirección USB), vuelve a buscarla y reintenta una vez. */
+  function enviarZebra(datos) {
+    var listo = BP.base && BP.disp ? Promise.resolve(true) : detectarImpresora();
+    return listo.then(function (ok) {
+      if (!ok) throw new Error('No encuentro la Zebra. Revisá que esté prendida y enchufada, y que Browser Print esté abierto. Después tocá "Buscar impresora".');
+      return enviarZebra1(datos).catch(function (e1) {
+        return detectarImpresora().then(function (ok2) {
+          if (!ok2) throw new Error('No encuentro la Zebra (' + e1.message + '). Revisá el USB y que Browser Print esté abierto.');
+          return enviarZebra1(datos).catch(function (e2) { throw new Error('No se pudo imprimir: ' + e2.message + '. Probá desenchufar y enchufar el USB de la Zebra y tocar "Buscar impresora".'); });
+        });
+      });
+    });
   }
   /** Imprime una lista de stickers. Zebra: uno por uno. Diálogo: todos juntos en una ventana. */
   function imprimirStickers(lista, alAvanzar) {
