@@ -52,6 +52,7 @@
     { g: 'Evento', admin: true, tec: true },
     { id: 'pantallas', i: '📺', t: 'Pantallas', admin: true, tec: true },
     { id: 'personal', i: '📱', t: 'App del asistente', admin: true },
+    { id: 'celulares', i: '🔗', t: 'Celulares vinculados', admin: true },
     { id: 'sorteo', i: '🎁', t: 'Sorteo', admin: true, tec: true },
     { id: 'comunicacion', i: '✉️', t: 'Mails y certificados', admin: true },
     { id: 'actividad', i: '🕑', t: 'Actividad', admin: true },
@@ -197,7 +198,7 @@
   V.tickets = function () {
     api('tickets').then(function (r) {
       cache.tickets = r.tickets; cache.tipos = r.tipos; cache.roles = r.roles;
-      $('main').innerHTML = cab('Tickets', '', '<button class="b ok" id="bCort">🎁 Cortesías</button><button class="b sec" id="bCsv">⬇︎ Exportar</button>') +
+      $('main').innerHTML = cab('Tickets', '', '<button class="b ok" id="bCort">🎁 Cortesías</button><button class="b sec" id="bLis">📋 Listado en Drive</button><button class="b sec" id="bCsv">⬇︎ Exportar</button>') +
         '<div class="tarj"><div class="fila"><input class="campo2 crece" id="tQ" placeholder="Buscar nombre, DNI, mail, empresa, código u orden" value="' + esc(fT.q) + '">' +
         '<select class="campo2" id="tTipo" style="width:auto"><option value="">Todos los tipos</option>' + r.tipos.map(function (t) { return '<option value="' + esc(t.id) + '"' + (fT.tipo === t.id ? ' selected' : '') + '>' + esc(t.nombre) + '</option>'; }).join('') + '</select></div>' +
         '<div class="fila" style="margin-top:10px"><div class="seg" id="tEst">' + [['todos', 'Todos'], ['Válida', 'Válidos'], ['En revisión', 'En revisión'], ['Anulada', 'Anulados'], ['Rechazada', 'Rechazados']].map(function (x) { return '<button data-v="' + x[0] + '"' + (fT.estado === x[0] ? ' class="on"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>' +
@@ -209,6 +210,16 @@
       $('tIng').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; fT.ingreso = b.getAttribute('data-v'); Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); }); pintarT(); };
       $('tBody').onclick = function (e) { var tr = e.target.closest('tr[data-cod]'); if (tr) verTicket(tr.getAttribute('data-cod')); };
       $('bCort').onclick = function () { cortesias(); };
+      $('bLis').onclick = function () {
+        if (!confirm('¿Armar un listado nuevo en Drive? (nombre, DNI, categoría y empresa, una pestaña por categoría)')) return;
+        boton(this, api('listado', {}, 170000), 'Armando… (puede tardar)').then(function (r) {
+          modal('<h3>📋 Listado listo</h3><div class="meta">' + esc(r.nombre) + '</div><div class="cont" style="margin-top:8px"><b>' + r.total + ' personas</b> · ' +
+            Object.keys(r.cuenta).filter(function (k) { return r.cuenta[k]; }).map(function (k) { return esc(k) + ': ' + r.cuenta[k]; }).join(' · ') +
+            (r.sinDni ? '<br>⚠ ' + r.sinDni + ' sin DNI (completalo en la planilla y volvé a armarlo)' : '') + '</div>' +
+            '<div class="acc"><a class="b ok" href="' + esc(r.url) + '" target="_blank" rel="noopener">Abrir el listado</a><a class="b sec" href="' + esc(r.carpeta) + '" target="_blank" rel="noopener">Ver la carpeta</a><button class="b sec" id="lisNo">Cerrar</button></div>');
+          $('lisNo').onclick = cerrarModal;
+        }).catch(fallo);
+      };
       $('bCsv').onclick = function () { csv('tickets', [['Código', 'Nombre', 'DNI', 'Mail', 'Empresa', 'Tipo', 'Estado', 'Origen', 'Orden', 'Comprador', 'Teléfono', 'Rubro', 'Rol', 'Cargo', 'Ingreso', 'Puerta', 'Credencial impresa']].concat(filtrarT().map(function (x) { return [x.cod, x.nombre, x.dni, x.mail, x.empresa, x.tipo, x.estado, x.origen, x.orden, x.comprador, x.tel, x.rubro, x.rol, x.cargo, fecha(x.ingreso), x.puerta, x.impresa ? 'Sí' : '']; }))); };
       pintarT(); $('tQ').focus();
     }).catch(fallo);
@@ -846,6 +857,58 @@
   };
 
   // ── Actividad ──
+  // ── v1.20.2 · Celulares vinculados ──
+  var fC = { q: '', f: 'todos' };
+  V.celulares = function () {
+    var D = null;
+    $('main').innerHTML = cab('Celulares vinculados', 'La página personal de cada asistente queda atada al primer celular que escanea su credencial. Si alguien cambió de celular o se la escaneó otra persona, liberala y que la vuelva a escanear con el suyo.', '<button class="b sec chico" id="cAct">↻ Actualizar</button>') +
+      '<div id="cKpi" class="grilla"></div><div id="cComp"></div>' +
+      '<div class="tarj"><div class="fila"><input class="campo2 crece" id="cQ" placeholder="Buscar nombre, empresa, código o celular" value="' + esc(fC.q) + '">' +
+      '<div class="seg" id="cFil">' + [['todos', 'Todos'], ['con', 'Con celular'], ['sin', 'Sin celular'], ['comp', 'Celular compartido']].map(function (x) { return '<button data-v="' + x[0] + '"' + (fC.f === x[0] ? ' class="on"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div></div></div>' +
+      '<div class="cont" id="cCont"></div><div class="scroll"><table class="tabla"><thead><tr><th>Nombre</th><th>Tipo</th><th>Ingresó</th><th>Celular</th><th></th></tr></thead><tbody id="cBody"><tr><td colspan="5" class="vacio">Cargando…</td></tr></tbody></table></div>';
+    function filtrar() {
+      var q = fC.q.trim().toLowerCase();
+      return D.lista.filter(function (x) {
+        if (fC.f === 'con' && !x.cel) return false; if (fC.f === 'sin' && x.cel) return false; if (fC.f === 'comp' && x.comparte < 2) return false;
+        return !q || (x.nombre + ' ' + x.empresa + ' ' + x.cod + ' ' + x.cel + ' ' + x.tipo).toLowerCase().indexOf(q) >= 0;
+      });
+    }
+    function pintar() {
+      var L = filtrar();
+      $('cCont').textContent = L.length + ' de ' + D.total;
+      $('cBody').innerHTML = L.map(function (x) {
+        return '<tr><td><b>' + esc(x.nombre) + '</b><small>' + esc([x.empresa, x.rol].filter(Boolean).join(' · ')) + '</small></td><td>' + esc(x.tipo) + '</td>' +
+          '<td>' + (x.ingreso ? '✓ ' + esc(fecha(x.ingreso).slice(-5)) : '—') + '</td>' +
+          '<td>' + (x.cel ? '<span style="font-family:monospace">📱 ' + esc(x.cel) + '</span>' + (x.comparte > 1 ? ' <span class="chip mal">compartido ×' + x.comparte + '</span>' : '') + (x.desde ? '<small>desde ' + esc(fecha(x.desde)) + '</small>' : '') : '<span style="color:#8A94A6">Sin vincular</span>') + '</td>' +
+          '<td>' + (x.cel ? '<button class="b sec chico" data-lib="' + esc(x.cod) + '">Liberar</button>' : '') + '</td></tr>';
+      }).join('') || '<tr><td colspan="5" class="vacio">Nadie con ese filtro.</td></tr>';
+    }
+    function mostrar(c) {
+      D = c;
+      $('cKpi').innerHTML = '<div class="kpi"><small>Con celular vinculado</small><b>' + c.conCel + '<span> / ' + c.total + '</span></b><span>tickets válidos</span></div>' +
+        '<div class="kpi"><small>Sin vincular</small><b>' + (c.total - c.conCel) + '</b><span>todavía no escanearon su credencial</span></div>' +
+        '<div class="kpi' + (c.compartidos ? ' alerta' : '') + '"><small>Celulares con varias credenciales</small><b>' + c.compartidos + '</b><span>' + (c.compartidos ? 'revisar abajo' : 'todo bien') + '</span></div>';
+      var g = {}; c.lista.forEach(function (x) { if (x.comparte > 1) (g[x.cel] = g[x.cel] || []).push(x); });
+      var ks = Object.keys(g);
+      $('cComp').innerHTML = ks.length ? '<div class="tarj"><h3>⚠️ Un mismo celular con varias credenciales</h3><div class="cont">Puede ser alguien del staff que escaneó con su teléfono, o una persona que escaneó la de un acompañante. Cada credencial tiene que quedar en el celular de su dueño.</div>' +
+        ks.map(function (k) { return '<div class="fila" style="margin-top:10px;align-items:center"><div class="crece"><b style="font-family:monospace">📱 ' + esc(k) + '</b> · ' + g[k].map(function (x) { return esc(x.nombre); }).join(', ') + '</div><button class="b sec chico" data-libs="' + esc(g[k].map(function (x) { return x.cod; }).join(',')) + '">Liberar las ' + g[k].length + '</button></div>'; }).join('') + '</div>' : '';
+      pintar();
+    }
+    function cargar() { api('celulares').then(function (r) { mostrar(r.celulares); }).catch(fallo); }
+    function liberar(cods, btn, txt) {
+      if (!confirm(txt)) return;
+      boton(btn, api('liberarCels', { cods: cods }), 'Liberando…').then(function (r) { toast(r.msj); mostrar(r.celulares); }).catch(fallo);
+    }
+    $('main').onclick = function (e) {
+      var b = e.target.closest('button[data-lib]');
+      if (b) { var x = D.lista.filter(function (y) { return y.cod === b.getAttribute('data-lib'); })[0]; liberar([x.cod], b, '¿Liberar el celular de ' + x.nombre + '? El próximo celular que escanee su credencial queda vinculado.'); return; }
+      var m = e.target.closest('button[data-libs]');
+      if (m) { var cs = m.getAttribute('data-libs').split(','); liberar(cs, m, '¿Liberar estas ' + cs.length + ' credenciales? Cada persona la vuelve a escanear con su propio celular.'); }
+    };
+    $('cQ').oninput = function () { fC.q = this.value; if (D) pintar(); };
+    $('cFil').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; fC.f = b.getAttribute('data-v'); Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); }); if (D) pintar(); };
+    $('cAct').onclick = cargar; cargar();
+  };
   V.actividad = function () {
     $('main').innerHTML = cab('Actividad', 'Escaneos de la puerta y todo lo que hace cada usuario (consola y panel).', '<button class="b sec" id="aAct">↻ Actualizar</button>') +
       '<div class="tarj"><input class="campo2" id="aQ" placeholder="Filtrar por nombre, código, acción o usuario"></div><div class="scroll" style="margin-top:12px"><table class="tabla"><thead><tr><th>Cuándo</th><th>Qué</th><th>Quién / dónde</th><th>Detalle</th></tr></thead><tbody id="aBody"><tr><td colspan="4" class="vacio">Cargando…</td></tr></tbody></table></div>';
