@@ -383,6 +383,7 @@
   // Por dentro sigue siendo una fila por tipo en la planilla: no cambia nada de lo vendido.
   function claseT(t) { if (t.cort) return 'socio'; if (t.precio > 0) return t.codigo ? 'beneficio' : 'venta'; return t.codigo ? 'invitacion' : 'interna'; }
   var CLASES = { venta: '🎟️ Ticket a la venta', socio: '🤝 Ticket de socio (se valida)', beneficio: '⭐ Grupo con precio especial (código)', invitacion: '✉️ Invitación / cortesía' };
+  var famAbiertas = {};
   V.tipos = function () {
     api('tipos').then(function (r) {
       var T = r.tipos; cache.tipos = T.map(function (t) { return { id: t.id, nombre: t.nombre }; }); cache.tiposFull = T;
@@ -394,11 +395,11 @@
       var padreDe = function (g) { var p = vigentes.filter(function (v) { return !v.cort && v.precio === g.tachado; })[0]; if (!p) p = vigentes.filter(function (v) { return !v.cort; }).sort(function (a, b) { return b.precio - a.precio; })[0]; return p ? p.id : ''; };
       var benef = T.filter(function (t) { return claseT(t) === 'beneficio'; }), gratis = T.filter(function (t) { return claseT(t) === 'invitacion' || claseT(t) === 'interna'; });
       var acc = function (t) { return (t.codigo ? '<button class="b sec chico" data-cl="' + esc(t.id) + '">🔗 Link</button><button class="b sec chico" data-cm="' + esc(t.id) + '">💬 Mensaje</button>' : '') + '<button class="b sec chico" data-ed="' + esc(t.id) + '">Editar</button>'; };
-      var fila = function (t, hijo) {
+      var fila = function (t, hijo, verNombre) {
         var precio = t.precio > 0 ? F.plata(t.precio) + (t.tachado > t.precio ? ' <s class="cont">' + F.plata(t.tachado) + '</s>' : '') : 'Sin cargo';
         var chips = (t.codigo ? '<span class="chip am">🔑 ' + esc(t.codigo) + '</span>' : '') + (claseT(t) === 'interna' ? '<span class="chip">📋 La cargás vos</span>' : '') + (claseT(t) === 'invitacion' ? '<span class="chip az">🔗 Se inscriben con el link</span>' : '') +
           (t.credTexto ? '<span class="chip az">🏷️ ' + esc(t.credTexto) + '</span>' : '') + (t.socio || t.cort ? '<span class="chip ok">Cuenta como socio</span>' : '') + (t.agotado ? '<span class="chip mal">Agotado a mano</span>' : '');
-        return '<div class="gFila' + (hijo ? ' hijo' : '') + '"><div class="gInfo"><b>' + (hijo ? '↳ ' : '') + esc(t.nombre) + '</b> ' + chipE(t) + '<div class="cont" style="margin:4px 0 0">' + precio + ' · ' + nums(t) + '</div>' + (chips ? '<div class="gChips">' + chips + '</div>' : '') + '</div>' +
+        return '<div class="gFila' + (hijo ? ' hijo' : '') + '"><div class="gInfo"><b>' + (hijo ? '↳ ' : '') + esc(verNombre || t.nombre) + '</b> ' + chipE(t) + '<div class="cont" style="margin:4px 0 0">' + precio + ' · ' + nums(t) + '</div>' + (chips ? '<div class="gChips">' + chips + '</div>' : '') + '</div>' +
           '<div class="gAcc">' + (claseT(t) === 'interna' || claseT(t) === 'invitacion' ? '<button class="b ok chico" data-ap="' + esc(t.id) + '">＋ Agregar personas</button>' : '') + acc(t) + '</div></div>';
       };
       var h = cab('Tickets y grupos', 'Pocos tickets y, adentro, grupos con su propio código, cupo y precio. El tope real del salón es el "Cupo total" de Ajustes.', '<button class="b sec" id="bNuevoV">＋ Ticket a la venta</button>');
@@ -408,19 +409,33 @@
         return '<div class="gGrupo">' + fila(v) + hijos.map(function (g) { return fila(g, true); }).join('') + (v.cort ? '' : '<button class="b sec chico gMas" data-nb="' + esc(v.id) + '">＋ Grupo con precio especial (ej: invitados de un speaker)</button>') + '</div>';
       }).join('') : '<div class="cont">No hay tickets a la venta.</div>') +
         (function () { var sueltos = benef.filter(function (g) { return !padreDe(g); }); return sueltos.length ? '<div class="gGrupo">' + sueltos.map(function (g) { return fila(g, true); }).join('') + '</div>' : ''; })() + '</div>';
-      h += '<div class="tarj"><div class="fila"><h3 class="crece" style="margin:0">✉️ Invitaciones y cortesías (sin cargo)</h3><button class="b ok" id="bNuevoI">＋ Grupo de invitados</button></div>' +
-        '<div class="cont">Cada grupo: la lista la cargás vos (＋ Agregar personas) y, si le ponés código, también se pueden inscribir solos con el link. Sin código nunca se ven en la tienda.</div>' +
-        (gratis.length ? gratis.map(function (g) { return '<div class="gGrupo">' + fila(g) + '</div>'; }).join('') : '<div class="cont">Todavía no hay grupos.</div>') + '</div>';
+      // v1.21 · familias: "Speakers · Lucas Dalto" se agrupa en el desplegable "Speakers"
+      var famDe = function (g) { var i = String(g.nombre).indexOf(' · '); return i > 0 ? String(g.nombre).slice(0, i).trim() : ''; };
+      var fams = {}, ordenF = [], sueltosI = [];
+      gratis.forEach(function (g) { var f = famDe(g); if (!f) { sueltosI.push(g); return; } if (!fams[f]) { fams[f] = []; ordenF.push(f); } fams[f].push(g); });
+      var famHtml = ordenF.map(function (f) {
+        var L = fams[f], ins = L.reduce(function (a, g) { return a + (g.vendidas || 0); }, 0), cup = L.reduce(function (a, g) { return a + (Number(g.cupo) || 0); }, 0), vin = L.reduce(function (a, g) { return a + (g.adentro || 0); }, 0);
+        return '<details class="gGrupo gFam"' + (famAbiertas[f] ? ' open' : '') + ' data-fam="' + esc(f) + '"><summary><b>' + esc(f) + '</b> <span class="cont">· ' + L.length + ' grupo' + (L.length === 1 ? '' : 's') + ' · <b>' + ins + '</b>' + (cup ? ' / ' + cup : '') + ' inscriptos · <b>' + vin + '</b> vinieron</span></summary>' +
+          L.map(function (g) { return fila(g, true, String(g.nombre).slice(String(g.nombre).indexOf(' · ') + 3)); }).join('') +
+          '<button class="b sec chico gMas" data-nf="' + esc(f) + '">＋ Agregar a ' + esc(f) + '</button></details>';
+      }).join('');
+      h += '<div class="tarj"><div class="fila" style="flex-wrap:wrap;gap:8px"><h3 class="crece" style="margin:0">✉️ Invitaciones y cortesías (sin cargo)</h3><button class="b sec" id="bNuevaFam">＋ Nueva familia (ej: Speakers)</button><button class="b ok" id="bNuevoI">＋ Grupo de invitados</button></div>' +
+        '<div class="cont">Cada grupo: la lista la cargás vos (＋ Agregar personas) y, si le ponés código, también se pueden inscribir solos con el link. Sin código nunca se ven en la tienda. Los grupos que se llaman "Familia · Nombre" (ej: "Speakers · Lucas Dalto") se agrupan solos en un desplegable.</div>' +
+        famHtml + sueltosI.map(function (g) { return '<div class="gGrupo">' + fila(g) + '</div>'; }).join('') + (gratis.length ? '' : '<div class="cont">Todavía no hay grupos.</div>') + '</div>';
       if (viejos.length) h += '<details class="tarj"><summary><b>Terminados o pausados (' + viejos.length + ')</b></summary>' + viejos.map(function (v) { return '<div class="gGrupo">' + fila(v) + '</div>'; }).join('') + '</details>';
       $('main').innerHTML = h; pintarUrg();
       var porId = {}; T.forEach(function (t) { porId[t.id] = t; });
       $('bNuevoV').onclick = function () { editarTipo({ nombre: '', precio: '', cupo: 100, activo: true }, 'venta'); };
       $('bNuevoI').onclick = function () { editarTipo({ nombre: '', precio: 0, cupo: 20, activo: true }, 'invitacion'); };
+      var nuevoEnFam = function (f) { famAbiertas[f] = true; editarTipo({ nombre: f + ' · ', precio: 0, cupo: 5, activo: true, _auto: true }, 'invitacion'); };
+      $('bNuevaFam').onclick = function () { var f = prompt('Nombre de la familia (ej: Speakers, Prensa, Comisión):', 'Speakers'); f = String(f || '').replace(/·/g, '').trim(); if (f) nuevoEnFam(f); };
+      Array.prototype.forEach.call($('main').querySelectorAll('details.gFam'), function (d) { d.addEventListener('toggle', function () { famAbiertas[d.getAttribute('data-fam')] = d.open; }); });
       $('main').onclick = function (e) {
         var b = e.target.closest('button'); if (!b) return;
         if (b.hasAttribute('data-ed')) return editarTipo(porId[b.getAttribute('data-ed')]);
         if (b.hasAttribute('data-nb')) { var p = porId[b.getAttribute('data-nb')]; return editarTipo({ nombre: '', precio: '', tachado: p.precio, cupo: 20, activo: true, codigo: '' }, 'beneficio'); }
         if (b.hasAttribute('data-ap')) return cortesias(b.getAttribute('data-ap'), V.tipos);
+        if (b.hasAttribute('data-nf')) return nuevoEnFam(b.getAttribute('data-nf'));
         if (b.hasAttribute('data-cl')) return copiarTxt(linkBenef(porId[b.getAttribute('data-cl')].codigo), '✓ Link copiado');
         if (b.hasAttribute('data-cm')) return copiarTxt(mensajeBenef(porId[b.getAttribute('data-cm')]), '✓ Mensaje copiado: pegalo en WhatsApp');
       };
@@ -452,7 +467,7 @@
       '<div data-c="codigo" class="ancho"><label class="et2" id="tCodEt">Código de acceso</label><div class="fila" style="gap:6px;flex-wrap:nowrap"><input class="campo2" data-k="codigo" value="' + esc(t.codigo || '') + '" style="text-transform:uppercase;font-family:monospace;font-weight:700"><button class="b sec" type="button" id="tGen">Generar</button></div></div>' +
       cp('credTexto', 'Credencial: texto en vez de la empresa (opcional)', t.credTexto, ' placeholder="Ej: Prensa · Eventos y Negocios"', 'ancho') +
       cp('desde', 'Venta desde (opcional)', t.desde, ' type="datetime-local"') + cp('hasta', 'Venta hasta (opcional)', t.hasta, ' type="datetime-local"') + '</div>' +
-      '<div class="fila" style="gap:16px;flex-wrap:wrap;margin-top:8px">' + ck('autoins', 'Se pueden inscribir solos con un link/código', !!t.codigo, '') + ck('activo', 'Activo', t.activo !== false) + ck('agotado', 'Agotado', t.agotado) + ck('socio', 'Cuenta como socio', t.socio, '(sin punto en la credencial)') + '</div>' +
+      '<div class="fila" style="gap:16px;flex-wrap:wrap;margin-top:8px">' + ck('autoins', 'Se pueden inscribir solos con un link/código', !!t.codigo || !!t._auto, '') + ck('activo', 'Activo', t.activo !== false) + ck('agotado', 'Agotado', t.agotado) + ck('socio', 'Cuenta como socio', t.socio, '(sin punto en la credencial)') + '</div>' +
       '<div class="cont" id="tAyuda"></div><div class="acc"><button class="b pri" id="tGuardar">Guardar</button><button class="b sec" id="tCancelar">Cancelar</button></div>');
     var vis = { venta: ['nombre', 'desc', 'precio', 'cupo', 'desde', 'hasta', 'activo', 'agotado', 'socio'], socio: ['nombre', 'desc', 'precio', 'cupo', 'activo', 'agotado'],
       beneficio: ['nombre', 'desc', 'precio', 'tachado', 'cupo', 'codigo', 'credTexto', 'activo', 'agotado', 'socio'], invitacion: ['nombre', 'desc', 'cupo', 'autoins', 'codigo', 'credTexto', 'socio', 'agotado'] };
@@ -468,12 +483,17 @@
     $('tGen').onclick = function () { if (q('codigo').value.trim() && !confirm('¿Reemplazar el código actual? El link viejo deja de funcionar.')) return; q('codigo').value = generarCodigo(q('nombre').value); };
     if (cl === 'beneficio' && nuevo && !q('codigo').value) q('codigo').value = '';
     mostrar(); $('tCancelar').onclick = cerrarModal;
+    var nm = q('nombre'), alFinal = function () { if (/·\s*$/.test(nm.value)) setTimeout(function () { nm.setSelectionRange(nm.value.length, nm.value.length); }, 0); };
+    nm.addEventListener('focus', alFinal); nm.addEventListener('mouseup', alFinal);
+    if (t._auto) setTimeout(function () { nm.focus(); nm.setSelectionRange(nm.value.length, nm.value.length); }, 50);
     $('tGuardar').onclick = function () {
       var c = $('tClase').value, val = function (k) { var el = q(k); return el.type === 'checkbox' ? el.checked : el.value; };
       var d = { nombre: val('nombre').trim(), desc: val('desc'), cupo: val('cupo'), activo: c === 'invitacion' ? true : val('activo'), agotado: val('agotado'), socio: c === 'socio' ? false : val('socio'),
         cort: c === 'socio', precio: c === 'invitacion' ? 0 : val('precio'), tachado: c === 'beneficio' ? val('tachado') : '', codigo: (c === 'beneficio' || (c === 'invitacion' && val('autoins'))) ? val('codigo') : '',
         credTexto: (c === 'beneficio' || c === 'invitacion') ? val('credTexto') : '', desde: c === 'venta' ? val('desde') : (t.desde || ''), hasta: c === 'venta' ? val('hasta') : (t.hasta || '') };
       if (!d.nombre) return toast('Poné el nombre.', true);
+      if (/·\s*$/.test(d.nombre)) { q('nombre').focus(); return toast('Completá el nombre después de "·" (ej: Speakers · Lucas Dalto).', true); }
+      if (c === 'invitacion' && val('autoins') && !String(d.codigo).trim()) { d.codigo = generarCodigo(d.nombre); q('codigo').value = d.codigo; }
       if (c === 'beneficio' && !String(d.codigo).trim()) return toast('Un grupo con precio especial necesita código (tocá Generar).', true);
       if ((c === 'venta' || c === 'beneficio' || c === 'socio') && !(Number(d.precio) > 0)) return toast('Poné el precio.', true);
       var antes = t.codigo || '';
