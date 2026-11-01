@@ -49,9 +49,10 @@
     { id: 'ordenes', i: '🧾', t: 'Órdenes', admin: true },
     { id: 'tipos', i: '🏷️', t: 'Tickets y grupos', admin: true },
     { id: 'facturar', i: '💼', t: 'Facturación', admin: true },
-    { g: 'Evento', admin: true },
+    { g: 'Evento', admin: true, tec: true },
+    { id: 'pantallas', i: '📺', t: 'Pantallas', admin: true, tec: true },
     { id: 'personal', i: '📱', t: 'App del asistente', admin: true },
-    { id: 'sorteo', i: '🎁', t: 'Sorteo', admin: true },
+    { id: 'sorteo', i: '🎁', t: 'Sorteo', admin: true, tec: true },
     { id: 'comunicacion', i: '✉️', t: 'Mails y certificados', admin: true },
     { id: 'actividad', i: '🕑', t: 'Actividad', admin: true },
     { id: 'ajustes', i: '⚙️', t: 'Ajustes', admin: true },
@@ -59,8 +60,11 @@
     { id: 'herramientas', i: '🩺', t: 'Diagnóstico', admin: true }
   ];
   function esAdmin() { return S && S.yo.rol === 'admin'; }
+  function esTec() { return S && S.yo.rol === 'tecnica'; }
+  function puede(s) { return esAdmin() || (esTec() ? !!s.tec : !s.admin); }
+  function inicioDe() { return esAdmin() ? 'inicio' : esTec() ? 'pantallas' : 'puerta'; }
   function pintarNav() {
-    $('nav').innerHTML = SECC.filter(function (s) { return !s.admin || esAdmin(); }).map(function (s) {
+    $('nav').innerHTML = SECC.filter(puede).map(function (s) {
       if (s.g) return '<div class="grupo">' + esc(s.g.toUpperCase()) + '</div>';
       return '<button data-v="' + s.id + '"' + (s.id === vista ? ' class="on"' : '') + '><span class="i">' + s.i + '</span>' + esc(s.t) + (s.id === 'socios' && cache.nSocios ? '<span class="n">' + cache.nSocios + '</span>' : '') + '</button>';
     }).join('');
@@ -70,7 +74,7 @@
   document.addEventListener('click', function (e) { if (document.body.classList.contains('menu') && !e.target.closest('.lado') && !e.target.closest('#bMenu')) document.body.classList.remove('menu'); });
   function ir(v) {
     var s = SECC.find(function (x) { return x.id === v; });
-    if (!s || (s.admin && !esAdmin())) v = esAdmin() ? 'inicio' : 'puerta';
+    if (!s || !puede(s)) v = inicioDe();
     vista = v; try { history.replaceState(null, '', '#' + v); } catch (e) { }
     pintarNav(); $('hTit').textContent = (SECC.find(function (x) { return x.id === v; }) || {}).t || 'Consola';
     window.scrollTo(0, 0); cargando();
@@ -398,6 +402,7 @@
           '<div class="gAcc">' + (claseT(t) === 'interna' || claseT(t) === 'invitacion' ? '<button class="b ok chico" data-ap="' + esc(t.id) + '">＋ Agregar personas</button>' : '') + acc(t) + '</div></div>';
       };
       var h = cab('Tickets y grupos', 'Pocos tickets y, adentro, grupos con su propio código, cupo y precio. El tope real del salón es el "Cupo total" de Ajustes.', '<button class="b sec" id="bNuevoV">＋ Ticket a la venta</button>');
+      h += '<div class="tarj" id="urgBox"><h3>🔥 Urgencia en la tienda</h3><div class="cont">Cargando…</div></div>';
       h += '<div class="tarj"><h3>🎟️ Tickets a la venta</h3>' + (vigentes.length ? vigentes.map(function (v) {
         var hijos = benef.filter(function (g) { return padreDe(g) === v.id; });
         return '<div class="gGrupo">' + fila(v) + hijos.map(function (g) { return fila(g, true); }).join('') + (v.cort ? '' : '<button class="b sec chico gMas" data-nb="' + esc(v.id) + '">＋ Grupo con precio especial (ej: invitados de un speaker)</button>') + '</div>';
@@ -407,7 +412,7 @@
         '<div class="cont">Cada grupo: la lista la cargás vos (＋ Agregar personas) y, si le ponés código, también se pueden inscribir solos con el link. Sin código nunca se ven en la tienda.</div>' +
         (gratis.length ? gratis.map(function (g) { return '<div class="gGrupo">' + fila(g) + '</div>'; }).join('') : '<div class="cont">Todavía no hay grupos.</div>') + '</div>';
       if (viejos.length) h += '<details class="tarj"><summary><b>Terminados o pausados (' + viejos.length + ')</b></summary>' + viejos.map(function (v) { return '<div class="gGrupo">' + fila(v) + '</div>'; }).join('') + '</details>';
-      $('main').innerHTML = h;
+      $('main').innerHTML = h; pintarUrg();
       var porId = {}; T.forEach(function (t) { porId[t.id] = t; });
       $('bNuevoV').onclick = function () { editarTipo({ nombre: '', precio: '', cupo: 100, activo: true }, 'venta'); };
       $('bNuevoI').onclick = function () { editarTipo({ nombre: '', precio: 0, cupo: 20, activo: true }, 'invitacion'); };
@@ -421,6 +426,18 @@
       };
     }).catch(fallo);
   };
+  // v1.20 · banner de urgencia en la tienda (cuenta regresiva REAL: a esa hora la venta online se cierra sola)
+  function pintarUrg(u) {
+    if (!u) { api('urgencia').then(function (r) { pintarUrg(r.urgencia); }).catch(function () { if ($('urgBox')) $('urgBox').hidden = true; }); return; }
+    var box = $('urgBox'); if (!box) return;
+    var loc = function (ms) { if (!ms) return ''; var d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); };
+    box.innerHTML = '<div class="interr"><div class="t"><b>🔥 Banner "Últimos días" en la tienda</b><small>Arriba de los tickets: animado, con cuenta regresiva hasta el cierre. En los tickets con 15 lugares o menos ya aparece "¡Últimos lugares!" (siempre real).</small></div><label class="sw"><input type="checkbox" id="urgOn"' + (u.on ? ' checked' : '') + '><span></span></label></div>' +
+      '<div class="fila" style="margin-top:10px;gap:8px;flex-wrap:wrap"><label class="et2" for="urgCierre" style="margin:0">Cierre de la venta online</label><input class="campo2" type="datetime-local" id="urgCierre" value="' + loc(u.cierre) + '" style="width:auto"><button class="b sec chico" id="urgG">Guardar hora</button><button class="b sec chico" id="urgSin">Sin hora</button></div>' +
+      '<div class="cont">⚠️ La cuenta regresiva es de verdad: <b>a esa hora la venta online se cierra sola</b>. Sin hora, el banner dice "Últimos días para inscribirte · Cupos limitados".</div>';
+    $('urgOn').onchange = function () { var el = this; api('urgenciaGuardar', { on: el.checked }).then(function (r) { toast(el.checked ? '✓ Banner prendido' : '✓ Banner apagado'); pintarUrg(r.urgencia); }).catch(function (e) { el.checked = !el.checked; fallo(e); }); };
+    $('urgG').onclick = function () { var v = $('urgCierre').value; if (!v) { toast('Elegí día y hora.', true); return; } var ms = new Date(v).getTime(); if (!confirm('¿La venta online se cierra sola el ' + new Date(ms).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) + '?')) return; boton(this, api('urgenciaGuardar', { cierre: ms })).then(function (r) { toast(r.msj); pintarUrg(r.urgencia); }).catch(fallo); };
+    $('urgSin').onclick = function () { boton(this, api('urgenciaGuardar', { cierre: 0 })).then(function (r) { toast('✓ Sin hora de cierre'); pintarUrg(r.urgencia); }).catch(fallo); };
+  }
   /** Formulario de un ticket o grupo: según "qué es", muestra solo los campos que corresponden. */
   function editarTipo(t, claseNueva) {
     var nuevo = !t.id, cl = claseNueva || claseT(t);
@@ -623,6 +640,86 @@
   }
 
   // ── Mails y certificados ──
+  // ── v1.20 · Pantallas del evento ──
+  var PANT = [['grandes', 'Pantallas grandes', '2112 × 880'], ['chicas', 'Pantallas chicas', '1056 × 704'], ['foyer', 'TVs del foyer', '1920 × 1080'], ['banner', 'Banner LED', '256 × 768']];
+  var VISTAS = [['auto', '🤖', 'Automático', 'Sigue la agenda sola: bienvenida, "ahora habla", breaks con countdown y cierre.'], ['bienvenida', '👋', 'Bienvenida', 'Con countdown a la hora de arranque.'], ['agenda', '📅', 'Agenda', 'Ahora y lo que sigue.'],
+    ['completa', '🗓️', 'Agenda completa', 'Todo el día en una placa.'],
+    ['ahora', '🎤', 'Ahora habla', 'Placa grande del speaker.'], ['break', '☕', 'Break', 'Con "volvemos a las…" y countdown.'], ['sorteo', '🎁', 'Sorteo', 'Premios, ruleta y ganador (se maneja en 🎁 Sorteo).'], ['aviso', '📣', 'Aviso', 'Texto libre, con countdown opcional.'],
+    ['pregunta', '❓', 'Pregunta', 'La última pregunta puesta al aire.'], ['sponsors', '⭐', 'Sponsors', 'HIT (main sponsor), El Piave y Ciao, AOFREP.'], ['gracias', '🙏', 'Gracias', 'Cierre del evento.']];
+  var SPK = [['', 'El que está hablando ahora'], ['dalto', 'Lucas Dalto'], ['sol', 'Sol Espasandín'], ['bonetto', 'Daniela Bonetto'], ['natt', 'Natt La Regina'], ['piacentini', 'Elisabet Piacentini']];
+  var tPant = null, pDest = 'todas', fPg = 'activas';
+  V.pantallas = function () {
+    clearInterval(tPant);
+    Promise.all([api('pantallas'), api('pregLista').catch(function () { return { preguntas: [] }; })]).then(function (rr) {
+      cache.pant = rr[0].pantallas; cache.preg = rr[1].preguntas || []; pintarPantallas();
+      tPant = setInterval(function () { if (vista !== 'pantallas') { clearInterval(tPant); return; } if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; api('pregLista').then(function (r) { cache.preg = r.preguntas; pintarPregPant(); }).catch(function () { }); }, 20000);
+    }).catch(fallo);
+  };
+  function urlPant(p, extra) { return 'pantalla.html?p=' + p + (extra || ''); }
+  function nomVista(v) { var x = VISTAS.find(function (y) { return y[0] === v; }); return x ? x[1] + ' ' + x[2] : v; }
+  function pintarPantallas() {
+    var C = cache.pant.canales;
+    var botones = function (dest) { return '<div class="vBtns">' + VISTAS.map(function (x) { return '<button class="b sec chico" data-vis="' + x[0] + '" data-dest="' + dest + '" title="' + esc(x[3]) + '">' + x[1] + ' ' + esc(x[2]) + '</button>'; }).join('') + '</div>'; };
+    $('main').innerHTML = cab('📺 Pantallas', 'Elegí qué muestra cada pantalla: cambia sola en unos 3 segundos, con animación. Lo normal es dejarlas en 🤖 Automático y tocar solo para avisos, preguntas y el sorteo.') +
+      '<div class="tarj"><h3>Todas las pantallas a la vez</h3>' + botones('todas') + '</div>' +
+      '<div class="tarj"><h3>⚙️ Datos para las placas</h3><div class="form">' +
+        '<div><label class="et2" for="pkSpk">Ahora habla</label><select class="campo2" id="pkSpk">' + SPK.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</select></div>' +
+        '<div><label class="et2" for="pkBien">Bienvenida: comenzamos a las</label><input class="campo2" id="pkBien" value="10:15" placeholder="10:15"></div>' +
+        '<div><label class="et2" for="pkBt">Break: título</label><input class="campo2" id="pkBt" value="" placeholder="Vacío = el de la agenda (Coffee break / Break)"></div>' +
+        '<div><label class="et2" for="pkBh">Break: volvemos a las</label><input class="campo2" id="pkBh" value="" placeholder="Vacío = el de la agenda"></div>' +
+        '<div class="ancho"><label class="et2" for="pkAt">Aviso: texto grande</label><input class="campo2" id="pkAt" maxlength="90" placeholder="Ej: Volvemos a las 15 hs"></div>' +
+        '<div><label class="et2" for="pkAs">Aviso: texto chico (opcional)</label><input class="campo2" id="pkAs" maxlength="160" placeholder="Ej: Gracias por la paciencia"></div>' +
+        '<div><label class="et2" for="pkAh">Aviso: countdown hasta (opcional)</label><input class="campo2" id="pkAh" placeholder="15:00"></div></div>' +
+        '<div class="cont">Se usan al tocar el botón de esa placa. Las horas van así: 15:30.</div></div>' +
+      '<div class="gPant">' + PANT.map(function (x) {
+        var c = C[x[0]] || { v: 'auto' };
+        return '<div class="tarj pCard" data-p="' + x[0] + '"><div class="fila"><h3 class="crece" style="margin:0">' + esc(x[1]) + ' <small style="font-weight:500;color:var(--suave)">' + x[2] + '</small></h3><span class="chip az" data-ch="' + x[0] + '">' + esc(nomVista(c.v)) + '</span></div>' +
+          '<div class="pPrev ' + x[0] + '"><iframe src="' + urlPant(x[0], '&previa=1') + '" tabindex="-1" title="Vista previa ' + esc(x[1]) + '"></iframe></div>' + botones(x[0]) +
+          '<div class="acc"><a class="b sec chico" target="_blank" href="' + urlPant(x[0]) + '">↗ Abrir esta pantalla</a><button class="b sec chico" data-png="' + x[0] + '">⬇ Descargar PNG de lo que se ve</button></div></div>';
+      }).join('') + '</div>' +
+      '<div class="tarj"><div class="fila" style="flex-wrap:wrap;gap:8px"><h3 class="crece" style="margin:0">❓ Preguntas del público</h3><label class="et2" style="margin:0">Mandar a</label><select class="campo2" id="pgDest" style="width:auto"><option value="todas">Todas las pantallas</option>' + PANT.map(function (x) { return '<option value="' + x[0] + '"' + (pDest === x[0] ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select>' +
+        '<div class="seg" id="pgEst"><button data-v="activas"' + (fPg === 'activas' ? ' class="on"' : '') + '>Para elegir</button><button data-v="todas"' + (fPg === 'todas' ? ' class="on"' : '') + '>Todas</button></div><button class="b sec chico" id="pgRe">↻</button></div>' +
+        '<div class="cont">"📺 Al aire" la muestra grande con el nombre de quien preguntó (o "Anónima"). Se actualiza cada 20 segundos.</div><div id="pgLista"></div></div>';
+    ajustarPrev(); addEventListener('resize', ajustarPrev);
+    $('pgDest').value = pDest; $('pgDest').onchange = function () { pDest = this.value; };
+    $('pgEst').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; fPg = b.getAttribute('data-v'); Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); }); pintarPregPant(); };
+    $('pgRe').onclick = function () { boton(this, api('pregLista')).then(function (r) { cache.preg = r.preguntas; pintarPregPant(); }).catch(fallo); };
+    pintarPregPant();
+    $('main').onclick = function (e) {
+      var b = e.target.closest('button[data-vis]');
+      if (b) {
+        var v = b.getAttribute('data-vis'), dest = b.getAttribute('data-dest'), est = { v: v };
+        if (v === 'ahora') est.speaker = $('pkSpk').value;
+        if (v === 'bienvenida') est.hasta = $('pkBien').value.trim();
+        if (v === 'break') { est.titulo = $('pkBt').value.trim(); est.hasta = $('pkBh').value.trim(); }
+        if (v === 'aviso') { est.titulo = $('pkAt').value.trim(); est.sub = $('pkAs').value.trim(); est.hasta = $('pkAh').value.trim(); if (!est.titulo) { toast('Escribí el texto del aviso arriba (Datos para las placas).', true); $('pkAt').focus(); return; } }
+        boton(b, api('pantallaSet', { canales: dest, estado: est })).then(function (r) { cache.pant = r.pantallas; marcarChips(); toast('✓ ' + (dest === 'todas' ? 'Todas' : (PANT.find(function (x) { return x[0] === dest; }) || [])[1]) + ': ' + nomVista(v)); }).catch(fallo); return;
+      }
+      var pg = e.target.closest('button[data-png]');
+      if (pg) { var p = pg.getAttribute('data-png'), c = cache.pant.canales[p] || { v: 'auto' }; window.open(urlPant(p, '&descargar=1&quieto=1&sinentrada=1&v=' + encodeURIComponent(c.v === 'auto' ? 'agenda' : c.v) + '&titulo=' + encodeURIComponent(c.titulo || '') + '&sub=' + encodeURIComponent(c.sub || '') + '&hasta=' + encodeURIComponent(c.hasta || '') + '&speaker=' + encodeURIComponent(c.speaker || '') + (c.pregunta ? '&pt=' + encodeURIComponent(c.pregunta.texto) + '&pn=' + encodeURIComponent(c.pregunta.nombre || '') + '&pe=' + encodeURIComponent(c.pregunta.empresa || '') + '&pc=' + encodeURIComponent(c.pregunta.charla || '') : '')), '_blank'); return; }
+      var al = e.target.closest('button[data-aire]');
+      if (al) { boton(al, api('pantallaPregunta', { fila: Number(al.getAttribute('data-aire')), canales: pDest })).then(function (r) { cache.pant = r.pantallas; marcarChips(); toast('✓ Pregunta al aire'); var q = cache.preg.find(function (x) { return x.fila === Number(al.getAttribute('data-aire')); }); if (q && q.estado === 'Nueva') { q.estado = 'Elegida'; pintarPregPant(); } }).catch(fallo); return; }
+      var pe = e.target.closest('button[data-pe]');
+      if (pe) { boton(pe, api('pregEstado', { fila: pe.getAttribute('data-pe'), estado: pe.getAttribute('data-e'), liviano: true })).then(function (r) { cache.preg = r.preguntas; pintarPregPant(); }).catch(fallo); }
+    };
+  }
+  function marcarChips() { PANT.forEach(function (x) { var el = document.querySelector('[data-ch="' + x[0] + '"]'); if (el) el.textContent = nomVista((cache.pant.canales[x[0]] || {}).v || 'auto'); }); }
+  function ajustarPrev() {
+    Array.prototype.forEach.call(document.querySelectorAll('.pPrev'), function (d) {
+      var p = PANT.find(function (x) { return d.classList.contains(x[0]); }), wh = { grandes: [2112, 880], chicas: [1056, 704], foyer: [1920, 1080], banner: [256, 768] }[p[0]];
+      var f = d.querySelector('iframe'), ancho = d.clientWidth, k = p[0] === 'banner' ? Math.min(ancho, 160) / wh[0] : ancho / wh[0];
+      f.style.width = wh[0] + 'px'; f.style.height = wh[1] + 'px'; f.style.transform = 'scale(' + k + ')'; d.style.height = Math.round(wh[1] * k) + 'px';
+    });
+  }
+  function pintarPregPant() {
+    var L = (cache.preg || []).filter(function (q) { return fPg === 'todas' || q.estado === 'Nueva' || q.estado === 'Elegida'; });
+    if (!$('pgLista')) return;
+    $('pgLista').innerHTML = L.length ? '<div class="scroll" style="margin-top:10px;max-height:60vh"><table class="tabla"><tbody>' + L.map(function (q) {
+      return '<tr><td style="width:62%"><b style="font-size:15px">' + esc(q.texto) + '</b><small>' + esc(q.nombre ? q.nombre + (q.empresa ? ' · ' + q.empresa : '') : 'Anónima') + ' · ' + esc(q.charla) + ' · ' + F.hora(q.fecha) + '</small></td><td><span class="chip ' + ({ Elegida: 'ok', Respondida: 'az' }[q.estado] || '') + '">' + esc(q.estado) + '</span></td>' +
+        '<td class="num"><button class="b pri chico" data-aire="' + q.fila + '">📺 Al aire</button> ' + (q.estado !== 'Respondida' ? '<button class="b sec chico" data-pe="' + q.fila + '" data-e="Respondida">✓ Respondida</button> ' : '') + '<button class="b sec chico" data-pe="' + q.fila + '" data-e="Oculta">Ocultar</button></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<div class="vacio">' + ((cache.preg || []).length ? 'No hay preguntas con este filtro.' : 'Todavía no llegaron preguntas (se prenden en 📱 App del asistente).') + '</div>';
+  }
+
   // ── v1.19 · Sorteo ──
   var tSor = null, edSor = null;
   V.sorteo = function () {
@@ -652,7 +749,7 @@
     if (soloDatos && $('sorKpis')) { $('sorKpis').innerHTML = kpis; $('sorSortear').innerHTML = htmlSortear; $('sorGan').innerHTML = htmlGan; return; }
     $('main').innerHTML = cab('🎁 Sorteo', 'Se sortea desde acá. La pantalla del proyector y los celulares de los asistentes se actualizan solos.', '<button class="b pri" id="sorPantalla">📺 Abrir pantalla para proyectar</button>') +
       '<div id="sorKpis">' + kpis + '</div>' +
-      '<div class="tarj"><h3>🎲 Sortear</h3><div class="cont">Al tocar Sortear, en la pantalla gira la ruleta de nombres ~9 segundos y aparece el ganador; en los celulares sale "Sorteando…" y al ganador, <b>¡GANASTE!</b></div><div id="sorSortear">' + htmlSortear + '</div>' +
+      '<div class="tarj"><h3>🎲 Sortear</h3><div class="cont">Al tocar Sortear, en la pantalla gira la ruleta de nombres ~15 segundos y aparece el ganador; en los celulares sale "Sorteando…" y al ganador, <b>¡GANASTE!</b></div><div id="sorSortear">' + htmlSortear + '</div>' +
       '<div class="acc"><button class="b sec" id="sorVerPremios">📺 Pantalla: mostrar premios</button><button class="b sec" id="sorVerGan">📺 Pantalla: mostrar último ganador</button></div></div>' +
       '<div class="tarj"><h3>🏆 Ganadores</h3><div id="sorGan">' + htmlGan + '</div></div>' +
       '<div class="tarj"><h3>Cómo se ve</h3>' + sw('sorOn', Z.on, 'Mostrar el sorteo en la app', 'Cada asistente ve en su página si participa y qué le falta. Prendelo un rato antes.') +
@@ -798,7 +895,7 @@
       '<div><label class="et2">Nombre</label><input class="campo2" id="uNom" value="' + esc(u.nombre) + '"></div>' +
       '<div><label class="et2">Usuario (para entrar)</label><input class="campo2" id="uUsu" value="' + esc(u.usuario) + '"' + (nuevo ? '' : ' readonly') + ' autocapitalize="none" placeholder="sin espacios"></div>' +
       '<div><label class="et2">Mail (opcional)</label><input class="campo2" id="uMail" type="email" value="' + esc(u.mail) + '"></div>' +
-      '<div><label class="et2">Rol</label><select class="campo2" id="uRol"><option value="operador"' + (u.rol === 'operador' ? ' selected' : '') + '>Operador (acreditación)</option><option value="admin"' + (u.rol === 'admin' ? ' selected' : '') + '>Admin (todo)</option></select></div>' +
+      '<div><label class="et2">Rol</label><select class="campo2" id="uRol"><option value="operador"' + (u.rol === 'operador' ? ' selected' : '') + '>Operador (acreditación)</option><option value="tecnica"' + (u.rol === 'tecnica' ? ' selected' : '') + '>Técnica (pantallas, preguntas y sorteo)</option><option value="admin"' + (u.rol === 'admin' ? ' selected' : '') + '>Admin (todo)</option></select></div>' +
       '<div><label class="et2">' + (nuevo ? 'Contraseña' : 'Nueva contraseña (vacío = no cambia)') + '</label><input class="campo2" id="uClave" type="text" autocomplete="off" placeholder="8+ con letras y números"></div></div>' +
       (nuevo ? '' : '<label class="chk2"><input type="checkbox" id="uAct"' + (u.activo ? ' checked' : '') + '> Activo (destildado: no puede entrar y se le cierra la sesión)</label>') +
       '<div class="acc"><button class="b pri" id="uOk">Guardar</button>' + (nuevo ? '' : '<button class="b mal" id="uBorrar">Borrar usuario</button>') + '<button class="b sec" id="uNo">Cancelar</button></div>' +
@@ -836,8 +933,8 @@
   function iniciar() {
     $('vLogin').classList.add('oculto'); $('vApp').classList.remove('oculto');
     $('hEvento').textContent = (S.evento && S.evento.nombre) || 'Eventos y Negocios';
-    $('hYo').textContent = S.yo.nombre; $('hRol').textContent = S.yo.rol === 'admin' ? 'Admin' : 'Operador';
-    ir((location.hash || '').slice(1) || (esAdmin() ? 'inicio' : 'puerta'));
+    $('hYo').textContent = S.yo.nombre; $('hRol').textContent = S.yo.rol === 'admin' ? 'Admin' : S.yo.rol === 'tecnica' ? 'Técnica' : 'Operador';
+    ir((location.hash || '').slice(1) || inicioDe());
   }
   function salir(msj) {
     try { localStorage.removeItem(K); } catch (e) { } S = null; cerrarModal();

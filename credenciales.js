@@ -101,8 +101,11 @@
     return mejor;
   }
   // v1.15: punto discreto (abajo a la izquierda) en los no socios, para que el equipo de ventas los identifique
-  var SIN_PUNTO = ['Speaker', 'Producción', 'Comisión Directiva', 'Staff', 'Socio AOFREP'];
-  function llevaPunto(c) { return c.noSocio === true && SIN_PUNTO.indexOf(String(c.rol || '')) < 0; }
+  // v1.20: el punto lo llevan los SOCIOS (es un "beneficio" visible: "lo tiene porque es socio"). El equipo no lleva punto.
+  var EQUIPO = ['Speaker', 'Producción', 'Staff', 'Prensa'];
+  function esEquipo(c) { return EQUIPO.indexOf(String(c.rol || '')) >= 0 || !!c.credFija; }
+  function esSocioC(c) { return c.noSocio !== true || c.rol === 'Socio AOFREP' || c.rol === 'Comisión Directiva'; }
+  function llevaPunto(c) { return esSocioC(c) && !esEquipo(c); }
   function datosSticker(c) {
     return { marca: llevaPunto(c), nombre: nombreCred(c).toUpperCase(), empresa: empresaCred(c), rubro: String(c.rubro || '').trim(), rol: String(c.rol || '').trim(), cargo: String(c.cargo || '').trim(), cargo2: String(c.cargo2 || '').trim(), empresa2: String(c.empCred2 || '').trim(),
       qr: cfg.qr && c.hola ? (D.sitio || location.origin).replace(/\/+$/, '') + '/a?h=' + c.hola : '' };
@@ -351,7 +354,7 @@
   function previa() {
     if (!actual) return;
     var ce = conEdicion(actual);
-    if ($('eSocio')) $('eSocio').textContent = llevaPunto(ce) ? '● No socio: el sticker lleva el punto chiquito abajo a la izquierda (para ventas). Si es socio, elegí Rol "Socio AOFREP".' : (actual.noSocio ? 'Sin punto por su rol.' : 'Socio: sin punto.');
+    if ($('eSocio')) $('eSocio').textContent = llevaPunto(ce) ? '● Socio: el sticker lleva el punto chiquito abajo a la izquierda.' : (esEquipo(ce) ? 'Sin punto: es del equipo (speaker, producción, staff o prensa).' : 'No socio: sin punto. Si es socio, elegí Rol "Socio AOFREP".');
     fuente().then(function () { dibujar($('pCanvas'), datosSticker(ce)); });
   }
   function cambio(c) {
@@ -407,8 +410,8 @@
       if (f === 'incompletos' && empresaCred(c) && c.rubro) return false;
       var ft = $('tTipo') ? $('tTipo').value : '', fs = $('tSocio') ? $('tSocio').value : '';
       if (ft && c.tipo !== ft) return false;
-      if (fs === 'socios' && llevaPunto(c)) return false;
-      if (fs === 'nosocios' && !llevaPunto(c)) return false;
+      if (fs === 'socios' && !(esSocioC(c) || esEquipo(c))) return false;
+      if (fs === 'nosocios' && (esSocioC(c) || esEquipo(c))) return false;
       if (q && norm(nombreCred(c) + ' ' + empresaCred(c) + ' ' + c.rubro + ' ' + c.dni).indexOf(q) < 0) return false;
       return true;
     });
@@ -428,7 +431,7 @@
         '<td><b>' + esc(nombreCred(c)) + '</b>' + (c.nomCred && c.nomCred !== c.nombre ? '<br><small style="color: var(--gris)">' + esc(c.nombre) + '</small>' : '') + '</td>' +
         '<td>' + (empresaCred(c) ? esc(empresaCred(c)) : '<span class="chip av">Falta</span>') + '</td><td>' + (c.rubro ? esc(c.rubro) : '<span class="chip av">Falta</span>') + '</td>' +
         '<td>' + (c.rol ? '<span class="chip az">' + esc(c.rol) + (c.cargo ? ' · ' + esc(c.cargo) : '') + '</span>' : '') + '</td>' +
-        '<td>' + (c.veces ? '<span class="chip ok">✓ ' + esc(c.impresa) + '</span>' : '') + (llevaPunto(c) ? ' <span title="No socio: lleva el punto">●</span>' : '') + '</td></tr>';
+        '<td>' + (c.veces ? '<span class="chip ok">✓ ' + esc(c.impresa) + '</span>' : '') + (llevaPunto(c) ? ' <span title="Socio: lleva el punto">●</span>' : '') + '</td></tr>';
     }).join('') || '<tr><td colspan="6" class="ayuda">No hay nadie con ese filtro.</td></tr>';
     var sel = Object.keys(elegidos).filter(function (k) { return elegidos[k]; }).length;
     $('tResumen').textContent = l.length + ' en la lista · ' + sel + ' elegidos';

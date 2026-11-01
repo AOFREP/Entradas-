@@ -44,6 +44,24 @@
 #tot { white-space: nowrap; }
 .resumen .benefNota { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #E3F6EA; color: #0B6B3A; font-weight: 700; font-size: 14px; }
 @keyframes sacude { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+/* v1.20 · urgencia (cuenta regresiva real hasta el cierre de la venta online) */
+.urg { position: relative; overflow: hidden; margin-top: 14px; border-radius: 16px; padding: 14px 16px; color: #fff; text-align: center;
+  background: linear-gradient(110deg, #B42318, #E8590C 45%, #B42318 90%); background-size: 220% 100%; animation: urgFondo 6s ease-in-out infinite; box-shadow: 0 10px 28px rgba(180,35,24,.28); }
+.urg::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; left: -40%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent); transform: skewX(-20deg); animation: urgBrillo 3.2s ease-in-out infinite; }
+.urg .t { font-weight: 900; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; }
+.urg .t .fu { display: inline-block; animation: urgFuego 1.1s ease-in-out infinite; }
+.urg .s { font-size: 14px; margin-top: 4px; opacity: .95; }
+.urg .cd { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+.urg .cd div { min-width: 54px; background: rgba(0,0,0,.22); border-radius: 10px; padding: 6px 4px 4px; }
+.urg .cd b { display: block; font-size: 24px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.urg .cd small { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; opacity: .85; }
+.tipo .est.pocas { animation: urgLatido 1.4s ease-in-out infinite; }
+.tipo .est.cupos { background: #FDECEA; color: #B42318; }
+@keyframes urgFondo { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes urgBrillo { 0% { left: -40%; } 60%, 100% { left: 130%; } }
+@keyframes urgFuego { 0%, 100% { transform: scale(1) rotate(-6deg); } 50% { transform: scale(1.25) rotate(6deg); } }
+@keyframes urgLatido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@media (prefers-reduced-motion: reduce) { .urg, .urg::after, .urg .t .fu, .tipo .est.pocas { animation: none; } }
 </style>
 </head>
 <body>
@@ -67,6 +85,7 @@
   <div id="cargando" class="cargando"><div class="spinner"></div>Cargando…</div>
   <div id="cerrada" class="card oculto"><b>La inscripción está cerrada.</b><div style="color:var(--gris);margin-top:6px">Seguinos para enterarte de las novedades.</div></div>
   <div id="falla" class="error oculto"></div>
+  <div id="urg" class="urg oculto" role="status"></div>
   <div id="ultima" class="aviso oculto"></div>
   <div id="info" class="card oculto"></div>
 
@@ -166,7 +185,7 @@
         $('info').classList.remove('oculto');
       }
       if (!d.abierta) { $('cerrada').classList.remove('oculto'); return; }
-      pintarTipos(); $('p1').classList.remove('oculto'); $('barra').classList.remove('oculto'); actualizar();
+      pintarTipos(); $('p1').classList.remove('oculto'); $('barra').classList.remove('oculto'); actualizar(); urgencia(d.urgencia);
       ultimaCompra(); codigosGuardados();
     }).catch(function (e) {
       $('cargando').classList.add('oculto'); $('falla').innerHTML = 'No pudimos cargar la inscripción: ' + F.esc(F.msg(e)) + ' <a href="" onclick="location.reload();return false">Reintentar</a>'; $('falla').classList.remove('oculto');
@@ -198,6 +217,21 @@
     if (!codVis) return '<div class="tipo codRow"><div class="info"><button type="button" class="codLink" data-vercod>🎟️ Tengo un código</button></div></div>';
     return '<div class="tipo codRow"><div class="info"><div class="codT">🎟️ Tengo un código</div><div class="codForm"><input id="cod_gen" data-codin="gen" placeholder="Ingresá tu código" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go"><button type="button" data-cod="gen">Aplicar</button></div><div class="codMsg" id="codMsg_gen"></div></div></div>';
   }
+  // v1.20 · banner de urgencia: la cuenta regresiva es hasta el cierre REAL de la venta online (configurado en la consola)
+  var urgT = null;
+  function urgencia(u) {
+    var el = $('urg'); clearInterval(urgT); if (!u) { el.classList.add('oculto'); return; }
+    el.classList.remove('oculto');
+    if (!u.cierre) { el.innerHTML = '<div class="t"><span class="fu">🔥</span> Últimos días para inscribirte <span class="fu">🔥</span></div><div class="s">Cupos limitados · asegurá tu lugar</div>'; return; }
+    var p2 = function (n) { return ('0' + n).slice(-2); }, tick = function () {
+      var s = Math.max(0, Math.floor((u.cierre - Date.now()) / 1000));
+      if (s <= 0) { clearInterval(urgT); location.reload(); return; }
+      var d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+      el.innerHTML = '<div class="t"><span class="fu">🔥</span> Últimos días <span class="fu">🔥</span></div><div class="s">La inscripción online cierra en</div><div class="cd">' + (d ? '<div><b>' + d + '</b><small>' + (d === 1 ? 'día' : 'días') + '</small></div>' : '') +
+        '<div><b>' + p2(h) + '</b><small>horas</small></div><div><b>' + p2(m) + '</b><small>min</small></div><div><b>' + p2(x) + '</b><small>seg</small></div></div>';
+    };
+    tick(); urgT = setInterval(tick, 1000);
+  }
   function pintarTipos() {
     var escrito = $('cod_gen') ? $('cod_gen').value : '';
     var h = visibles().map(function (t) {
@@ -207,6 +241,7 @@
       else if (t.estado === 'proximamente') est = '<span class="est">Desde el ' + (t.desde ? new Date(t.desde).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' }) : '') + '</span>';
       else if (t.estado === 'finalizado') est = '<span class="est agot">Agotado</span>';
       else if (t.disp <= 15) est = '<span class="est pocas">¡Últimos ' + t.disp + ' lugares!</span>';
+      else if (D.urgencia && t.estado === 'venta') est = '<span class="est cupos">🔥 Cupos limitados</span>';
       var agot = t.estado === 'agotado' || t.estado === 'finalizado';
       var tach = t.tachado > t.precio ? '<s class="tach">' + F.plata(t.tachado) + '</s>' : '';
       var ahorro = tach && !agot ? '<span class="ahorro">Ahorrás ' + F.plata(t.tachado - t.precio) + '</span>' : '';

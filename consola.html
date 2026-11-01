@@ -12,7 +12,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="estilos.css?v=1.19.0">
+<link rel="stylesheet" href="estilos.css?v=1.20.0">
 <style>
   :root { --lado: 236px; --ok: #11663A; --okF: #D6F0DD; --azF: #DCE8F7; --az: #1F4E8C; --nar: #8A3A00; --narF: #FFE3C7; }
   body { background: var(--fondo); }
@@ -141,6 +141,14 @@
   #toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; background: #13233A; color: #fff; border-radius: 12px; padding: 12px 18px; font-weight: 700; z-index: 60; box-shadow: 0 10px 30px rgba(0,0,0,.3); max-width: calc(100% - 32px); font-size: 14px; }
   #toast.err { background: var(--rojo); }
   .cargandoV { padding: 40px; text-align: center; color: var(--suave); }
+  /* v1.20 · Pantallas */
+  .vBtns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .gPant { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; margin-top: 14px; }
+  .gPant .tarj { margin-top: 0 !important; }
+  .pPrev { position: relative; overflow: hidden; border-radius: 10px; margin-top: 10px; background: #071A33; }
+  .pPrev iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .pPrev.banner { width: 160px; margin-left: auto; margin-right: auto; }
+  @media (max-width: 560px) { .gPant { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -181,8 +189,8 @@
 <div id="modal" class="oculto"><div class="caja"><button class="cerrar" id="mCerrar" aria-label="Cerrar">✕</button><div id="mCont"></div></div></div>
 <div id="toast" class="oculto"></div>
 
-<script src="config.js?v=1.19.0"></script>
-<script src="comun.js?v=1.19.0"></script>
-<script src="consola.js?v=1.19.0"></script>
+<script src="config.js?v=1.20.0"></script>
+<script src="comun.js?v=1.20.0"></script>
+<script src="consola.js?v=1.20.0"></script>
 </body>
 </html>
