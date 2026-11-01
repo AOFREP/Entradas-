@@ -47,10 +47,11 @@
     { id: 'socios', i: '✅', t: 'Socios', admin: true },
     { id: 'tickets', i: '🎟️', t: 'Tickets', admin: true },
     { id: 'ordenes', i: '🧾', t: 'Órdenes', admin: true },
-    { id: 'tipos', i: '🏷️', t: 'Tipos y precios', admin: true },
+    { id: 'tipos', i: '🏷️', t: 'Tickets y grupos', admin: true },
     { id: 'facturar', i: '💼', t: 'Facturación', admin: true },
     { g: 'Evento', admin: true },
-    { id: 'personal', i: '📱', t: 'Página personal', admin: true },
+    { id: 'personal', i: '📱', t: 'App del asistente', admin: true },
+    { id: 'sorteo', i: '🎁', t: 'Sorteo', admin: true },
     { id: 'comunicacion', i: '✉️', t: 'Mails y certificados', admin: true },
     { id: 'actividad', i: '🕑', t: 'Actividad', admin: true },
     { id: 'ajustes', i: '⚙️', t: 'Ajustes', admin: true },
@@ -203,7 +204,7 @@
       $('tEst').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; fT.estado = b.getAttribute('data-v'); Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); }); pintarT(); };
       $('tIng').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; fT.ingreso = b.getAttribute('data-v'); Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); }); pintarT(); };
       $('tBody').onclick = function (e) { var tr = e.target.closest('tr[data-cod]'); if (tr) verTicket(tr.getAttribute('data-cod')); };
-      $('bCort').onclick = cortesias;
+      $('bCort').onclick = function () { cortesias(); };
       $('bCsv').onclick = function () { csv('tickets', [['Código', 'Nombre', 'DNI', 'Mail', 'Empresa', 'Tipo', 'Estado', 'Origen', 'Orden', 'Comprador', 'Teléfono', 'Rubro', 'Rol', 'Cargo', 'Ingreso', 'Puerta', 'Credencial impresa']].concat(filtrarT().map(function (x) { return [x.cod, x.nombre, x.dni, x.mail, x.empresa, x.tipo, x.estado, x.origen, x.orden, x.comprador, x.tel, x.rubro, x.rol, x.cargo, fecha(x.ingreso), x.puerta, x.impresa ? 'Sí' : '']; }))); };
       pintarT(); $('tQ').focus();
     }).catch(fallo);
@@ -234,6 +235,7 @@
         '<div class="acc">' + (val ? (x.ingreso ? '<button class="b sec" id="xDes">↩️ Deshacer ingreso (' + fecha(x.ingreso) + ')</button>' : '<button class="b ok" id="xIn">✓ Dar ingreso</button>') : '') +
         (val ? '<button class="b sec" id="xImp">🖨️ Imprimir credencial</button><button class="b wa" id="xWa">WhatsApp</button><button class="b sec" id="xLink">🔗 Copiar link del ticket</button>' : '') +
         (x.orden ? '<button class="b sec" id="xOrden">🧾 Ver orden ' + esc(x.orden) + '</button>' : '') + '</div>' +
+        (val ? '<div class="cont">📱 App: ' + (x.cel ? 'vinculada a un celular · <a href="" id="xLibCel">Liberar celular</a> (si cambió de celular o no puede entrar)' : 'todavía no escaneó su credencial con el celular') + (x.dni ? ' · DNI ' + esc(x.dni) : '') + '</div>' : '') +
         '<div class="bloque"><h4>Datos del ticket</h4><div class="form">' + campo('xNom', 'Nombre y apellido', x.nombre) + campo('xDni', 'DNI', x.dni) + campo('xMail', 'Mail', x.mail) + campo('xEmp', 'Empresa', x.empresa) + '</div></div>' +
         '<div class="bloque"><h4>Credencial</h4><div class="form">' + campo('xNomC', 'Nombre en la credencial', x.nomCred, x.nombre) + campo('xEmpC', 'Empresa en la credencial', x.empCred, x.empresa) + campo('xCar', 'Cargo en esa empresa', x.cargo, 'Ej: Presidenta') + campo('xEmpC2', '2ª empresa (opcional)', x.empCred2, 'Ej: Fonzi Events') + campo('xCar2', 'Cargo en la 2ª empresa', x.cargo2, 'Ej: CEO') + campo('xRub', 'Rubro', x.rubro) +
         '<div><label class="et2" for="xRol">Rol (no se imprime)</label><select class="campo2" id="xRol"><option value="">Asistente (sin franja)</option>' + roles.map(function (k) { return '<option' + (k === x.rol ? ' selected' : '') + '>' + esc(k) + '</option>'; }).join('') + '</select></div></div>' +
@@ -246,6 +248,7 @@
       var recargar = function () { verTicket(cod); if (vista === 'tickets') api('tickets').then(function (r2) { cache.tickets = r2.tickets; pintarT(); }).catch(function () { }); };
       if ($('xIn')) $('xIn').onclick = function () { boton(this, api('ingreso', { cod: cod })).then(function (r2) { toast(r2.msj); recargar(); }).catch(fallo); };
       if ($('xDes')) $('xDes').onclick = function () { if (!confirm('¿Deshacer el ingreso?')) return; boton(this, api('deshacerIngreso', { cod: cod })).then(function (r2) { toast(r2.msj); recargar(); }).catch(fallo); };
+      if ($('xLibCel')) $('xLibCel').onclick = function (ev) { ev.preventDefault(); if (!confirm('¿Liberar el celular? El próximo que escanee su credencial queda vinculado.')) return; api('liberarCel', { cod: x.cod }).then(function (r2) { toast(r2.msj); verTicket(x.cod); }).catch(fallo); };
       if ($('xLink')) $('xLink').onclick = function () { try { navigator.clipboard.writeText(x.link); toast('✓ Link copiado'); } catch (e) { prompt('Link del ticket:', x.link); } };
       if ($('xWa')) $('xWa').onclick = function () {
         var w = window.open('', '_blank');
@@ -271,7 +274,7 @@
     d = d.replace(/^0/, ''); if (d.length === 8) d = '11' + d;
     return d.length === 10 ? '549' + d : '';
   }
-  function cortesias() {
+  function cortesias(tipoId, alTerminar) {
     var tipos = cache.tipos || [];
     modal('<h3>🎁 Cortesías / invitados</h3><div class="meta">Una persona por renglón: <b>Nombre y apellido, DNI, mail</b> (DNI y mail opcionales). Podés pegar desde una planilla.</div>' +
       '<label class="et2">Tipo de ticket</label><select class="campo2" id="cTipo">' + tipos.map(function (t) { return '<option value="' + esc(t.id) + '">' + esc(t.nombre) + '</option>'; }).join('') + '</select>' +
@@ -287,8 +290,9 @@
     $('cOk').onclick = function () {
       var filas = leer(); if (!filas.length) { toast('Cargá al menos una persona.', true); return; }
       if (!confirm('¿Crear ' + filas.length + ' cortesía(s)?')) return;
-      boton(this, api('cortesias', { tipo: $('cTipo').value, filas: filas, mandar: $('cMandar').checked, nota: $('cNota').value }, 120000), 'Creando…').then(function (r) { cerrarModal(); toast(r.msj); if (vista === 'tickets') V.tickets(); }).catch(fallo);
+      boton(this, api('cortesias', { tipo: $('cTipo').value, filas: filas, mandar: $('cMandar').checked, nota: $('cNota').value }, 120000), 'Creando…').then(function (r) { cerrarModal(); toast(r.msj); if (alTerminar) alTerminar(); else if (vista === 'tickets') V.tickets(); }).catch(fallo);
     };
+    if (tipoId) { $('cTipo').value = tipoId; var t0 = tipos.filter(function (x) { return x.id === tipoId; })[0]; if (t0) { $('mCont').querySelector('h3').textContent = '＋ Agregar personas · ' + t0.nombre; } }
   }
 
   // ── Órdenes ──
@@ -370,52 +374,96 @@
       'Tu ticket a *' + F.plata(t.precio) + '*' + (t.tachado > t.precio ? ' en lugar de ~' + F.plata(t.tachado) + '~' : '') + '.\n\n' +
       'Entrá acá y ya te aparece desbloqueado:\n' + linkBenef(t.codigo) + '\n\nSi te lo pide, tu código es: *' + t.codigo + '*';
   }
+  // ── Tickets y grupos (v1.17) ──
+  // Pocos tickets "de verdad" (venta general, socio) y, adentro, grupos: precio especial con código, invitaciones y cortesías.
+  // Por dentro sigue siendo una fila por tipo en la planilla: no cambia nada de lo vendido.
+  function claseT(t) { if (t.cort) return 'socio'; if (t.precio > 0) return t.codigo ? 'beneficio' : 'venta'; return t.codigo ? 'invitacion' : 'interna'; }
+  var CLASES = { venta: '🎟️ Ticket a la venta', socio: '🤝 Ticket de socio (se valida)', beneficio: '⭐ Grupo con precio especial (código)', invitacion: '✉️ Invitación / cortesía' };
   V.tipos = function () {
     api('tipos').then(function (r) {
-      var general = 0; r.tipos.forEach(function (t) { if (!t.codigo && !t.cort && t.estadoWeb === 'venta' && t.precio > general) general = t.precio; });
-      var porId = {}; r.tipos.forEach(function (t) { porId[t.id] = t; });
-      var est = { venta: ['ok', 'En venta'], agotado: ['mal', 'Agotado'], finalizado: ['', 'Terminó'], proximamente: ['az', 'Próximamente'], reservado: ['am', 'Reservado'], oculto: ['', 'Oculto'] };
-      var tarjeta = function (t) {
-        var e = est[t.estadoWeb] || ['', t.estadoWeb];
-        return '<div class="tarj tipoT' + (t.codigo ? ' conCod' : '') + '" data-id="' + esc(t.id || '') + '"><div class="cabT"><b>' + esc(t.nombre || 'Tipo nuevo') + '</b>' + (t.codigo ? '<span class="chip am">' + (t.precio > 0 ? '⭐ Beneficio con código' : '🎟️ Invitación con código') + '</span>' : '') + (t.credTexto ? '<span class="chip az">🏷️ ' + esc(t.credTexto) + '</span>' : '') + (t.id ? '<span class="chip ' + e[0] + '">' + e[1] + '</span>' : '') + '</div>' +
-          (t.id ? '<div class="stats"><span>Vendidas <b>' + t.vendidas + '</b></span><span>Reservadas <b>' + t.reservadas + '</b></span><span>Disponibles <b>' + (t.disp == null ? '—' : t.disp) + '</b></span><span style="font-family:monospace">' + esc(t.id) + '</span></div>' : '') +
-          '<div class="form"><div><label class="et2">Nombre</label><input class="campo2" data-k="nombre" value="' + esc(t.nombre || '') + '"></div>' +
-          '<div><label class="et2">Precio</label><input class="campo2" data-k="precio" type="number" min="0" step="500" value="' + esc(t.precio == null ? '' : t.precio) + '"></div>' +
-          '<div><label class="et2">Cupo</label><input class="campo2" data-k="cupo" type="number" min="0" value="' + esc(t.cupo == null ? '' : t.cupo) + '"></div>' +
-          '<div class="ancho"><label class="et2">Descripción</label><input class="campo2" data-k="desc" value="' + esc(t.desc || '') + '"></div>' +
-          '<div><label class="et2">Venta desde</label><input class="campo2" data-k="desde" type="datetime-local" value="' + esc(t.desde || '') + '"></div>' +
-          '<div><label class="et2">Venta hasta</label><input class="campo2" data-k="hasta" type="datetime-local" value="' + esc(t.hasta || '') + '"></div></div>' +
-          '<div class="fila" style="gap:18px"><label class="chk2"><input type="checkbox" data-k="activo"' + (t.activo ? ' checked' : '') + '> Activo (se ve en la tienda)</label>' +
-          '<label class="chk2"><input type="checkbox" data-k="cort"' + (t.cort ? ' checked' : '') + '> Socio (se valida)</label>' +
-          '<label class="chk2"><input type="checkbox" data-k="agotado"' + (t.agotado ? ' checked' : '') + '> Agotado</label></div>' +
-          '<div class="form" style="margin-top:8px"><div class="ancho" style="max-width:460px"><label class="et2">Credencial: texto en vez de la empresa (opcional)</label><input class="campo2" data-k="credTexto" value="' + esc(t.credTexto || '') + '" placeholder="Ej: Prensa · Eventos y Negocios"><small class="cont">Para prensa, producción o redes: al inscribirse se les pide su empresa o medio (queda guardada), pero en el sticker sale este texto.</small></div></div>' +
-          '<div class="benefB"><div class="benefT">⭐ Beneficio con código <small>Opcional. Si ponés un código, en la web este ticket aparece con candado y solo se puede comprar con el código (sirve para todas las compras que quieras; el tope es el cupo).</small></div>' +
-          '<div class="form"><div class="ancho" style="max-width:460px"><label class="et2">Código de acceso</label><div class="fila" style="gap:6px;flex-wrap:nowrap"><input class="campo2" data-k="codigo" value="' + esc(t.codigo || '') + '" placeholder="Vacío = ticket normal" style="text-transform:uppercase;font-family:monospace;font-weight:700"><button class="b sec" type="button" data-gen title="Inventa un código difícil de adivinar">Generar</button></div></div>' +
-          '<div><label class="et2">Precio tachado</label><input class="campo2" data-k="tachado" type="number" min="0" step="500" value="' + esc(t.tachado || '') + '" placeholder="Ej: ' + (general || 90000) + '">' + (general ? '<small class="cont">Precio general hoy: ' + F.plata(general) + ' · <a href="" data-usar="' + general + '">usar</a></small>' : '') + '</div></div>' +
-          (t.id && t.codigo ? '<div class="comp"><div class="cont">Link para compartir (entra con el beneficio ya desbloqueado):</div><div class="lnk">' + esc(linkBenef(t.codigo)) + '</div>' +
-            '<div class="acc"><button class="b sec" type="button" data-cl="' + esc(t.id) + '">🔗 Copiar link</button><button class="b sec" type="button" data-cm="' + esc(t.id) + '">💬 Copiar mensaje</button>' +
-            '<a class="b wa" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(mensajeBenef(t)) + '">WhatsApp</a><a class="b sec" target="_blank" rel="noopener" href="' + esc(linkBenef(t.codigo)) + '">Probar ↗</a></div>' +
-            '<div class="cont" style="margin-top:8px">Vendidas con el código: <b>' + t.vendidas + '</b>' + (t.cupo ? ' de ' + t.cupo : '') + (t.reservadas ? ' · ' + t.reservadas + ' pagando ahora' : '') + '</div></div>' : '') +
-          '</div>' +
-          '<div class="acc"><button class="b pri" data-guardar>Guardar</button></div></div>';
+      var T = r.tipos; cache.tipos = T.map(function (t) { return { id: t.id, nombre: t.nombre }; }); cache.tiposFull = T;
+      var est = { venta: ['ok', 'En venta'], agotado: ['mal', 'Agotado'], finalizado: ['', 'Terminó'], proximamente: ['az', 'Próximamente'], reservado: ['am', 'Reservado'], oculto: ['', 'No se ve en la tienda'] };
+      var chipE = function (t) { var e = est[t.estadoWeb] || ['', t.estadoWeb]; if (!(t.precio > 0) && t.estadoWeb === 'venta') e = ['ok', 'Inscripción abierta']; return '<span class="chip ' + e[0] + '">' + e[1] + '</span>'; };
+      var nums = function (t) { return '<span class="nums"><b>' + t.vendidas + '</b>' + (t.cupo ? ' / ' + t.cupo : '') + ' <small>' + (t.precio > 0 ? 'vendidos' : 'inscriptos') + '</small>' + (t.reservadas ? ' <small>· ' + t.reservadas + ' pagando</small>' : '') + ' · <b>' + (t.adentro || 0) + '</b> <small>vinieron</small></span>'; };
+      var ventas = T.filter(function (t) { return claseT(t) === 'venta' || claseT(t) === 'socio'; });
+      var vigentes = ventas.filter(function (t) { return t.activo && t.estadoWeb !== 'finalizado'; }), viejos = ventas.filter(function (t) { return !(t.activo && t.estadoWeb !== 'finalizado'); });
+      var padreDe = function (g) { var p = vigentes.filter(function (v) { return !v.cort && v.precio === g.tachado; })[0]; if (!p) p = vigentes.filter(function (v) { return !v.cort; }).sort(function (a, b) { return b.precio - a.precio; })[0]; return p ? p.id : ''; };
+      var benef = T.filter(function (t) { return claseT(t) === 'beneficio'; }), gratis = T.filter(function (t) { return claseT(t) === 'invitacion' || claseT(t) === 'interna'; });
+      var acc = function (t) { return (t.codigo ? '<button class="b sec chico" data-cl="' + esc(t.id) + '">🔗 Link</button><button class="b sec chico" data-cm="' + esc(t.id) + '">💬 Mensaje</button>' : '') + '<button class="b sec chico" data-ed="' + esc(t.id) + '">Editar</button>'; };
+      var fila = function (t, hijo) {
+        var precio = t.precio > 0 ? F.plata(t.precio) + (t.tachado > t.precio ? ' <s class="cont">' + F.plata(t.tachado) + '</s>' : '') : 'Sin cargo';
+        var chips = (t.codigo ? '<span class="chip am">🔑 ' + esc(t.codigo) + '</span>' : '') + (claseT(t) === 'interna' ? '<span class="chip">📋 La cargás vos</span>' : '') + (claseT(t) === 'invitacion' ? '<span class="chip az">🔗 Se inscriben con el link</span>' : '') +
+          (t.credTexto ? '<span class="chip az">🏷️ ' + esc(t.credTexto) + '</span>' : '') + (t.socio || t.cort ? '<span class="chip ok">Cuenta como socio</span>' : '') + (t.agotado ? '<span class="chip mal">Agotado a mano</span>' : '');
+        return '<div class="gFila' + (hijo ? ' hijo' : '') + '"><div class="gInfo"><b>' + (hijo ? '↳ ' : '') + esc(t.nombre) + '</b> ' + chipE(t) + '<div class="cont" style="margin:4px 0 0">' + precio + ' · ' + nums(t) + '</div>' + (chips ? '<div class="gChips">' + chips + '</div>' : '') + '</div>' +
+          '<div class="gAcc">' + (claseT(t) === 'interna' || claseT(t) === 'invitacion' ? '<button class="b ok chico" data-ap="' + esc(t.id) + '">＋ Agregar personas</button>' : '') + acc(t) + '</div></div>';
       };
-      $('main').innerHTML = cab('Tipos y precios', 'Los cambios se ven en la tienda en el momento. El tope real del salón es el "Cupo total" de Ajustes.', '<button class="b sec" id="bNuevoT">＋ Tipo nuevo</button>') + r.tipos.map(tarjeta).join('') + '<div id="tNuevo"></div>';
-      $('bNuevoT').onclick = function () { $('tNuevo').innerHTML = tarjeta({ nombre: '', precio: 0, cupo: 0, activo: false }); $('tNuevo').scrollIntoView({ behavior: 'smooth' }); };
+      var h = cab('Tickets y grupos', 'Pocos tickets y, adentro, grupos con su propio código, cupo y precio. El tope real del salón es el "Cupo total" de Ajustes.', '<button class="b sec" id="bNuevoV">＋ Ticket a la venta</button>');
+      h += '<div class="tarj"><h3>🎟️ Tickets a la venta</h3>' + (vigentes.length ? vigentes.map(function (v) {
+        var hijos = benef.filter(function (g) { return padreDe(g) === v.id; });
+        return '<div class="gGrupo">' + fila(v) + hijos.map(function (g) { return fila(g, true); }).join('') + (v.cort ? '' : '<button class="b sec chico gMas" data-nb="' + esc(v.id) + '">＋ Grupo con precio especial (ej: invitados de un speaker)</button>') + '</div>';
+      }).join('') : '<div class="cont">No hay tickets a la venta.</div>') +
+        (function () { var sueltos = benef.filter(function (g) { return !padreDe(g); }); return sueltos.length ? '<div class="gGrupo">' + sueltos.map(function (g) { return fila(g, true); }).join('') + '</div>' : ''; })() + '</div>';
+      h += '<div class="tarj"><div class="fila"><h3 class="crece" style="margin:0">✉️ Invitaciones y cortesías (sin cargo)</h3><button class="b ok" id="bNuevoI">＋ Grupo de invitados</button></div>' +
+        '<div class="cont">Cada grupo: la lista la cargás vos (＋ Agregar personas) y, si le ponés código, también se pueden inscribir solos con el link. Sin código nunca se ven en la tienda.</div>' +
+        (gratis.length ? gratis.map(function (g) { return '<div class="gGrupo">' + fila(g) + '</div>'; }).join('') : '<div class="cont">Todavía no hay grupos.</div>') + '</div>';
+      if (viejos.length) h += '<details class="tarj"><summary><b>Terminados o pausados (' + viejos.length + ')</b></summary>' + viejos.map(function (v) { return '<div class="gGrupo">' + fila(v) + '</div>'; }).join('') + '</details>';
+      $('main').innerHTML = h;
+      var porId = {}; T.forEach(function (t) { porId[t.id] = t; });
+      $('bNuevoV').onclick = function () { editarTipo({ nombre: '', precio: '', cupo: 100, activo: true }, 'venta'); };
+      $('bNuevoI').onclick = function () { editarTipo({ nombre: '', precio: 0, cupo: 20, activo: true }, 'invitacion'); };
       $('main').onclick = function (e) {
-        var u = e.target.closest('[data-usar]'); if (u) { e.preventDefault(); u.closest('.tipoT').querySelector('[data-k="tachado"]').value = u.getAttribute('data-usar'); return; }
-        var g = e.target.closest('button[data-gen]');
-        if (g) { var cd = g.closest('.tipoT'), ic = cd.querySelector('[data-k="codigo"]'); if (ic.value.trim() && !confirm('¿Reemplazar el código actual? El link y el código viejos van a dejar de funcionar (los tickets ya vendidos siguen valiendo).')) return; ic.value = generarCodigo(cd.querySelector('[data-k="nombre"]').value); return; }
-        var cl = e.target.closest('button[data-cl]'); if (cl) { copiarTxt(linkBenef(porId[cl.getAttribute('data-cl')].codigo), '✓ Link copiado'); return; }
-        var cm = e.target.closest('button[data-cm]'); if (cm) { copiarTxt(mensajeBenef(porId[cm.getAttribute('data-cm')]), '✓ Mensaje copiado: pegalo en WhatsApp'); return; }
-        var b = e.target.closest('button[data-guardar]'); if (!b) return;
-        var card = b.closest('.tipoT'), d = {};
-        Array.prototype.forEach.call(card.querySelectorAll('[data-k]'), function (i) { d[i.getAttribute('data-k')] = i.type === 'checkbox' ? i.checked : i.value; });
-        var antes = porId[card.getAttribute('data-id')];
-        if (antes && antes.codigo && String(d.codigo || '').trim().toUpperCase().replace(/\s+/g, '-') !== antes.codigo && !confirm(d.codigo ? '¿Cambiar el código? El link y el código viejos dejan de funcionar (los tickets ya vendidos siguen valiendo).' : '¿Sacar el código? El ticket pasa a verse y venderse como uno normal para todo el público.')) return;
-        boton(b, api('tipoGuardar', { tipoId: card.getAttribute('data-id'), datos: d })).then(function (r2) { toast(r2.msj); V.tipos(); }).catch(fallo);
+        var b = e.target.closest('button'); if (!b) return;
+        if (b.hasAttribute('data-ed')) return editarTipo(porId[b.getAttribute('data-ed')]);
+        if (b.hasAttribute('data-nb')) { var p = porId[b.getAttribute('data-nb')]; return editarTipo({ nombre: '', precio: '', tachado: p.precio, cupo: 20, activo: true, codigo: '' }, 'beneficio'); }
+        if (b.hasAttribute('data-ap')) return cortesias(b.getAttribute('data-ap'), V.tipos);
+        if (b.hasAttribute('data-cl')) return copiarTxt(linkBenef(porId[b.getAttribute('data-cl')].codigo), '✓ Link copiado');
+        if (b.hasAttribute('data-cm')) return copiarTxt(mensajeBenef(porId[b.getAttribute('data-cm')]), '✓ Mensaje copiado: pegalo en WhatsApp');
       };
     }).catch(fallo);
   };
+  /** Formulario de un ticket o grupo: según "qué es", muestra solo los campos que corresponden. */
+  function editarTipo(t, claseNueva) {
+    var nuevo = !t.id, cl = claseNueva || claseT(t);
+    var gen = (cache.tiposFull || []).filter(function (x) { return claseT(x) === 'venta' && x.activo; }).sort(function (a, b) { return b.precio - a.precio; })[0];
+    var opc = Object.keys(CLASES).map(function (k) { return '<option value="' + k + '"' + (k === (cl === 'interna' ? 'invitacion' : cl) ? ' selected' : '') + '>' + CLASES[k] + '</option>'; }).join('');
+    var ck = function (k, txt, v, sub) { return '<label class="chk2" data-c="' + k + '"><input type="checkbox" data-k="' + k + '"' + (v ? ' checked' : '') + '> ' + txt + (sub ? ' <small class="cont">' + sub + '</small>' : '') + '</label>'; };
+    var cp = function (k, et, v, extra, cls) { return '<div data-c="' + k + '"' + (cls ? ' class="' + cls + '"' : '') + '><label class="et2">' + et + '</label><input class="campo2" data-k="' + k + '" value="' + esc(v == null ? '' : v) + '"' + (extra || '') + '></div>'; };
+    modal('<h3>' + (nuevo ? 'Nuevo' : 'Editar') + ': ' + esc(t.nombre || '') + '</h3>' +
+      '<label class="et2">¿Qué es?</label><select class="campo2" id="tClase"' + (nuevo ? '' : ' disabled') + '>' + opc + '</select>' +
+      '<div class="form" id="tForm">' + cp('nombre', 'Nombre', t.nombre, ' placeholder="Ej: Invitados de Natt"', 'ancho') + cp('desc', 'Texto en la tienda (opcional)', t.desc, ' placeholder="Ej: Ticket con beneficio para la comunidad de Natt"', 'ancho') +
+      cp('precio', 'Precio', t.precio, ' type="number" min="0" step="500"') + cp('tachado', 'Precio tachado (antes)', t.tachado || '', ' type="number" min="0" step="500" placeholder="' + (gen ? gen.precio : '') + '"') + cp('cupo', 'Cupo', t.cupo, ' type="number" min="0"') +
+      '<div data-c="codigo" class="ancho"><label class="et2" id="tCodEt">Código de acceso</label><div class="fila" style="gap:6px;flex-wrap:nowrap"><input class="campo2" data-k="codigo" value="' + esc(t.codigo || '') + '" style="text-transform:uppercase;font-family:monospace;font-weight:700"><button class="b sec" type="button" id="tGen">Generar</button></div></div>' +
+      cp('credTexto', 'Credencial: texto en vez de la empresa (opcional)', t.credTexto, ' placeholder="Ej: Prensa · Eventos y Negocios"', 'ancho') +
+      cp('desde', 'Venta desde (opcional)', t.desde, ' type="datetime-local"') + cp('hasta', 'Venta hasta (opcional)', t.hasta, ' type="datetime-local"') + '</div>' +
+      '<div class="fila" style="gap:16px;flex-wrap:wrap;margin-top:8px">' + ck('autoins', 'Se pueden inscribir solos con un link/código', !!t.codigo, '') + ck('activo', 'Activo', t.activo !== false) + ck('agotado', 'Agotado', t.agotado) + ck('socio', 'Cuenta como socio', t.socio, '(sin punto en la credencial)') + '</div>' +
+      '<div class="cont" id="tAyuda"></div><div class="acc"><button class="b pri" id="tGuardar">Guardar</button><button class="b sec" id="tCancelar">Cancelar</button></div>');
+    var vis = { venta: ['nombre', 'desc', 'precio', 'cupo', 'desde', 'hasta', 'activo', 'agotado', 'socio'], socio: ['nombre', 'desc', 'precio', 'cupo', 'activo', 'agotado'],
+      beneficio: ['nombre', 'desc', 'precio', 'tachado', 'cupo', 'codigo', 'credTexto', 'activo', 'agotado', 'socio'], invitacion: ['nombre', 'desc', 'cupo', 'autoins', 'codigo', 'credTexto', 'socio', 'agotado'] };
+    var ayuda = { venta: 'Lo ve todo el público en la tienda.', socio: 'Se pide empresa + CUIT y queda "En revisión" hasta que validás la membresía.', beneficio: 'Solo lo ven quienes tienen el código o el link. El precio tachado aparece al lado.',
+      invitacion: 'Sin cargo. La lista la cargás vos con "＋ Agregar personas". Si tildás "Se pueden inscribir solos", con el link completan sus datos y reciben el QR al instante.' };
+    var q = function (k) { return $('mCont').querySelector('[data-k="' + k + '"]'); };
+    function mostrar() {
+      var c = $('tClase').value, v = vis[c], auto = q('autoins').checked;
+      Array.prototype.forEach.call($('mCont').querySelectorAll('[data-c]'), function (el) { var k = el.getAttribute('data-c'); el.hidden = v.indexOf(k) < 0 || (k === 'codigo' && c === 'invitacion' && !auto); });
+      $('tAyuda').textContent = ayuda[c];
+    }
+    $('tClase').onchange = mostrar; q('autoins').onchange = function () { if (this.checked && !q('codigo').value) q('codigo').value = generarCodigo(q('nombre').value); mostrar(); };
+    $('tGen').onclick = function () { if (q('codigo').value.trim() && !confirm('¿Reemplazar el código actual? El link viejo deja de funcionar.')) return; q('codigo').value = generarCodigo(q('nombre').value); };
+    if (cl === 'beneficio' && nuevo && !q('codigo').value) q('codigo').value = '';
+    mostrar(); $('tCancelar').onclick = cerrarModal;
+    $('tGuardar').onclick = function () {
+      var c = $('tClase').value, val = function (k) { var el = q(k); return el.type === 'checkbox' ? el.checked : el.value; };
+      var d = { nombre: val('nombre').trim(), desc: val('desc'), cupo: val('cupo'), activo: c === 'invitacion' ? true : val('activo'), agotado: val('agotado'), socio: c === 'socio' ? false : val('socio'),
+        cort: c === 'socio', precio: c === 'invitacion' ? 0 : val('precio'), tachado: c === 'beneficio' ? val('tachado') : '', codigo: (c === 'beneficio' || (c === 'invitacion' && val('autoins'))) ? val('codigo') : '',
+        credTexto: (c === 'beneficio' || c === 'invitacion') ? val('credTexto') : '', desde: c === 'venta' ? val('desde') : (t.desde || ''), hasta: c === 'venta' ? val('hasta') : (t.hasta || '') };
+      if (!d.nombre) return toast('Poné el nombre.', true);
+      if (c === 'beneficio' && !String(d.codigo).trim()) return toast('Un grupo con precio especial necesita código (tocá Generar).', true);
+      if ((c === 'venta' || c === 'beneficio' || c === 'socio') && !(Number(d.precio) > 0)) return toast('Poné el precio.', true);
+      var antes = t.codigo || '';
+      if (antes && String(d.codigo).trim().toUpperCase().replace(/\s+/g, '-') !== antes && !confirm(d.codigo ? '¿Cambiar el código? El link viejo deja de funcionar (los tickets ya emitidos siguen valiendo).' : '¿Sacar el código? Ya no se van a poder inscribir solos con el link.')) return;
+      boton(this, api('tipoGuardar', { tipoId: t.id || '', datos: d })).then(function (r2) { cerrarModal(); toast(r2.msj); V.tipos(); }).catch(fallo);
+    };
+  }
 
   // ── Facturación ──
   var fF = 'pend';
@@ -448,6 +496,46 @@
 
   // ── Página personal (lo que abre el QR del sticker) ──
   var tPreg = null, fP = { charla: '', estado: 'activas' };
+  // ── v1.18 · Reporte para compartir (se abre en una pestaña y se guarda como PDF con Imprimir) ──
+  function reporte(modo) {
+    var w = window.open('', '_blank'); if (!w) { toast('Permití ventanas emergentes para ver el reporte.', true); return; }
+    w.document.write('<p style="font-family:Arial;padding:30px">Armando el reporte…</p>');
+    Promise.all([api('inicio'), api('personal')]).then(function (rs) {
+      var I = rs[0].resumen, Pu = rs[0].puerta, P = rs[1].personal, ev = S.evento || {}, interno = modo !== 'speakers';
+      var estr = function (n) { n = Math.round(n || 0); return '★★★★★'.slice(0, n) + '<span style="color:#ccc">' + '★★★★★'.slice(n) + '</span>'; };
+      var charlas = {}; (P.cal || []).forEach(function (c) { charlas[c.charla] = { cal: c, preg: [] }; });
+      (P.preguntas || []).forEach(function (q) { if (q.estado === 'Oculta') return; (charlas[q.charla] = charlas[q.charla] || { cal: null, preg: [] }).preg.push(q); });
+      var bloqueCharla = function (nombre, x) {
+        var c = x.cal, h = '<section><h2>🎤 ' + esc(nombre) + '</h2>';
+        if (c) h += '<div class="kpis"><div><b>' + c.prom + ' ★</b><small>promedio</small></div><div><b>' + c.n + '</b><small>calificaciones</small></div><div><b>' + x.preg.length + '</b><small>preguntas</small></div></div>' +
+          '<p class="dist">' + c.dist.map(function (n, k) { return (k + 1) + '★ ' + n; }).join(' · ') + '</p>';
+        else h += '<p class="dist">Sin calificaciones · ' + x.preg.length + ' preguntas</p>';
+        var com = c ? c.resp.filter(function (r) { return r.comentario; }) : [];
+        if (com.length) h += '<h3>Comentarios</h3><ul>' + com.map(function (r) { return '<li>' + estr(r.estrellas) + ' ' + esc(r.comentario) + (interno ? ' <small>— ' + esc(r.nombre) + (r.empresa ? ', ' + esc(r.empresa) : '') + '</small>' : '') + '</li>'; }).join('') + '</ul>';
+        if (x.preg.length) h += '<h3>Preguntas del público</h3><ul>' + x.preg.map(function (q) { return '<li>' + esc(q.texto) + (interno && q.nombre ? ' <small>— ' + esc(q.nombre) + (q.empresa ? ', ' + esc(q.empresa) : '') + '</small>' : '') + (q.estado === 'Respondida' ? ' <small class="ok">✓ respondida</small>' : '') + '</li>'; }).join('') + '</ul>';
+        return h + '</section>';
+      };
+      var h = '<!doctype html><html><head><meta charset="utf-8"><title>Reporte · ' + esc(ev.nombre || 'Evento') + '</title><style>' +
+        'body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#13233A;max-width:820px;margin:0 auto;padding:28px}h1{margin:0;font-size:26px}h2{font-size:19px;margin:0 0 8px;color:#0B2240}h3{font-size:14px;margin:14px 0 6px;color:#5F6B7D;text-transform:uppercase;letter-spacing:1px}' +
+        'section{border:1px solid #DCE3EC;border-radius:14px;padding:16px 18px;margin-top:16px;page-break-inside:avoid}.kpis{display:flex;gap:12px;flex-wrap:wrap}.kpis div{background:#F3F6FA;border-radius:10px;padding:10px 14px;min-width:110px}.kpis b{display:block;font-size:22px}.kpis small,.sub{color:#5F6B7D}' +
+        'ul{margin:0;padding-left:18px}li{margin:4px 0;line-height:1.4}small{color:#5F6B7D}.dist{color:#5F6B7D;font-size:13px;margin:8px 0 0}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;border-bottom:1px solid #EEF1F5;text-align:left}td.n,th.n{text-align:right}.ok{color:#11663A}' +
+        '.bar{display:flex;gap:8px;justify-content:flex-end}.bar button{font:inherit;font-weight:700;padding:10px 16px;border-radius:10px;border:0;background:#1E6FD9;color:#fff;cursor:pointer}@media print{.bar{display:none}body{padding:0}}</style></head><body>' +
+        '<div class="bar"><button onclick="window.print()">Guardar como PDF / Imprimir</button></div>' +
+        '<h1>' + esc(ev.nombre || 'Evento') + '</h1><div class="sub">' + esc([ev.fecha, ev.lugar].filter(Boolean).join(' · ')) + ' · ' + (interno ? 'Reporte interno' : 'Reporte para speakers (sin datos personales)') + ' · ' + esc(I.hora || '') + '</div>';
+      h += '<section><h2>👥 Asistencia</h2><div class="kpis"><div><b>' + I.validos + '</b><small>inscriptos</small></div><div><b>' + Pu.adentro + '</b><small>vinieron</small></div>' +
+        (interno && P.net ? '<div><b>' + P.net.comparten + '</b><small>en el directorio</small></div><div><b>' + ((P.net.dir || {}).conexiones || 0) + '</b><small>conexiones</small></div>' : '') + '</div>' +
+        (interno ? '<h3>Por ticket y grupo</h3><table><tr><th>Ticket / grupo</th><th class="n">Inscriptos</th><th class="n">Vinieron</th></tr>' + I.tipos.filter(function (t) { return t.vendidos + t.cortesias + t.revision > 0; }).map(function (t) { return '<tr><td>' + esc(t.nombre) + '</td><td class="n">' + (t.vendidos + t.cortesias + t.revision) + '</td><td class="n">' + t.adentro + '</td></tr>'; }).join('') + '</table>' : '') + '</section>';
+      var nombres = Object.keys(charlas); if (!nombres.length) h += '<section><p>Todavía no hay calificaciones ni preguntas.</p></section>';
+      nombres.forEach(function (n) { h += bloqueCharla(n, charlas[n]); });
+      if (interno && P.encuesta && P.encuesta.resultados && P.encuesta.resultados.length) {
+        h += '<section><h2>⭐ Encuesta de satisfacción</h2><p class="sub">' + P.encuesta.respuestas + ' personas respondieron</p>' + P.encuesta.resultados.map(function (r) {
+          var d = r.tipo === 'estrellas' ? (r.promedio == null ? '—' : r.promedio + ' ★ · ' + r.dist.map(function (n, k) { return (k + 1) + '★ ' + n; }).join(' · ')) : r.tipo === 'opciones' ? r.dist.map(function (x) { return esc(x.op) + ': ' + x.n; }).join(' · ') : '<ul>' + r.textos.slice(0, 40).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+          return '<h3>' + esc(r.texto) + '</h3><div>' + d + '</div>'; }).join('') + '</section>';
+      }
+      if (interno && P.net && P.net.dir) { var a = P.net.dir.acciones || {}; h += '<section><h2>🤝 Directorio</h2><div class="kpis"><div><b>' + (a.whatsapp || 0) + '</b><small>WhatsApp</small></div><div><b>' + (a.agendar || 0) + '</b><small>agendados</small></div><div><b>' + (a.destacar || 0) + '</b><small>destacados</small></div></div>' + (P.net.dir.top && P.net.dir.top.length ? '<p class="dist">Más destacados: ' + P.net.dir.top.map(function (x) { return esc(x.nombre) + ' (' + x.n + ')'; }).join(' · ') + '</p>' : '') + '</section>'; }
+      w.document.open(); w.document.write(h + '</body></html>'); w.document.close();
+    }).catch(function (e) { w.close(); fallo(e); });
+  }
   V.personal = function () {
     clearInterval(tPreg);
     api('personal').then(function (r) { pintarPersonal(r.personal); tPreg = setInterval(function () { if (vista !== 'personal') { clearInterval(tPreg); return; } if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; api('personal').then(function (r2) { cache.personal = r2.personal; pintarPreguntas(); }).catch(function () { }); }, 20000); }).catch(fallo);
@@ -455,19 +543,31 @@
   function pintarPersonal(P) {
     cache.personal = P; var a = P.ajustes;
     var sw = function (k, t, sub) { return '<div class="interr"><div class="t"><b>' + t + '</b><small>' + sub + '</small></div><label class="sw"><input type="checkbox" data-aj="' + k + '"' + (a[k] ? ' checked' : '') + '><span></span></label></div>'; };
-    $('main').innerHTML = cab('Página personal', 'Lo que ve cada asistente al escanear el QR de su sticker. Se prende y se apaga desde acá.') +
-      '<div class="tarj"><h3>Qué se muestra</h3>' + sw('PREG_ON', 'Preguntas a las charlas', 'Mandan preguntas al speaker desde el celular. Las moderás abajo.') + sw('NET_ON', 'Networking', 'Comparten su contacto y ven a quienes también comparten. En la puerta se les pregunta.') + sw('ENC_ON', 'Encuesta de satisfacción', 'Prendela al final de la jornada.') + '</div>' +
+    var calCard = (function (L) {
+      if (!L || !L.length) return '<div class="tarj"><h3>⭐ Calificación de las charlas</h3><div class="cont">Todavía nadie calificó. Al terminar cada charla, a los asistentes les aparece la pregunta en su página.</div></div>';
+      return '<div class="tarj"><h3>⭐ Calificación de las charlas</h3><div class="cont">Confidencial para los asistentes (no se comparte con los speakers). Acá ves quién calificó.</div>' + L.map(function (c, i) {
+        return '<details class="bloque" style="margin-top:8px"><summary><b>' + esc(c.charla) + '</b> · ' + (c.prom == null ? '—' : c.prom + ' ★') + ' · ' + c.n + ' calificación' + (c.n === 1 ? '' : 'es') + ' <span class="cont">(' + c.dist.map(function (n, k) { return (k + 1) + '★ ' + n; }).join(' · ') + ')</span></summary>' +
+          '<table class="tabla"><tbody>' + c.resp.map(function (x) { return '<tr><td><b>' + esc(x.nombre) + '</b><small>' + esc(x.empresa || '') + '</small></td><td style="white-space:nowrap">' + '★★★★★'.slice(0, x.estrellas) + '<span style="opacity:.25">' + '★★★★★'.slice(x.estrellas) + '</span></td><td>' + esc(x.comentario || '') + '</td></tr>'; }).join('') + '</tbody></table></details>';
+      }).join('') + '<div class="acc"><button class="b sec" id="calCsv">⬇︎ Exportar calificaciones</button></div></div>';
+    })(P.cal);
+    $('main').innerHTML = cab('App del asistente', 'Lo que ve cada asistente al escanear el QR de su sticker (página personal). Se prende y se apaga desde acá.', '<button class="b pri" id="bRep">📄 Reporte del evento</button><button class="b sec" id="bRepS">📄 Reporte para speakers</button>') +
+      '<div class="tarj"><h3>Qué se muestra</h3>' + sw('PREG_ON', 'Preguntas a las charlas', 'Mandan preguntas al speaker desde el celular. Las moderás abajo.') + sw('CAL_ON', 'Calificar cada charla', 'Al terminar cada charla se les pregunta qué les pareció (1 a 5 ★ y comentario). Confidencial.') + sw('NET_ON', 'Directorio (networking)', 'Se suman al directorio y ven a quienes también se sumaron. En la puerta se les pregunta.') + sw('ENC_ON', 'Encuesta de satisfacción', 'Prendela al final de la jornada.') + '</div>' + calCard +
       '<div class="tarj"><h3>Wifi y aviso</h3><div class="form"><div><label class="et2" for="aWr">Red wifi</label><div class="fila"><input class="campo2 crece" id="aWr" value="' + esc(a.WIFI_RED) + '" placeholder="Nombre de la red"><button class="b sec chico" data-g="WIFI_RED" data-i="aWr">Guardar</button></div></div>' +
       '<div><label class="et2" for="aWc">Clave wifi</label><div class="fila"><input class="campo2 crece" id="aWc" value="' + esc(a.WIFI_CLAVE) + '" placeholder="Contraseña"><button class="b sec chico" data-g="WIFI_CLAVE" data-i="aWc">Guardar</button></div></div>' +
       '<div class="ancho"><label class="et2" for="aAv">Aviso arriba de la agenda</label><div class="fila"><input class="campo2 crece" id="aAv" value="' + esc(a.AVISO) + '" placeholder="Ej: Empezamos 10 minutos tarde"><button class="b sec chico" data-g="AVISO" data-i="aAv">Guardar</button></div><div class="cont">Lo ven todos (QR del dorso y del sticker). Borralo y guardá para sacarlo.</div></div></div></div>' +
       '<div class="tarj"><div class="fila"><h3 class="crece" style="margin:0">🎤 Preguntas</h3><select class="campo2" id="pfCharla" style="width:auto"></select><div class="seg" id="pfEst"><button data-v="activas"' + (fP.estado === 'activas' ? ' class="on"' : '') + '>Para moderar</button><button data-v="Elegida"' + (fP.estado === 'Elegida' ? ' class="on"' : '') + '>Elegidas</button><button data-v="todas"' + (fP.estado === 'todas' ? ' class="on"' : '') + '>Todas</button></div></div><div class="cont">Se actualiza sola cada 20 segundos.</div><div id="pfLista"></div></div>' +
       '<div class="tarj"><h3>⭐ Encuesta</h3><div class="cont">' + P.encuesta.respuestas + ' persona(s) respondieron.</div><div id="encRes"></div><h3 style="margin-top:18px">Preguntas de la encuesta</h3><div id="encEd"></div><div class="acc"><button class="b sec" id="encMas">＋ Agregar pregunta</button><button class="b pri" id="encGuardar">Guardar preguntas</button></div></div>' +
-      '<div class="tarj"><h3>🤝 Networking</h3><div class="grilla"><div class="kpi"><small>Comparten</small><b>' + P.net.comparten + '</b></div><div class="kpi"><small>No comparten</small><b>' + P.net.noComparten + '</b></div><div class="kpi"><small>Sin responder</small><b>' + P.net.sinRespuesta + '</b></div></div></div>';
+      '<div class="tarj"><h3>🤝 Directorio Eventos y Negocios</h3><div class="grilla"><div class="kpi"><small>En el directorio</small><b>' + P.net.comparten + '</b></div><div class="kpi"><small>No quisieron</small><b>' + P.net.noComparten + '</b></div><div class="kpi"><small>Sin responder</small><b>' + P.net.sinRespuesta + '</b></div></div>' +
+      (function (d) { if (!d) return ''; var a = d.acciones || {};
+        return '<div class="grilla" style="margin-top:10px"><div class="kpi"><small>Conexiones</small><b>' + (d.conexiones || 0) + '</b></div><div class="kpi"><small>Lo usaron</small><b>' + (d.activos || 0) + '</b></div><div class="kpi"><small>WhatsApp</small><b>' + (a.whatsapp || 0) + '</b></div><div class="kpi"><small>Agendados</small><b>' + (a.agendar || 0) + '</b></div><div class="kpi"><small>Destacados</small><b>' + (a.destacar || 0) + '</b></div></div>' +
+          '<div class="cont">Conexiones = pares de personas en las que una destacó, agendó o le escribió a la otra. El detalle queda en la pestaña <b>Directorio</b> de la planilla.</div>' +
+          (d.top && d.top.length ? '<div class="cont"><b>Más destacados:</b> ' + d.top.map(function (x) { return esc(x.nombre) + ' (' + x.n + ')'; }).join(' · ') + '</div>' : ''); })(P.net.dir) + '</div>';
     $('main').onchange = function (e) {
       var i = e.target; if (!i.hasAttribute('data-aj')) return; var k = i.getAttribute('data-aj'), v = i.checked;
       api('personalAjuste', { clave: k, valor: v }).then(function () { toast(v ? '✓ Prendido' : '✓ Apagado'); }).catch(function (e2) { i.checked = !v; fallo(e2); });
     };
     $('main').onclick = function (e) {
+      var rb = e.target.closest('#bRep, #bRepS'); if (rb) { reporte(rb.id === 'bRepS' ? 'speakers' : 'interno'); return; }
       var b = e.target.closest('button[data-g]'); if (b) { boton(b, api('personalAjuste', { clave: b.getAttribute('data-g'), valor: $(b.getAttribute('data-i')).value })).then(function () { toast('✓ Guardado'); }).catch(fallo); return; }
       var pe = e.target.closest('button[data-pf]'); if (pe) { boton(pe, api('pregEstado', { fila: pe.getAttribute('data-pf'), estado: pe.getAttribute('data-e') })).then(function (r) { cache.personal = r.personal; pintarPreguntas(); }).catch(fallo); return; }
     };
@@ -495,6 +595,7 @@
       else c += r.textos.length ? '<div style="max-height:200px;overflow:auto;margin-top:6px">' + r.textos.map(function (t) { return '<div class="cont">“' + esc(t) + '”</div>'; }).join('') + '</div>' : '<div class="cont">Sin respuestas todavía.</div>';
       return c + '</div>';
     }).join('') + '<div class="acc"><button class="b sec chico" id="encCsv">⬇︎ Exportar textos y puntajes</button></div>' : '<div class="cont">Todavía no armaste preguntas.</div>';
+    if ($('calCsv')) $('calCsv').onclick = function () { var f = [['Charla', 'Nombre', 'Empresa', 'Estrellas', 'Comentario']]; (cache.personal.cal || []).forEach(function (c) { c.resp.forEach(function (x) { f.push([c.charla, x.nombre, x.empresa, x.estrellas, x.comentario]); }); }); csv('calificaciones', f); };
     if ($('encCsv')) $('encCsv').onclick = function () { csv('encuesta', [['Pregunta', 'Tipo', 'Respuestas', 'Promedio / detalle']].concat(E.resultados.map(function (r) { return [r.texto, r.tipo, r.n, r.tipo === 'estrellas' ? r.promedio : r.tipo === 'opciones' ? r.dist.map(function (d) { return d.op + ': ' + d.n; }).join(' | ') : r.textos.join(' | ')]; }))); };
     function pintarEd() {
       $('encEd').innerHTML = ed.map(function (q, i) {
@@ -522,6 +623,83 @@
   }
 
   // ── Mails y certificados ──
+  // ── v1.19 · Sorteo ──
+  var tSor = null, edSor = null;
+  V.sorteo = function () {
+    clearInterval(tSor); edSor = null;
+    api('sorteo').then(function (r) { pintarSorteo(r.sorteo);
+      tSor = setInterval(function () { if (vista !== 'sorteo') { clearInterval(tSor); return; } if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; api('sorteo').then(function (r2) { pintarSorteo(r2.sorteo, true); }).catch(function () { }); }, 15000);
+    }).catch(fallo);
+  };
+  function pintarSorteo(Z, soloDatos) {
+    cache.sorteo = Z; var c = Z.conteo, rq = Z.req;
+    if (!edSor) edSor = Z.premios.map(function (p) { return { id: p.id, nombre: p.nombre, de: p.de || '', cant: p.cant || 1 }; });
+    var sw = function (id, on, t, sub) { return '<div class="interr"><div class="t"><b>' + t + '</b><small>' + sub + '</small></div><label class="sw"><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + '><span></span></label></div>'; };
+    var ck = function (id, on, t) { return '<label class="fila" style="gap:8px;margin-top:8px;cursor:pointer"><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + ' style="width:18px;height:18px"> ' + t + '</label>'; };
+    var girando = Z.actual && Z.actual.rev > Z.ahora;
+    var htmlSortear = Z.premios.length ? '<table class="tabla" style="margin-top:6px"><tbody>' + Z.premios.map(function (p) {
+      var gan = Z.ganadores.filter(function (g) { return g.p === p.id && g.estado !== 'ausente'; });
+      return '<tr><td><b style="font-size:15px">' + esc(p.nombre) + '</b><small>' + (p.de ? 'Gentileza de ' + esc(p.de) + ' · ' : '') + (p.cant > 1 ? p.cant + ' unidades · ' : '') + (gan.length ? '🏆 ' + gan.map(function (g) { return esc(g.nombre); }).join(', ') : 'Sin sortear') + '</small></td>' +
+        '<td class="num">' + (p.quedan > 0 ? '<button class="b pri" data-sortear="' + esc(p.id) + '"' + (girando ? ' disabled' : '') + '>🎲 Sortear' + (p.cant > 1 ? ' (' + p.quedan + ')' : '') + '</button>' : '<span class="chip ok">✓ Sorteado</span>') + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<div class="vacio">Primero cargá los premios (abajo).</div>';
+    var est = { '': '<span class="chip am">A entregar</span>', entregado: '<span class="chip ok">✓ Entregado</span>', ausente: '<span class="chip mal">No estaba</span>' };
+    var htmlGan = Z.ganadores.length ? '<div class="scroll" style="margin-top:8px"><table class="tabla"><thead><tr><th>Premio</th><th>Ganador</th><th>Hora</th><th>Estado</th><th></th></tr></thead><tbody>' + Z.ganadores.map(function (g) {
+      return '<tr><td>' + esc(g.premio) + '</td><td><b>' + esc(g.nombre) + '</b><small>' + esc(g.empresa || '') + '</small></td><td>' + F.hora(g.ts) + '</td><td>' + (est[g.estado] || '') + '</td><td class="num">' +
+        (g.estado !== 'entregado' ? '<button class="b sec chico" data-marca="' + g.ts + '" data-e="entregado">✓ Entregado</button> ' : '') + (g.estado === '' ? '<button class="b sec chico" data-marca="' + g.ts + '" data-e="ausente">✗ No está</button>' : '') +
+        (g.estado !== '' ? ' <button class="b sec chico" data-marca="' + g.ts + '" data-e="">Deshacer</button>' : '') + '</td></tr>';
+    }).join('') + '</tbody></table></div><div class="cont">"No está" libera el premio para volver a sortearlo (esa persona ya no participa).</div>' : '<div class="cont">Todavía no hubo ganadores.</div>';
+    var kpis = '<div class="grilla"><div class="kpi"><small>Asistentes (sin equipo)</small><b>' + c.validas + '</b></div><div class="kpi"><small>Ya ingresaron</small><b>' + c.ingresaron + '</b></div><div class="kpi"><small>Con la app abierta</small><b>' + c.conApp + '</b></div><div class="kpi"><small>Participan ahora</small><b style="color:var(--ok)">' + c.participan + '</b><span>cumplen los requisitos y no ganaron</span></div></div>';
+    if (soloDatos && $('sorKpis')) { $('sorKpis').innerHTML = kpis; $('sorSortear').innerHTML = htmlSortear; $('sorGan').innerHTML = htmlGan; return; }
+    $('main').innerHTML = cab('🎁 Sorteo', 'Se sortea desde acá. La pantalla del proyector y los celulares de los asistentes se actualizan solos.', '<button class="b pri" id="sorPantalla">📺 Abrir pantalla para proyectar</button>') +
+      '<div id="sorKpis">' + kpis + '</div>' +
+      '<div class="tarj"><h3>🎲 Sortear</h3><div class="cont">Al tocar Sortear, en la pantalla gira la ruleta de nombres ~9 segundos y aparece el ganador; en los celulares sale "Sorteando…" y al ganador, <b>¡GANASTE!</b></div><div id="sorSortear">' + htmlSortear + '</div>' +
+      '<div class="acc"><button class="b sec" id="sorVerPremios">📺 Pantalla: mostrar premios</button><button class="b sec" id="sorVerGan">📺 Pantalla: mostrar último ganador</button></div></div>' +
+      '<div class="tarj"><h3>🏆 Ganadores</h3><div id="sorGan">' + htmlGan + '</div></div>' +
+      '<div class="tarj"><h3>Cómo se ve</h3>' + sw('sorOn', Z.on, 'Mostrar el sorteo en la app', 'Cada asistente ve en su página si participa y qué le falta. Prendelo un rato antes.') +
+        sw('sorVivo', Z.vivo, 'En vivo', 'Los celulares consultan más seguido (cada ~10 s) para mostrar "Sorteando…". Se prende solo al sortear; apagalo al terminar.') +
+        '<div class="form" style="margin-top:10px"><div class="ancho"><label class="et2" for="sorTit">Título en la pantalla</label><div class="fila"><input class="campo2 crece" id="sorTit" value="' + esc(Z.titulo) + '" maxlength="60"><button class="b sec chico" id="sorTitG">Guardar</button></div></div></div></div>' +
+      '<div class="tarj"><h3>🎁 Premios</h3><div id="sorEd"></div><div class="acc"><button class="b sec" id="sorMas">＋ Agregar premio</button><button class="b pri" id="sorGuardarP">Guardar premios</button></div></div>' +
+      '<div class="tarj"><h3>✅ Quiénes participan</h3>' + ck('rqVin', rq.vinieron, 'Solo quienes <b>ingresaron</b> (acreditados en la puerta)') + ck('rqApp', rq.app, 'Solo quienes <b>escanearon el QR de su credencial</b> (así les llega el ¡GANASTE! al celu)') +
+        ck('rqDir', rq.directorio, 'Solo quienes se sumaron al <b>directorio</b>') + ck('rqEq', rq.equipo, 'Excluir al <b>equipo</b>: producción, staff, prensa, comisión directiva, speakers e invitaciones con texto fijo') +
+        '<div class="fila" style="margin-top:10px;gap:8px">Calificar al menos <input class="campo2" id="rqCal" type="number" min="0" max="10" value="' + (rq.charlas || 0) + '" style="width:70px"> charla(s) <span class="cont">(0 = no hace falta)</span></div>' +
+        '<div class="acc"><button class="b pri" id="sorGuardarR">Guardar requisitos</button></div></div>' +
+      '<div class="tarj"><h3>Prueba</h3><div class="cont">Para ensayar antes del evento: sorteá, mirá la pantalla y después borrá los ganadores.</div><div class="acc"><button class="b sec" id="sorBorrar">🗑 Borrar ganadores</button></div></div>';
+    pintarEdSor();
+    var guardar = function (b, cfg, ok) { return boton(b, api('sorteoGuardar', { cfg: cfg })).then(function (r2) { toast(ok || r2.msj); edSor = null; pintarSorteo(r2.sorteo); }).catch(fallo); };
+    $('sorPantalla').onclick = function () { window.open('sorteo.html', 'sorteo'); };
+    $('sorOn').onchange = function () { var el = this; api('sorteoGuardar', { cfg: { on: el.checked } }).then(function (r2) { toast(el.checked ? '✓ Visible en la app' : '✓ Oculto en la app'); pintarSorteo(r2.sorteo, true); $('sorVivo').checked = r2.sorteo.vivo; }).catch(function (e2) { el.checked = !el.checked; fallo(e2); }); };
+    $('sorVivo').onchange = function () { var el = this; api('sorteoGuardar', { cfg: { vivo: el.checked } }).then(function () { toast(el.checked ? '✓ En vivo' : '✓ Fin del en vivo'); }).catch(function (e2) { el.checked = !el.checked; fallo(e2); }); };
+    $('sorTitG').onclick = function () { guardar(this, { titulo: $('sorTit').value }); };
+    $('sorMas').onclick = function () { leerEdSor(); edSor.push({ id: '', nombre: '', de: '', cant: 1 }); pintarEdSor(); var l = $('sorEd').querySelectorAll('[data-k="nombre"]'); if (l.length) l[l.length - 1].focus(); };
+    $('sorGuardarP').onclick = function () { leerEdSor(); guardar(this, { premios: edSor.filter(function (p) { return p.nombre.trim(); }) }, '✓ Premios guardados'); };
+    $('sorGuardarR').onclick = function () { guardar(this, { req: { vinieron: $('rqVin').checked, app: $('rqApp').checked, directorio: $('rqDir').checked, equipo: $('rqEq').checked, charlas: Number($('rqCal').value) || 0 } }, '✓ Requisitos guardados'); };
+    $('sorBorrar').onclick = function () { if (!confirm('¿Borrar TODOS los ganadores? Usalo solo para pruebas.')) return; boton(this, api('sorteoBorrar')).then(function (r2) { toast(r2.msj); pintarSorteo(r2.sorteo); }).catch(fallo); };
+    $('sorVerPremios').onclick = function () { boton(this, api('sorteoPantalla', { modo: 'premios' })).then(function () { toast('✓ La pantalla muestra los premios'); }).catch(fallo); };
+    $('sorVerGan').onclick = function () { boton(this, api('sorteoPantalla', { modo: 'ganador' })).then(function () { toast('✓ La pantalla muestra al último ganador'); }).catch(fallo); };
+    $('main').onclick = function (e) {
+      var s = e.target.closest('button[data-sortear]');
+      if (s) {
+        var nom = s.closest('tr').querySelector('b').textContent; if (!confirm('¿Sortear "' + nom + '" ahora? Va a salir en la pantalla y en los celulares.')) return;
+        boton(s, api('sortear', { premio: s.getAttribute('data-sortear') }), '🎲 Sorteando…').then(function (r2) {
+          toast('🎲 Girando en la pantalla… ganó ' + r2.ganador.nombre + ' (se revela en unos segundos)'); pintarSorteo(r2.sorteo, true);
+          setTimeout(function () { if (vista === 'sorteo') api('sorteo').then(function (r3) { pintarSorteo(r3.sorteo, true); }).catch(function () { }); }, 10000);
+        }).catch(fallo); return;
+      }
+      var m = e.target.closest('button[data-marca]');
+      if (m) { var es = m.getAttribute('data-e'); if (es === 'ausente' && !confirm('¿Marcar que no está? El premio vuelve a quedar para sortear.')) return; boton(m, api('sorteoMarcar', { ts: Number(m.getAttribute('data-marca')), estado: es })).then(function (r2) { pintarSorteo(r2.sorteo, true); }).catch(fallo); return; }
+      var q = e.target.closest('button[data-quitar]'); if (q) { leerEdSor(); edSor.splice(Number(q.getAttribute('data-quitar')), 1); pintarEdSor(); }
+    };
+  }
+  function pintarEdSor() {
+    $('sorEd').innerHTML = edSor.length ? edSor.map(function (p, i) {
+      return '<div class="fila" data-i="' + i + '" style="margin-top:8px;gap:8px;flex-wrap:wrap"><input class="campo2 crece" data-k="nombre" placeholder="Premio (ej: Kit de mate)" value="' + esc(p.nombre) + '" maxlength="80" style="min-width:200px">' +
+        '<input class="campo2" data-k="de" placeholder="Gentileza de (opcional)" value="' + esc(p.de) + '" maxlength="60" style="width:200px"><input class="campo2" data-k="cant" type="number" min="1" max="20" value="' + (p.cant || 1) + '" title="Cantidad" style="width:70px"><button class="b sec chico" data-quitar="' + i + '" title="Quitar">✕</button></div>';
+    }).join('') : '<div class="cont">Sin premios todavía.</div>';
+  }
+  function leerEdSor() {
+    Array.prototype.forEach.call($('sorEd').querySelectorAll('[data-i]'), function (f) { var p = edSor[Number(f.getAttribute('data-i'))]; f.querySelectorAll('[data-k]').forEach(function (x) { p[x.getAttribute('data-k')] = x.getAttribute('data-k') === 'cant' ? Number(x.value) || 1 : x.value; }); });
+  }
+
   V.comunicacion = function () {
     api('comunicacion').then(function (r) {
       var c = r.cert;

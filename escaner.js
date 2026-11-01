@@ -69,6 +69,9 @@
     S.mostrando = true;
     var r = $('res'); r.className = clase; $('rIco').textContent = ico; $('rTit').textContent = tit; $('rNom').textContent = nom || ''; $('rDet').textContent = det || '';
     $('rCred').textContent = cred || ''; $('rCred').classList.toggle('oculto', !cred);
+    // v1.18: recordatorio para vincular la app al celular de la persona
+    var ra = $('rApp'); if (!ra) { ra = document.createElement('div'); ra.id = 'rApp'; ra.className = 'det'; ra.style.cssText = 'margin-top:14px;font-weight:700'; $('res').appendChild(ra); }
+    ra.textContent = clase === 'v' ? '📱 Decile: «Escaneá ahora el QR de tu credencial con tu celu»' : '';
     sonar(clase === 'v' || clase === 'a' ? 'v' : 'x');
     // recuadro chico del inicio
     $('ult').className = 'ult ' + (clase === 'v' || clase === 'g' || clase === 'a' ? clase : 'r');

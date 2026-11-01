@@ -12,7 +12,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="estilos.css?v=1.14.0">
+<link rel="stylesheet" href="estilos.css?v=1.19.0">
 <style>
   :root { --lado: 236px; --ok: #11663A; --okF: #D6F0DD; --azF: #DCE8F7; --az: #1F4E8C; --nar: #8A3A00; --narF: #FFE3C7; }
   body { background: var(--fondo); }
@@ -107,6 +107,15 @@
   .seg button.on { background: #fff; color: var(--texto); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .tipoT .cabT { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .tipoT .cabT b { font-size: 17px; flex: 1; }
+  /* v1.17 · Tickets y grupos */
+  .gGrupo { border-top: 1px solid var(--borde); padding: 10px 0 6px; } .gGrupo:first-of-type { border-top: 0; }
+  .gFila { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; padding: 6px 0; }
+  .gFila.hijo { margin-left: 18px; padding-left: 12px; border-left: 3px solid #E8C766; }
+  .gInfo { flex: 1; min-width: 240px; } .gInfo .nums small { color: var(--gris); }
+  .gChips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .gAcc { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .gMas { margin: 4px 0 0 30px; }
+  details.tarj summary { cursor: pointer; }
   .benefB { margin-top: 14px; padding: 12px 14px; border: 1px dashed #D9B44A; border-radius: 12px; background: #FFFBEA; }
   .tipoT.conCod .benefB { border-style: solid; }
   .benefT { font-weight: 800; color: #7A5200; margin-bottom: 4px; } .benefT small { display: block; font-weight: 500; color: var(--gris); font-size: 12px; margin-top: 2px; }
@@ -172,8 +181,8 @@
 <div id="modal" class="oculto"><div class="caja"><button class="cerrar" id="mCerrar" aria-label="Cerrar">✕</button><div id="mCont"></div></div></div>
 <div id="toast" class="oculto"></div>
 
-<script src="config.js?v=1.14.0"></script>
-<script src="comun.js?v=1.14.0"></script>
-<script src="consola.js?v=1.14.0"></script>
+<script src="config.js?v=1.19.0"></script>
+<script src="comun.js?v=1.19.0"></script>
+<script src="consola.js?v=1.19.0"></script>
 </body>
 </html>

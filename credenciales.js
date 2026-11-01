@@ -100,8 +100,11 @@
     }
     return mejor;
   }
+  // v1.15: punto discreto (abajo a la izquierda) en los no socios, para que el equipo de ventas los identifique
+  var SIN_PUNTO = ['Speaker', 'Producción', 'Comisión Directiva', 'Staff', 'Socio AOFREP'];
+  function llevaPunto(c) { return c.noSocio === true && SIN_PUNTO.indexOf(String(c.rol || '')) < 0; }
   function datosSticker(c) {
-    return { nombre: nombreCred(c).toUpperCase(), empresa: empresaCred(c), rubro: String(c.rubro || '').trim(), rol: String(c.rol || '').trim(), cargo: String(c.cargo || '').trim(), cargo2: String(c.cargo2 || '').trim(), empresa2: String(c.empCred2 || '').trim(),
+    return { marca: llevaPunto(c), nombre: nombreCred(c).toUpperCase(), empresa: empresaCred(c), rubro: String(c.rubro || '').trim(), rol: String(c.rol || '').trim(), cargo: String(c.cargo || '').trim(), cargo2: String(c.cargo2 || '').trim(), empresa2: String(c.empCred2 || '').trim(),
       qr: cfg.qr && c.hola ? (D.sitio || location.origin).replace(/\/+$/, '') + '/a?h=' + c.hola : '' };
   }
   // Renglón con partes de distinto peso (ej: "Presidenta · " liviano + "AOFREP" negrita)
@@ -128,10 +131,13 @@
       qrX = ANCHO - 28 - qrLado; qrY = ALTO - 28 - qrLado;
       for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) cx.fillRect(qrX + k * m, qrY + r * m, m, m);
     }
+    // v1.15: punto de 2,5 mm a 3,5 mm de los bordes, abajo a la izquierda (simétrico al QR)
+    if (d.marca) { cx.beginPath(); cx.arc(28 + 10, ALTO - 28 - 10, 10, 0, 2 * Math.PI); cx.fill(); }
     // Texto centrado en todo el ancho. Solo los renglones que bajan hasta la altura del QR se achican para no tocarlo.
     var izqA = (window.STICKER_ALINEAR || 'centro') === 'izq';
     var centro = izqA ? margen : ANCHO / 2, full = ANCHO - 2 * margen;
     var angosto = qrLado ? (izqA ? qrX - 14 - margen : Math.max(220, 2 * (qrX - 14 - centro))) : full, qTop = qrLado ? qrY - 14 : Infinity;
+    if (d.marca && !qrLado) { qTop = ALTO - 28 - 20 - 14; angosto = izqA ? full - 34 : full - 2 * 34; }
     // Nombre: hasta 100 px; si no entra, se achica; si sigue sin entrar (o es muy largo), dos renglones
     cx.font = '800 100' + FUENTE;
     var lineas = [d.nombre], tNom = ajustar(cx, d.nombre, 800, 100, full);
@@ -305,6 +311,8 @@
     var entregar = vista === 'Puerta' && c.veces && !bloqueo;
     if (entregar) avisos += '<div class="aviso ok" style="font-size:18px;font-weight:800">🏷️ Credencial ya impresa (' + esc(c.impresa) + '): buscala en la caja y entregala.</div><div class="ayuda">Reimprimí solo si se le perdió o hay que corregir algo.</div>';
     else if (c.veces) avisos += '<div class="aviso av">Ya tiene sticker (impreso ' + esc(c.impresa) + (c.veces > 1 ? ', ' + c.veces + ' veces' : '') + '). Imprimí de nuevo solo si se le perdió o salió mal.</div>';
+    avisos += '<div class="ayuda" id="eSocio" style="margin-top:6px"></div>';
+    avisos += '<div class="ayuda" id="eCel" style="margin-top:4px">' + (c.cel ? '📱 Su app ya está vinculada a un celular. <button class="lnk" id="eLibCel" type="button">Liberar celular</button> (si cambió de celular o no puede entrar)' : '📱 Decile: «Escaneá ahora el QR de tu credencial con tu celu»: así la app queda vinculada a su celular.') + '</div>';
     if (c.ingreso) avisos += '<div class="aviso info">Ya ingresó a las ' + F.hora(c.ingreso) + (c.puerta ? ' (' + esc(c.puerta) + ')' : '') + '.</div>';
     var roles = '<option value="">Asistente (sin franja)</option>' + D.roles.map(function (r) { return '<option' + (r === e.rol ? ' selected' : '') + '>' + esc(r) + '</option>'; }).join('');
     $('pEditor').innerHTML = '<div style="margin-top: 16px; border-top: 1px solid var(--borde); padding-top: 12px">' +
@@ -326,6 +334,10 @@
     if ($('eNet')) $('eNet').onclick = function (ev) { var b = ev.target.closest('button[data-n]'); if (!b) return; var v = b.getAttribute('data-n'); this.setAttribute('data-v', v); Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) { x.classList.toggle('on', x === b); }); leerEditor(); };
     ['eNom', 'eEmp', 'eRub', 'eRol', 'eCar', 'eEmp2', 'eCar2'].forEach(function (id) { $(id).addEventListener('input', leerEditor); $(id).addEventListener('change', leerEditor); });
     $('eImprimir').onclick = imprimirActual; if ($('eEntregar')) $('eEntregar').onclick = entregarActual; $('eGuardar').onclick = function () { guardarActual().then(function (ok) { if (ok) toast('✓ Guardado'); }).catch(fallo); };
+    if ($('eLibCel')) $('eLibCel').onclick = function () {
+      if (!confirm('¿Liberar el celular de ' + nombreCred(c) + '? El próximo celular que escanee su credencial queda vinculado.')) return;
+      F.post('cred', { op: 'liberarCel', token: S.token, puerta: S.puerta, cod: c.cod }).then(function (r) { toast(r.msj); c.cel = 0; actual.cel = 0; $('eCel').textContent = '📱 Listo: que escanee su credencial con el celular nuevo.'; }).catch(fallo);
+    };
     $('eCerrar').onclick = function () { actual = null; pintarEditor(); if (vista === 'Puerta') $('pLector').focus(); };
     previa();
     if (c._lector && !bloqueo && vista === 'Puerta') (entregar ? $('eEntregar') : $('eImprimir')).focus();
@@ -336,7 +348,12 @@
     previa();
   }
   function conEdicion(c) { var e = c._edit || {}; return Object.assign({}, c, { nomCred: e.nomCred, empCred: e.empCred, rubro: e.rubro, rol: e.rol, cargo: e.cargo, cargo2: e.cargo2, empCred2: e.empCred2 }); }
-  function previa() { if (!actual) return; fuente().then(function () { dibujar($('pCanvas'), datosSticker(conEdicion(actual))); }); }
+  function previa() {
+    if (!actual) return;
+    var ce = conEdicion(actual);
+    if ($('eSocio')) $('eSocio').textContent = llevaPunto(ce) ? '● No socio: el sticker lleva el punto chiquito abajo a la izquierda (para ventas). Si es socio, elegí Rol "Socio AOFREP".' : (actual.noSocio ? 'Sin punto por su rol.' : 'Socio: sin punto.');
+    fuente().then(function () { dibujar($('pCanvas'), datosSticker(ce)); });
+  }
   function cambio(c) {
     var e = c._edit; if (!e) return false;
     return e.nomCred !== (c.nomCred || '') || e.empCred !== (c.empCred || empresaCred(c)) || e.rubro !== (c.rubro || '') || e.rol !== (c.rol || '') || e.cargo !== (c.cargo || '') || e.cargo2 !== (c.cargo2 || '') || e.empCred2 !== (c.empCred2 || '') || (e.net || '') !== (c.net || '') ||
@@ -358,7 +375,7 @@
     var c = actual, b = $('eEntregar'); b.disabled = true;
     var p = guardarActual().then(function () { return c.ingreso ? null : F.post('sync', { puerta: S.puerta, token: S.token, desde: 0, eventos: [{ id: 'ent-' + c.cod + '-' + Date.now(), c: c.cod, ts: Date.now(), tipo: 'in' }] }, 60000); });
     p.then(function () {
-      toast('✓ Credencial entregada a ' + nombreCred(c));
+      toast('✓ Credencial entregada a ' + nombreCred(c) + ' · 📱 que escanee el QR con su celu');
       actual = null; $('pResultados').innerHTML = ''; pintarEditor(); cargar(true); $('pLector').focus();
     }).catch(function (e) { b.disabled = false; fallo(e); });
   }
@@ -388,6 +405,10 @@
       if (f === 'sin' && c.veces) return false;
       if (f === 'rol' && !c.rol) return false;
       if (f === 'incompletos' && empresaCred(c) && c.rubro) return false;
+      var ft = $('tTipo') ? $('tTipo').value : '', fs = $('tSocio') ? $('tSocio').value : '';
+      if (ft && c.tipo !== ft) return false;
+      if (fs === 'socios' && llevaPunto(c)) return false;
+      if (fs === 'nosocios' && !llevaPunto(c)) return false;
       if (q && norm(nombreCred(c) + ' ' + empresaCred(c) + ' ' + c.rubro + ' ' + c.dni).indexOf(q) < 0) return false;
       return true;
     });
@@ -396,6 +417,10 @@
     return l;
   }
   function pintarTanda() {
+    // v1.18: el filtro por ticket/grupo se arma con los tipos que hay
+    var tt = $('tTipo'), tipos = {}; D.creds.forEach(function (c) { if (c.estado === 'Válida' && c.tipo) tipos[c.tipo] = (tipos[c.tipo] || 0) + 1; });
+    var claves = Object.keys(tipos).sort();
+    if (tt && tt.getAttribute('data-k') !== claves.join('|')) { var v = tt.value; tt.innerHTML = '<option value="">Todos los tickets y grupos</option>' + claves.map(function (k) { return '<option value="' + esc(k) + '">' + esc(k) + ' (' + tipos[k] + ')</option>'; }).join(''); tt.value = v; tt.setAttribute('data-k', claves.join('|')); }
     var l = filtrados(), n = 0;
     $('tLista').innerHTML = l.map(function (c) {
       if (elegidos[c.cod]) n++;
@@ -403,7 +428,7 @@
         '<td><b>' + esc(nombreCred(c)) + '</b>' + (c.nomCred && c.nomCred !== c.nombre ? '<br><small style="color: var(--gris)">' + esc(c.nombre) + '</small>' : '') + '</td>' +
         '<td>' + (empresaCred(c) ? esc(empresaCred(c)) : '<span class="chip av">Falta</span>') + '</td><td>' + (c.rubro ? esc(c.rubro) : '<span class="chip av">Falta</span>') + '</td>' +
         '<td>' + (c.rol ? '<span class="chip az">' + esc(c.rol) + (c.cargo ? ' · ' + esc(c.cargo) : '') + '</span>' : '') + '</td>' +
-        '<td>' + (c.veces ? '<span class="chip ok">✓ ' + esc(c.impresa) + '</span>' : '') + '</td></tr>';
+        '<td>' + (c.veces ? '<span class="chip ok">✓ ' + esc(c.impresa) + '</span>' : '') + (llevaPunto(c) ? ' <span title="No socio: lleva el punto">●</span>' : '') + '</td></tr>';
     }).join('') || '<tr><td colspan="6" class="ayuda">No hay nadie con ese filtro.</td></tr>';
     var sel = Object.keys(elegidos).filter(function (k) { return elegidos[k]; }).length;
     $('tResumen').textContent = l.length + ' en la lista · ' + sel + ' elegidos';
@@ -454,7 +479,7 @@
   $('pLector').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); buscar(this.value); } });
   $('pLector').addEventListener('input', function () { if (!codigoLeido(this.value) && this.value.trim().length >= 3) buscar(this.value); });
   $('pResultados').addEventListener('click', function (e) { var b = e.target.closest('[data-cod]'); if (!b) return; var c = buscarCod(b.getAttribute('data-cod')); if (c) { $('pResultados').innerHTML = ''; $('pLector').value = ''; elegir(c, false); } });
-  ['tBuscar', 'tFiltro', 'tOrden'].forEach(function (id) { $(id).addEventListener('input', pintarTanda); $(id).addEventListener('change', pintarTanda); });
+  ['tBuscar', 'tFiltro', 'tOrden', 'tTipo', 'tSocio'].forEach(function (id) { $(id).addEventListener('input', pintarTanda); $(id).addEventListener('change', pintarTanda); });
   $('tTodos').onchange = function () { var on = this.checked; filtrados().forEach(function (c) { elegidos[c.cod] = on; }); pintarTanda(); };
   $('tLista').addEventListener('click', function (e) {
     var chk = e.target.closest('[data-chk]'); if (chk) { elegidos[chk.getAttribute('data-chk')] = chk.checked; pintarTanda(); return; }
