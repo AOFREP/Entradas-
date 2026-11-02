@@ -304,13 +304,13 @@ body { font-family: "Public Sans", -apple-system, "Segoe UI", Arial, sans-serif;
     { ini: '10:25', fin: '11:25', tipo: 'charla', foto: 'dalto', titulo: 'Lucas Dalto', sub: 'Creador de Soy Dalto · Empresario y divulgador tecnológico', tema: 'Tecnología para potenciar tu negocio' },
     { ini: '11:25', fin: '11:45', tipo: 'pausa', ico: '☕', titulo: 'Coffee break' },
     { ini: '11:45', fin: '12:30', tipo: 'charla', foto: 'sol', titulo: 'Sol Espasandín', sub: 'Diseñadora y ambientadora de eventos', tema: 'Conectar con el cliente y crear propuestas que se eligen' },
-    { ini: '12:30', fin: '13:15', tipo: 'charla', foto: 'bonetto', titulo: 'Daniela Bonetto', sub: 'CEO de Bonetto Sonido e Iluminación', tema: 'Cómo construir una empresa sólida que crezca y se sostenga' },
-    { ini: '13:15', fin: '14:35', tipo: 'pausa', ico: '🍽️', titulo: 'Break' },
-    { ini: '14:35', fin: '14:40', tipo: 'general', ico: '🎤', titulo: 'Inicio de la segunda parte', sub: 'Volvemos a la sala' },
-    { ini: '14:40', fin: '15:30', tipo: 'charla', foto: 'natt', titulo: 'Natt La Regina', sub: 'Event Planner · Directora de Natt La Regina Planners', tema: 'El negocio detrás de los eventos', etiqueta: 'Entrevista' },
-    { ini: '15:30', fin: '15:50', tipo: 'pausa', ico: '☕', titulo: 'Coffee break' },
-    { ini: '15:50', fin: '16:55', tipo: 'charla', foto: 'piacentini', titulo: 'Elisabet Piacentini', sub: 'Contadora · CEO de Estudio Contable Piacentini', tema: 'Gestión, impuestos y finanzas de tu PyME' },
-    { ini: '16:55', fin: '17:00', tipo: 'general', ico: '👏', titulo: 'Cierre', sub: 'Gracias por acompañarnos' }
+    { ini: '12:30', fin: '13:45', tipo: 'charla', foto: 'bonetto', titulo: 'Daniela Bonetto', sub: 'CEO de Bonetto Sonido e Iluminación', tema: 'Cómo construir una empresa sólida que crezca y se sostenga' },
+    { ini: '13:45', fin: '15:00', tipo: 'pausa', ico: '🍽️', titulo: 'Almuerzo' },
+    { ini: '15:00', fin: '15:05', tipo: 'general', ico: '🎤', titulo: 'Inicio de la segunda parte', sub: 'Volvemos a la sala' },
+    { ini: '15:05', fin: '15:45', tipo: 'charla', foto: 'natt', titulo: 'Natt La Regina', sub: 'Event Planner · Directora de Natt La Regina Planners', tema: 'El negocio detrás de los eventos', etiqueta: 'Entrevista' },
+    { ini: '15:45', fin: '16:00', tipo: 'pausa', ico: '☕', titulo: 'Coffee break' },
+    { ini: '16:00', fin: '16:55', tipo: 'charla', foto: 'piacentini', titulo: 'Elisabet Piacentini', sub: 'Contadora · CEO de Estudio Contable Piacentini', tema: 'Gestión, impuestos y finanzas de tu PyME' },
+    { ini: '16:55', fin: '17:10', tipo: 'general', ico: '🎁', titulo: 'Cierre de jornada y sorteo', sub: 'Gracias por acompañarnos' }
   ];
   var ARRANCA = '10:15';
 
@@ -402,21 +402,21 @@ body { font-family: "Public Sans", -apple-system, "Segoe UI", Arial, sans-serif;
   // ── v1.20.7 · placas diseñadas por el equipo (grandes pg-*.jpg · chicas pc-*.jpg · TVs foyer pt-*.jpg) + countdown y movimiento encima ──
   var PLS = {
     grandes: { breve: 'pg-01-en-breve.jpg', dalto: 'pg-02-dalto.jpg', natt: 'pg-03-natt.jpg', bonetto: 'pg-04-bonetto.jpg', sol: 'pg-05-sol.jpg', piacentini: 'pg-06-piacentini.jpg',
-      credencial: 'pg-07-credencial.jpg', agenda: 'pg-08-agenda.jpg', gracias: 'pg-12-gracias.jpg', arrCd: 'pg-13-arrancamos-cd.jpg', arr: 'pg-14-arrancamos.jpg', volCd: 'pg-15-volvemos-cd.jpg', vol: 'pg-16-volvemos.jpg',
-      breaks: { '11:45': ['pg-09-coffee-1145.jpg', 'pg-15-volvemos-cd.jpg'], '15:50': ['pg-10-coffee-1550.jpg', 'pg-15-volvemos-cd.jpg'], '14:35': ['pg-11-break-1435.jpg', 'pg-15-volvemos-cd.jpg'] },
+      credencial: 'pg-07-credencial.jpg', agendaVieja: 'pg-08-agenda.jpg', gracias: 'pg-12-gracias.jpg', arrCd: 'pg-13-arrancamos-cd.jpg', arr: 'pg-14-arrancamos.jpg', volCd: 'pg-15-volvemos-cd.jpg', vol: 'pg-16-volvemos.jpg',
+      breaks: { '11:45': ['pg-09-coffee-1145.jpg', 'pg-15-volvemos-cd.jpg'], '16:00': ['pg-10-coffee-1600.jpg', 'pg-15-volvemos-cd.jpg'], '15:00': ['pg-11-almuerzo-1500.jpg', 'pg-15-volvemos-cd.jpg'] },
       box: { 'pg-13-arrancamos-cd.jpg': [674, 454, 763, 247], 'pg-15-volvemos-cd.jpg': [674, 454, 763, 247] } },
     chicas: { breve: 'pc-01-en-breve.jpg', dalto: 'pc-02-dalto.jpg', natt: 'pc-03-natt.jpg', bonetto: 'pc-04-bonetto.jpg', sol: 'pc-05-sol.jpg', piacentini: 'pc-06-piacentini.jpg',
-      credencial: 'pc-07-credencial.jpg', agenda: 'pc-08-agenda.jpg', gracias: 'pc-15-gracias.jpg', arrCd: 'pc-18-arrancamos-cd.jpg', arr: 'pc-19-arrancamos.jpg', vol: 'pc-20-volvemos.jpg',
-      breaks: { '11:45': ['pc-09-coffee-1145.jpg', 'pc-10-coffee-1145-cd.jpg'], '15:50': ['pc-11-coffee-1550.jpg', 'pc-12-coffee-1550-cd.jpg'], '14:35': ['pc-13-break-1435.jpg', 'pc-14-break-1435-cd.jpg'] },
-      box: { 'pc-18-arrancamos-cd.jpg': [268, 316, 520, 205], 'pc-10-coffee-1145-cd.jpg': [283, 430, 491, 159], 'pc-12-coffee-1550-cd.jpg': [283, 430, 491, 159], 'pc-14-break-1435-cd.jpg': [283, 430, 491, 159] } },
+      credencial: 'pc-07-credencial.jpg', agendaVieja: 'pc-08-agenda.jpg', gracias: 'pc-15-gracias.jpg', arrCd: 'pc-18-arrancamos-cd.jpg', arr: 'pc-19-arrancamos.jpg', vol: 'pc-20-volvemos.jpg',
+      breaks: { '11:45': ['pc-09-coffee-1145.jpg', 'pc-10-coffee-1145-cd.jpg'], '16:00': ['pc-11-coffee-1600.jpg', 'pc-12-coffee-1600-cd.jpg'], '15:00': ['pc-13-almuerzo-1500.jpg', 'pc-14-almuerzo-1500-cd.jpg'] },
+      box: { 'pc-18-arrancamos-cd.jpg': [268, 316, 520, 205], 'pc-10-coffee-1145-cd.jpg': [283, 430, 491, 159], 'pc-12-coffee-1600-cd.jpg': [283, 430, 491, 159], 'pc-14-almuerzo-1500-cd.jpg': [283, 430, 491, 159] } },
     foyer: { breve: 'pt-01-en-breve.jpg', dalto: 'pt-02-dalto.jpg', natt: 'pt-03-natt.jpg', bonetto: 'pt-04-bonetto.jpg', sol: 'pt-05-sol.jpg', piacentini: 'pt-06-piacentini.jpg',
-      credencial: 'pt-07-credencial.jpg', agenda: 'pt-08-agenda.jpg', gracias: 'pt-15-gracias.jpg', arrCd: 'pt-16-arrancamos-cd.jpg', arr: 'pt-17-arrancamos.jpg', volCd: 'pt-18-volvemos-cd.jpg', vol: 'pt-19-volvemos.jpg',
-      breaks: { '11:45': ['pt-10-coffee-1145.jpg', 'pt-09-coffee-1145-cd.jpg'], '15:50': ['pt-12-coffee-1550.jpg', 'pt-11-coffee-1550-cd.jpg'], '14:35': ['pt-14-break-1435.jpg', 'pt-13-break-1435-cd.jpg'] },
-      box: { 'pt-16-arrancamos-cd.jpg': [534, 480, 852, 337], 'pt-18-volvemos-cd.jpg': [534, 480, 852, 337], 'pt-09-coffee-1145-cd.jpg': [555, 660, 810, 263], 'pt-11-coffee-1550-cd.jpg': [555, 660, 810, 263], 'pt-13-break-1435-cd.jpg': [555, 660, 810, 263] } },
+      credencial: 'pt-07-credencial.jpg', agendaVieja: 'pt-08-agenda.jpg', gracias: 'pt-15-gracias.jpg', arrCd: 'pt-16-arrancamos-cd.jpg', arr: 'pt-17-arrancamos.jpg', volCd: 'pt-18-volvemos-cd.jpg', vol: 'pt-19-volvemos.jpg',
+      breaks: { '11:45': ['pt-10-coffee-1145.jpg', 'pt-09-coffee-1145-cd.jpg'], '16:00': ['pt-12-coffee-1600.jpg', 'pt-11-coffee-1600-cd.jpg'], '15:00': ['pt-14-almuerzo-1500.jpg', 'pt-13-almuerzo-1500-cd.jpg'] },
+      box: { 'pt-16-arrancamos-cd.jpg': [534, 480, 852, 337], 'pt-18-volvemos-cd.jpg': [534, 480, 852, 337], 'pt-09-coffee-1145-cd.jpg': [555, 660, 810, 263], 'pt-11-coffee-1600-cd.jpg': [555, 660, 810, 263], 'pt-13-almuerzo-1500-cd.jpg': [555, 660, 810, 263] } },
     banner: { breve: 'pb-01-en-breve.jpg', dalto: 'pb-02-dalto.jpg', natt: 'pb-03-natt.jpg', bonetto: 'pb-04-bonetto.jpg', sol: 'pb-05-sol.jpg', piacentini: 'pb-06-piacentini.jpg',
-      agenda: 'pb-07-agenda.jpg', gracias: 'pb-14-gracias.jpg', arrCd: 'pb-15-arrancamos-cd.jpg', arr: 'pb-16-arrancamos.jpg', volCd: 'pb-17-volvemos-cd.jpg', vol: 'pb-18-volvemos.jpg',
-      breaks: { '11:45': ['pb-09-coffee-1145.jpg', 'pb-08-coffee-1145-cd.jpg'], '15:50': ['pb-11-coffee-1550.jpg', 'pb-10-coffee-1550-cd.jpg'], '14:35': ['pb-13-break-1435.jpg', 'pb-12-break-1435-cd.jpg'] },
-      box: { 'pb-15-arrancamos-cd.jpg': [24, 371, 208, 100], 'pb-17-volvemos-cd.jpg': [24, 371, 208, 100], 'pb-08-coffee-1145-cd.jpg': [24, 387, 208, 100], 'pb-10-coffee-1550-cd.jpg': [24, 387, 208, 100], 'pb-12-break-1435-cd.jpg': [24, 387, 208, 100] } } // el banner no tiene placa de credencial
+      agendaVieja: 'pb-07-agenda.jpg', gracias: 'pb-14-gracias.jpg', arrCd: 'pb-15-arrancamos-cd.jpg', arr: 'pb-16-arrancamos.jpg', volCd: 'pb-17-volvemos-cd.jpg', vol: 'pb-18-volvemos.jpg',
+      breaks: { '11:45': ['pb-09-coffee-1145.jpg', 'pb-08-coffee-1145-cd.jpg'], '16:00': ['pb-11-coffee-1600.jpg', 'pb-10-coffee-1600-cd.jpg'], '15:00': ['pb-13-almuerzo-1500.jpg', 'pb-12-almuerzo-1500-cd.jpg'] },
+      box: { 'pb-15-arrancamos-cd.jpg': [24, 371, 208, 100], 'pb-17-volvemos-cd.jpg': [24, 371, 208, 100], 'pb-08-coffee-1145-cd.jpg': [24, 387, 208, 100], 'pb-10-coffee-1600-cd.jpg': [24, 387, 208, 100], 'pb-12-almuerzo-1500-cd.jpg': [24, 387, 208, 100] } } // el banner no tiene placa de credencial
   };
   var PL = PLS[P] || {}, PLACAS = !!PLS[P] && !Q.has('sinplacas');
   var CD_ARRANQUE = 15 * 60, CD_BREAK = 5 * 60, ROTA = 20000; // countdown en el recuadro: últimos 15 min antes de arrancar y últimos 5 min de cada break
@@ -482,7 +482,7 @@ body { font-family: "Public Sans", -apple-system, "Segoe UI", Arial, sans-serif;
     return { html: '<div class="ag">' + ahoraCard + prox + '</div>' };
   };
   V.completa = function () {
-    if (PLACAS) return placa(PL.agenda, 'Agenda del día');
+    if (PLACAS && PL.agenda) return placa(PL.agenda, 'Agenda del día');
     var t = ahora(), L = AGENDA.filter(function (a) { return P !== 'banner' || a.tipo === 'charla'; });
     return { html: '<div class="kick a1">Agenda del día</div><div class="comp a2">' + L.map(function (a) { var vivo = t >= ms(a.ini) && t < ms(a.fin);
       return '<div class="fila' + (a.tipo === 'pausa' ? ' pz' : '') + (vivo ? ' en' : '') + '"><span class="hh">' + esc(a.ini) + '</span>' + img(a, 'mini') + '<div><b>' + esc(a.titulo) + '</b>' + (a.tema && P !== 'banner' ? '<small>' + esc(a.tema) + '</small>' : '') + '</div></div>'; }).join('') + '</div>' };
