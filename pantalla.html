@@ -612,7 +612,7 @@ body { font-family: "Public Sans", -apple-system, "Segoe UI", Arial, sans-serif;
       .then(function () { setTimeout(consultar, 3000); });
   }
   pintar(true); consultar();
-  if (!QUIETO && !FORZADO && !PREVIA) {
+  if (!QUIETO && !FORZADO && !PREVIA && !Q.has('video')) {
     $('arranque').hidden = false;
     $('bEmpezar').onclick = function () { $('arranque').hidden = true; audio(); if (ac && ac.resume) ac.resume(); try { var d = document.documentElement; (d.requestFullscreen || d.webkitRequestFullscreen).call(d); } catch (e) { } };
   }
@@ -638,6 +638,51 @@ body { font-family: "Public Sans", -apple-system, "Segoe UI", Arial, sans-serif;
     };
     sc.onerror = function () { avisoD.textContent = 'No se pudo cargar la herramienta para el PNG (¿sin internet?).'; };
     document.head.appendChild(sc);
+  }
+  // v1.20.8 · 🎬 Descargar VIDEO con la animación (Chrome): graba esta misma pestaña, recortada al lienzo, y baja un MP4/WebM
+  if (Q.has('video')) {
+    try { $('red').style.display = 'none'; } catch (e) { }
+    var cv = document.createElement('div');
+    cv.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40;background:#F8F0C8;color:#071A33;font:500 15px -apple-system,Segoe UI,sans-serif;padding:20px 22px;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.45);max-width:440px;line-height:1.4;text-align:left';
+    cv.innerHTML = '<div style="font-weight:800;font-size:18px;margin-bottom:6px">🎬 Descargar video con animación</div>' +
+      '<div style="font-size:13px;margin-bottom:12px">Pantalla <b>' + P + '</b> · ' + W + ' × ' + H + '. Para mejor calidad, maximizá esta ventana antes de grabar. Chrome te va a pedir permiso para <b>compartir esta pestaña</b>: aceptalo.</div>' +
+      '<label style="font-size:13px;font-weight:700">Duración <select id="vDur" style="font:inherit;margin-left:6px;padding:3px 6px;border-radius:6px">' +
+      '<option value="12">12 s (placa sola)</option><option value="20">20 s</option><option value="45">45 s (vuelta completa de sponsors)</option><option value="60">60 s</option></select></label>' +
+      '<div style="margin-top:14px;display:flex;gap:8px"><button id="vGo" style="font:700 15px inherit;font-family:inherit;background:#1d4460;color:#fff;border:0;border-radius:9px;padding:10px 16px;cursor:pointer">● Grabar</button></div>' +
+      '<div id="vMsg" style="font-size:13px;margin-top:10px"></div>';
+    document.body.appendChild(cv);
+    var vMsg = function (t) { var m = document.getElementById('vMsg'); if (m) m.textContent = t; };
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) vMsg('Este navegador no puede grabar. Usá Google Chrome en la compu.');
+    document.getElementById('vGo').onclick = function () {
+      var dur = +document.getElementById('vDur').value || 12, stream, tipo = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].filter(function (t) { return MediaRecorder.isTypeSupported(t); })[0];
+      navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30, width: { ideal: W * 2 }, height: { ideal: H * 2 } }, audio: false, preferCurrentTab: true, selfBrowserSurface: 'include', surfaceSwitching: 'exclude' })
+        .then(function (st) { stream = st; var tr = st.getVideoTracks()[0];
+          return (window.CropTarget && tr.cropTo) ? CropTarget.fromElement(lz).then(function (ct) { return tr.cropTo(ct); }).catch(function () { }) : null; })
+        .then(function () {
+          cv.style.display = 'none';
+          // arranca la placa de cero para que se grabe la entrada completa
+          Array.prototype.forEach.call(document.querySelectorAll('#escena .v'), function (v) { v.remove(); }); clave = ''; pintar(true);
+          return new Promise(function (ok) { setTimeout(ok, 350); });
+        })
+        .then(function () {
+          // se redibuja en un lienzo de la medida EXACTA de la pantalla (W × H) para que el archivo salga con ese tamaño
+          var vEl = document.createElement('video'); vEl.muted = true; vEl.srcObject = stream; vEl.play();
+          var cnv = document.createElement('canvas'); cnv.width = W; cnv.height = H; var cx = cnv.getContext('2d'), vivo = true;
+          (function dib() { if (!vivo) return; if (vEl.videoWidth) cx.drawImage(vEl, 0, 0, W, H); requestAnimationFrame(dib); })();
+          var salida = cnv.captureStream(30);
+          var partes = [], rec = new MediaRecorder(salida, tipo ? { mimeType: tipo, videoBitsPerSecond: 16000000 } : { videoBitsPerSecond: 16000000 });
+          rec.ondataavailable = function (e) { if (e.data && e.data.size) partes.push(e.data); };
+          rec.onstop = function () {
+            vivo = false; stream.getTracks().forEach(function (t) { t.stop(); }); salida.getTracks().forEach(function (t) { t.stop(); });
+            var mt = rec.mimeType || tipo || 'video/webm', ext = /mp4/.test(mt) ? 'mp4' : 'webm';
+            var a = document.createElement('a'); a.download = 'pantalla-' + P + '-' + (FORZADO ? FORZADO.v : 'auto') + '-' + W + 'x' + H + '-' + dur + 's.' + ext;
+            a.href = URL.createObjectURL(new Blob(partes, { type: mt })); document.body.appendChild(a); a.click(); a.remove();
+            cv.style.display = ''; vMsg('✓ Video descargado (' + ext.toUpperCase() + ', ' + dur + ' s). Podés grabar otro o cerrar la pestaña.');
+          };
+          setTimeout(function () { rec.start(1000); }, 150); setTimeout(function () { rec.state !== 'inactive' && rec.stop(); }, dur * 1000 + 150);
+        })
+        .catch(function (e) { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); cv.style.display = ''; vMsg('No se grabó: ' + (e && e.name === 'NotAllowedError' ? 'no se dio permiso para compartir la pestaña.' : (e && e.message || e))); });
+    };
   }
 })();
 </script>
