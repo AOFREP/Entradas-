@@ -329,6 +329,8 @@ body { font-family: "Public Sans", -apple-system, "Segoe UI", Arial, sans-serif;
         f.src = 'pantalla.html?p=' + k + '&previa=1' + (Q.get('hora') ? '&hora=' + Q.get('hora') : ''); f.setAttribute('allow', 'autoplay; fullscreen'); f.tabIndex = -1;
         f.style.cssText = 'position:absolute;border:0;left:' + c[0] + 'px;top:' + c[1] + 'px;width:' + MEDM[k][0] + 'px;height:' + MEDM[k][1] + 'px';
         lzm.appendChild(f);
+        if (Q.has('guia')) { var gd = document.createElement('div'); gd.style.cssText = 'position:absolute;z-index:5;pointer-events:none;box-sizing:border-box;border:4px solid #ff2d55;left:' + c[0] + 'px;top:' + c[1] + 'px;width:' + MEDM[k][0] + 'px;height:' + MEDM[k][1] + 'px;font:700 34px -apple-system,Arial,sans-serif;color:#fff;display:flex;align-items:center;justify-content:center;text-shadow:0 2px 8px #000;background:rgba(255,45,85,.12)';
+          gd.textContent = k.toUpperCase() + ' · x ' + c[0] + ' y ' + c[1] + ' · ' + MEDM[k][0] + '×' + MEDM[k][1]; lzm.appendChild(gd); }
       });
     });
     var esc2 = function () { var k = Math.min(innerWidth / lw[0], innerHeight / lw[1]); lzm.style.transform = 'scale(' + k + ')'; };
@@ -343,7 +345,7 @@ body { font-family: "Public Sans", -apple-system, "Segoe UI", Arial, sans-serif;
   function escalar() { var k = Math.min(innerWidth / W, innerHeight / H); lz.style.transform = 'translate(' + Math.round((innerWidth - W * k) / 2) + 'px,' + Math.round((innerHeight - H * k) / 2) + 'px) scale(' + k + ')'; }
   addEventListener('resize', escalar); escalar();
   // ?v=… fuerza una vista (consola: vista previa y descarga) · ?quieto=1 sin consultar al sistema · ?hora=15:20 simula la hora
-  var FORZADO = Q.get('v') ? { v: Q.get('v'), titulo: Q.get('titulo') || '', sub: Q.get('sub') || '', hasta: Q.get('hasta') || '', speaker: Q.get('speaker') || '', pregunta: Q.get('pt') ? { texto: Q.get('pt'), nombre: Q.get('pn') || '', empresa: Q.get('pe') || '', charla: Q.get('pc') || '' } : null } : null;
+  var FORZADO = Q.get('v') ? { v: Q.get('v'), f: Q.get('f') || '', titulo: Q.get('titulo') || '', sub: Q.get('sub') || '', hasta: Q.get('hasta') || '', speaker: Q.get('speaker') || '', pregunta: Q.get('pt') ? { texto: Q.get('pt'), nombre: Q.get('pn') || '', empresa: Q.get('pe') || '', charla: Q.get('pc') || '' } : null } : null;
   var QUIETO = Q.has('quieto'), PREVIA = Q.has('previa'), SINCD = Q.has('sincd');
   if (Q.has('sinentrada')) lz.classList.add('sinEntrada');
   function ms(hhmm) { return new Date(FECHA + 'T' + hhmm + ':00-03:00').getTime(); }

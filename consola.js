@@ -702,6 +702,14 @@
         '<div><label class="et2" for="pkAs">Aviso: texto chico (opcional)</label><input class="campo2" id="pkAs" maxlength="160" placeholder="Ej: Gracias por la paciencia"></div>' +
         '<div><label class="et2" for="pkAh">Aviso: countdown hasta (opcional)</label><input class="campo2" id="pkAh" placeholder="15:00"></div></div>' +
         '<div class="cont">Se usan al tocar el botón de esa placa. Las horas van así: 15:30.</div></div>' +
+      '<div class="tarj"><h3>🧩 Pixel map · una sola salida para técnica (grande + 2 chicas)</h3>' +
+        '<div class="cont" style="margin-bottom:8px">Técnica saca esta salida por una sola HDMI y recorta cada pantalla con estas coordenadas. Lo que elijas acá arriba (por pantalla o "todas") se ve en el pixel map al instante.</div><div class="form">' +
+        '<div><label class="et2" for="pmL">Salida (ancho × alto)</label><select class="campo2" id="pmL" onchange="__pm()"><option value="3840x2160">3840 × 2160 (4K)</option><option value="2112x1584">2112 × 1584 (justo)</option><option value="2560x1600">2560 × 1600</option></select></div>' +
+        '<div><label class="et2" for="pmG">Grande (x,y) · 2112 × 880</label><input class="campo2" id="pmG" value="0,0" oninput="__pm()"></div>' +
+        '<div><label class="et2" for="pmC1">Chica 1 (x,y) · 1056 × 704</label><input class="campo2" id="pmC1" value="0,880" oninput="__pm()"></div>' +
+        '<div><label class="et2" for="pmC2">Chica 2 (x,y) · 1056 × 704</label><input class="campo2" id="pmC2" value="1056,880" oninput="__pm()"></div></div>' +
+        '<div id="pmTxt" class="cont" style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;margin:8px 0"></div>' +
+        '<div class="acc"><a class="b chico" id="pmA" target="_blank" href="#">↗ Abrir pixel map (para la compu de técnica)</a><a class="b sec chico" id="pmGuia" target="_blank" href="#">🧭 Ver con guía (bordes y medidas, para mapear)</a></div></div>' +
       '<div class="gPant">' + PANT.map(function (x) {
         var c = C[x[0]] || { v: 'auto' };
         return '<div class="tarj pCard" data-p="' + x[0] + '"><div class="fila"><h3 class="crece" style="margin:0">' + esc(x[1]) + ' <small style="font-weight:500;color:var(--suave)">' + x[2] + '</small></h3><span class="chip az" data-ch="' + x[0] + '">' + esc(nomVista(c.v)) + '</span></div>' +
@@ -1047,3 +1055,15 @@
   if (s0 && s0.token && Number(String(s0.token).split('.')[0]) > Date.now()) { S = s0; iniciar(); } else salir('');
   window.addEventListener('hashchange', function () { var v = location.hash.slice(1); if (S && v && v !== vista) ir(v); });
 })();
+
+// v1.20.9 · pixel map (consola → Pantallas)
+window.__pm = function () {
+  var g = function (id) { var e = document.getElementById(id); return e ? e.value.replace(/\s/g, '') : ''; };
+  var a = document.getElementById('pmA'); if (!a) return;
+  var L = g('pmL') || '3840x2160', G = g('pmG') || '0,0', C1 = g('pmC1') || '0,880', C2 = g('pmC2') || '1056,880';
+  var u = 'pantalla.html?p=mosaico&lienzo=' + L + '&grandes=' + G + '&chicas=' + C1 + ';' + C2;
+  a.href = u; document.getElementById('pmGuia').href = u + '&guia=1';
+  var xy = function (s, w, h) { var c = s.split(',').map(Number); return 'x ' + c[0] + ' · y ' + c[1] + ' · ' + w + ' × ' + h; };
+  document.getElementById('pmTxt').innerHTML = 'Salida ' + L.replace('x', ' × ') + '<br>Grande: ' + xy(G, 2112, 880) + '<br>Chica 1: ' + xy(C1, 1056, 704) + '<br>Chica 2: ' + xy(C2, 1056, 704);
+};
+setInterval(function () { var a = document.getElementById('pmA'); if (a && a.getAttribute('href') === '#') window.__pm(); }, 400);
