@@ -676,7 +676,7 @@
   var VISTAS = [['auto', '🤖', 'Automático', 'Sigue la agenda sola: bienvenida, "ahora habla", breaks con countdown y cierre.'], ['bienvenida', '👋', 'Bienvenida', 'Con countdown a la hora de arranque.'], ['agenda', '📅', 'Agenda', 'Ahora y lo que sigue.'],
     ['completa', '🗓️', 'Agenda completa', 'Todo el día en una placa.'],
     ['ahora', '🎤', 'Ahora habla', 'Placa grande del speaker.'], ['break', '☕', 'Break', 'Con "volvemos a las…" y countdown.'], ['sorteo', '🎁', 'Sorteo', 'Premios, ruleta y ganador (se maneja en 🎁 Sorteo).'], ['aviso', '📣', 'Aviso', 'Texto libre, con countdown opcional.'],
-    ['pregunta', '❓', 'Pregunta', 'La última pregunta puesta al aire.'], ['sponsors', '⭐', 'Sponsors', 'HIT (main sponsor), El Piave y Ciao, AOFREP.'], ['gracias', '🙏', 'Gracias', 'Cierre del evento.']];
+    ['pregunta', '❓', 'Pregunta', 'La última pregunta puesta al aire.'], ['sponsors', '⭐', 'Sponsors', 'Rotan: HIT (main sponsor), El Piave y Bacigaluppi, con AOFREP · Eventos y Negocios entre cada uno.'], ['gracias', '🙏', 'Gracias', 'Cierre del evento.'], ['credencial', '📱', 'Tu credencial', 'Cómo usar la credencial y la app (escaneá el QR).']];
   var SPK = [['', 'El que está hablando ahora'], ['dalto', 'Lucas Dalto'], ['sol', 'Sol Espasandín'], ['bonetto', 'Daniela Bonetto'], ['natt', 'Natt La Regina'], ['piacentini', 'Elisabet Piacentini']];
   var tPant = null, pDest = 'todas', fPg = 'activas';
   V.pantallas = function () {

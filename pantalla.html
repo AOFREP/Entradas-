@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <link rel="icon" href="favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* v1.20 · Pantallas del evento. pantalla.html?p=grandes | chicas | foyer | banner
    Se deja abierta (pantalla completa) en la compu de cada pantalla; se maneja desde la consola → 📺 Pantallas.
@@ -192,6 +192,88 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
 .f-banner .ruleta { width: 100%; }
 .f-banner .ruleta b, .f-banner .ganador { white-space: normal; }
 .f-banner .anillo::after { inset: -6px; }
+
+/* ═════ v1.20.6 · Estética del equipo (Public Sans · fondo #1d4460 · amarillo #f0e4b1 · azul #639dc4) ═════ */
+:root { --crema: #f0e4b1; --oro: #f0e4b1; --celeste: #9cc3df; --vivo: #f0e4b1; --linea: rgba(156,195,223,.3); --tenue: rgba(255,255,255,.78); --azul: #1d4460; --noche: #1d4460; }
+body { font-family: "Public Sans", -apple-system, "Segoe UI", Arial, sans-serif; }
+#lienzo { background: #1d4460; }
+.fondo .lineas, .fondo .orbe, .fondo .brillo { display: none; }
+.fondo::before { content: ""; position: absolute; inset: -4%; background: #1d4460 url(fondo-pantalla.jpg) center / 100% 100% no-repeat; animation: fondoVivo 12s ease-in-out infinite; }
+@keyframes fondoVivo { 0%, 100% { transform: scale(1) translate(0, 0); } 50% { transform: scale(1.05) translate(-1.2%, .8%); } }
+/* logos: Eventos y Negocios arriba a la izquierda · AOFREP abajo a la derecha · sponsors abajo a la izquierda */
+.top { justify-content: flex-start; }
+.top .aofTop { display: none; }
+.top .eynTop { height: calc(var(--logoTop) * 1.75); }
+.sinEyn .eynTop { visibility: visible; }
+.pie .aofPie { height: calc(var(--logoTop) * .95); margin-left: auto; }
+.pie .g2 { margin-right: auto; }
+.pie small { color: var(--celeste); }
+/* textos */
+.h1 { color: #fff; font-weight: 800; letter-spacing: -.01em; line-height: 1.02; }
+.h2, .nom { font-weight: 800; letter-spacing: -.01em; }
+.kick, .cdK, .prox .k, .acomp small { color: var(--crema); letter-spacing: .3em; font-weight: 700; }
+.vuelve { color: var(--crema); font-weight: 600; }
+.tema { color: var(--crema); font-weight: 600; }
+.txt, .rol { font-weight: 400; }
+/* recuadro del countdown: el celeste #639dc4 */
+.cdBox { background: rgba(99,157,196,.72); border: 0; box-shadow: none; border-radius: calc(var(--u) * 3); padding: calc(var(--u) * 1.4) calc(var(--u) * 5) calc(var(--u) * 1.8); margin-top: calc(var(--u) * 4.5); }
+.cdBox .cdK { color: #fff; opacity: .9; }
+.cd { font-weight: 800; color: #fff; text-shadow: none; letter-spacing: -.01em; }
+.cd.fin { color: #fff; font-size: var(--fsH2); }
+/* tarjetas y chips */
+.card { background: rgba(29,68,96,.55); border-color: var(--linea); }
+.card.vivo { border-color: rgba(240,228,177,.7); background: linear-gradient(135deg, rgba(99,157,196,.38), rgba(29,68,96,.5)); }
+.chip { background: var(--crema); color: #1d4460; }
+.chip i { background: #1d4460; }
+.premio { background: rgba(29,68,96,.55); } .premio.listo { border-color: rgba(240,228,177,.7); background: rgba(99,157,196,.3); }
+.premio .g { color: var(--crema); }
+.ruleta { background: rgba(99,157,196,.55); border-color: rgba(240,228,177,.5); }
+.lleva { background: var(--crema); color: #1d4460; }
+.anillo::after { border-color: rgba(240,228,177,.75); }
+.comp .fila.en, .comp .fila.en .hh { color: var(--crema); }
+.fila .hh { color: var(--crema); }
+.eynG { filter: none; }
+/* bienvenida, break y aviso: una columna centrada como el diseño */
+.f-grandes .dosCol, .f-foyer .dosColG { flex-direction: column; gap: 0; text-align: center; }
+.f-grandes .dosCol .izq, .f-foyer .dosColG .izq { align-items: center; }
+.f-grandes .dosCol .cdBox { margin-top: calc(var(--u) * 4.5); }
+.f-banner .pie .aofPie { margin: 0; height: 26px; }
+.f-banner .h1 { font-size: 31px; overflow-wrap: anywhere; }
+
+/* ═════ v1.20.7 · Pantallas grandes con las placas diseñadas por el equipo (pg-*.jpg) + countdown y movimiento encima ═════ */
+.v.pl { padding: 0; display: block; }
+.plImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; animation: plEntra 1.4s cubic-bezier(.2,.8,.2,1) both, plVive 24s ease-in-out 1.4s infinite; }
+@keyframes plEntra { from { opacity: 0; transform: scale(1.035); } to { opacity: 1; transform: none; } }
+@keyframes plVive { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.018); } }
+.fases .plImg { opacity: 0; transition: opacity 1.1s ease; animation: plVive 24s ease-in-out infinite; }
+.fases .plImg.on { opacity: 1; }
+.plBrillo { position: absolute; top: -10%; bottom: -10%; width: 14%; left: -25%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.075), transparent); transform: skewX(-18deg); animation: barre 12s ease-in-out 2s infinite; pointer-events: none; }
+.cdPl { position: absolute; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .8s ease; }
+.fases[data-fase="cd"] .cdPl { opacity: 1; }
+.cdPl .cd { font-family: "Public Sans", Arial, sans-serif; font-size: 1em; font-weight: 800; line-height: 1; color: #fff; text-shadow: none; letter-spacing: -.01em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* v1.20.7 · rotación de sponsors */
+.spo .sl .kick { margin-bottom: calc(var(--u) * 2.5); }
+.spo .slHit { margin-top: 0; }
+.spo .spAof { height: calc(var(--logoAcomp) * 1.05); }
+.spo .spPre { margin: calc(var(--u) * 1.2) 0 calc(var(--u) * 1.4); }
+.spo .spEyn { width: calc(var(--piaveG) * 1.05); }
+.spo .spLogo { width: calc(var(--hitG) * .62); max-height: calc(var(--logoAcomp) * 2.6); object-fit: contain; }
+.f-banner .spo .spLogo { width: 200px; }
+
+/* v1.20.7 · capas animadas */
+.plC { position: absolute; opacity: 0; will-change: transform, opacity; }
+.an-izq { animation: anIzq 1s cubic-bezier(.2,.8,.2,1) both; }
+.an-crece { transform-origin: 50% 50%; animation: anCrece 1s cubic-bezier(.2,.8,.2,1) both; }
+.an-sube { animation: anSube 1s cubic-bezier(.2,.8,.2,1) both; }
+.an-fade { animation: anFade 1.2s ease both; }
+.an-respira { animation: anFade 1.2s ease both, respira 6s ease-in-out infinite; }
+@keyframes anIzq { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
+@keyframes anCrece { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: none; } }
+@keyframes anSube { from { opacity: 0; transform: translateY(40px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes anFade { from { opacity: 0; } to { opacity: 1; } }
+.sinEntrada .plC { animation: none; opacity: 1; }
 </style>
 </head>
 <body>
@@ -202,6 +284,7 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
   <div class="pie">
     <div class="g"><small>Main sponsor</small><img class="hit respira" src="p-hit.svg" alt="HIT Events"></div>
     <div class="g g2"><small>Nos acompaña</small><img class="spo" src="p-piave.svg" alt="El Piave"></div>
+    <img class="aofPie" src="p-aofrep.svg" alt="AOFREP">
   </div>
   <canvas id="conf"></canvas>
   <div class="estadoRed" id="red"></div>
@@ -234,6 +317,26 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var Q = new URLSearchParams(location.search);
+  // ── Mosaico: una sola salida HDMI con todas las LED, cada una en su lugar del pixel map ──
+  // pantalla.html?p=mosaico&lienzo=3840x2160&grandes=0,0;0,880&chicas=2112,0&banner=3584,0
+  if (Q.get('p') === 'mosaico') {
+    var lw = (Q.get('lienzo') || '1920x1080').split('x').map(Number), MEDM = { grandes: [2112, 880], chicas: [1056, 704], foyer: [1920, 1080], banner: [256, 768] };
+    document.documentElement.style.background = '#000';
+    var lzm = document.getElementById('lienzo'); lzm.innerHTML = ''; lzm.style.cssText = 'position:absolute;left:0;top:0;transform-origin:0 0;background:#000;width:' + lw[0] + 'px;height:' + lw[1] + 'px';
+    Object.keys(MEDM).forEach(function (k) {
+      (Q.get(k) || '').split(';').filter(Boolean).forEach(function (xy) {
+        var c = xy.split(',').map(Number), f = document.createElement('iframe');
+        f.src = 'pantalla.html?p=' + k + '&previa=1' + (Q.get('hora') ? '&hora=' + Q.get('hora') : ''); f.setAttribute('allow', 'autoplay; fullscreen'); f.tabIndex = -1;
+        f.style.cssText = 'position:absolute;border:0;left:' + c[0] + 'px;top:' + c[1] + 'px;width:' + MEDM[k][0] + 'px;height:' + MEDM[k][1] + 'px';
+        lzm.appendChild(f);
+      });
+    });
+    var esc2 = function () { var k = Math.min(innerWidth / lw[0], innerHeight / lw[1]); lzm.style.transform = 'scale(' + k + ')'; };
+    addEventListener('resize', esc2); esc2();
+    var ar = document.getElementById('arranque'); ar.hidden = false;
+    document.getElementById('bEmpezar').onclick = function () { ar.hidden = true; try { var d = document.documentElement; (d.requestFullscreen || d.webkitRequestFullscreen).call(d); } catch (e) { } };
+    return;
+  }
   var MED = { grandes: [2112, 880], chicas: [1056, 704], foyer: [1920, 1080], banner: [256, 768] };
   var P = MED[Q.get('p')] ? Q.get('p') : 'foyer', W = MED[P][0], H = MED[P][1];
   var lz = $('lienzo'); lz.className = 'f-' + P; lz.style.width = W + 'px'; lz.style.height = H + 'px';
@@ -263,7 +366,12 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
     if (t >= fin) return { v: 'gracias', k: 'af' };
     var i = itemEn(t);
     if (i >= 0 && AGENDA[i].tipo === 'pausa') return { v: 'break', titulo: AGENDA[i].titulo, hasta: AGENDA[i].fin, k: 'ab' + i };
-    return { v: P === 'grandes' && i >= 0 && AGENDA[i].tipo === 'charla' ? 'ahora' : 'agenda', k: 'ag' + i };
+    if (PLACAS && i >= 0 && AGENDA[i].tipo === 'general') {
+      if (AGENDA[i].ini === ARRANCA) return { v: 'fija', f: 'arr', txt: '¡Ya arrancamos!', k: 'pg' + i };
+      if (/segunda/i.test(AGENDA[i].titulo)) return { v: 'fija', f: 'vol', txt: '¡Ya volvemos!', k: 'pg' + i };
+      if (/cierre/i.test(AGENDA[i].titulo)) return { v: 'gracias', k: 'pg' + i };
+    }
+    return { v: (P === 'grandes' || (PLACAS && (P === 'chicas' || P === 'foyer' || P === 'banner'))) && i >= 0 && AGENDA[i].tipo === 'charla' ? 'ahora' : 'agenda', k: 'ag' + i };
   }
   function vista() {
     var e = FORZADO || (ESTADO && ESTADO.canales && ESTADO.canales[P]) || { v: 'auto' };
@@ -289,12 +397,77 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
   }
   function cdBloque(k, hasta, finTxt, cls) { return SINCD || !hasta ? '' : '<div class="cdBox ' + (cls || 'a4') + '"><div class="cdK">' + esc(k) + '</div>' + cdHtml(hasta, finTxt) + '</div>'; }
 
+  // ── v1.20.7 · placas diseñadas por el equipo (grandes pg-*.jpg · chicas pc-*.jpg · TVs foyer pt-*.jpg) + countdown y movimiento encima ──
+  var PLS = {
+    grandes: { breve: 'pg-01-en-breve.jpg', dalto: 'pg-02-dalto.jpg', natt: 'pg-03-natt.jpg', bonetto: 'pg-04-bonetto.jpg', sol: 'pg-05-sol.jpg', piacentini: 'pg-06-piacentini.jpg',
+      credencial: 'pg-07-credencial.jpg', agenda: 'pg-08-agenda.jpg', gracias: 'pg-12-gracias.jpg', arrCd: 'pg-13-arrancamos-cd.jpg', arr: 'pg-14-arrancamos.jpg', volCd: 'pg-15-volvemos-cd.jpg', vol: 'pg-16-volvemos.jpg',
+      breaks: { '11:45': ['pg-09-coffee-1145.jpg', 'pg-15-volvemos-cd.jpg'], '15:50': ['pg-10-coffee-1550.jpg', 'pg-15-volvemos-cd.jpg'], '14:35': ['pg-11-break-1435.jpg', 'pg-15-volvemos-cd.jpg'] },
+      box: { 'pg-13-arrancamos-cd.jpg': [674, 454, 763, 247], 'pg-15-volvemos-cd.jpg': [674, 454, 763, 247] } },
+    chicas: { breve: 'pc-01-en-breve.jpg', dalto: 'pc-02-dalto.jpg', natt: 'pc-03-natt.jpg', bonetto: 'pc-04-bonetto.jpg', sol: 'pc-05-sol.jpg', piacentini: 'pc-06-piacentini.jpg',
+      credencial: 'pc-07-credencial.jpg', agenda: 'pc-08-agenda.jpg', gracias: 'pc-15-gracias.jpg', arrCd: 'pc-18-arrancamos-cd.jpg', arr: 'pc-19-arrancamos.jpg', vol: 'pc-20-volvemos.jpg',
+      breaks: { '11:45': ['pc-09-coffee-1145.jpg', 'pc-10-coffee-1145-cd.jpg'], '15:50': ['pc-11-coffee-1550.jpg', 'pc-12-coffee-1550-cd.jpg'], '14:35': ['pc-13-break-1435.jpg', 'pc-14-break-1435-cd.jpg'] },
+      box: { 'pc-18-arrancamos-cd.jpg': [268, 316, 520, 205], 'pc-10-coffee-1145-cd.jpg': [283, 430, 491, 159], 'pc-12-coffee-1550-cd.jpg': [283, 430, 491, 159], 'pc-14-break-1435-cd.jpg': [283, 430, 491, 159] } },
+    foyer: { breve: 'pt-01-en-breve.jpg', dalto: 'pt-02-dalto.jpg', natt: 'pt-03-natt.jpg', bonetto: 'pt-04-bonetto.jpg', sol: 'pt-05-sol.jpg', piacentini: 'pt-06-piacentini.jpg',
+      credencial: 'pt-07-credencial.jpg', agenda: 'pt-08-agenda.jpg', gracias: 'pt-15-gracias.jpg', arrCd: 'pt-16-arrancamos-cd.jpg', arr: 'pt-17-arrancamos.jpg', volCd: 'pt-18-volvemos-cd.jpg', vol: 'pt-19-volvemos.jpg',
+      breaks: { '11:45': ['pt-10-coffee-1145.jpg', 'pt-09-coffee-1145-cd.jpg'], '15:50': ['pt-12-coffee-1550.jpg', 'pt-11-coffee-1550-cd.jpg'], '14:35': ['pt-14-break-1435.jpg', 'pt-13-break-1435-cd.jpg'] },
+      box: { 'pt-16-arrancamos-cd.jpg': [534, 480, 852, 337], 'pt-18-volvemos-cd.jpg': [534, 480, 852, 337], 'pt-09-coffee-1145-cd.jpg': [555, 660, 810, 263], 'pt-11-coffee-1550-cd.jpg': [555, 660, 810, 263], 'pt-13-break-1435-cd.jpg': [555, 660, 810, 263] } },
+    banner: { breve: 'pb-01-en-breve.jpg', dalto: 'pb-02-dalto.jpg', natt: 'pb-03-natt.jpg', bonetto: 'pb-04-bonetto.jpg', sol: 'pb-05-sol.jpg', piacentini: 'pb-06-piacentini.jpg',
+      agenda: 'pb-07-agenda.jpg', gracias: 'pb-14-gracias.jpg', arrCd: 'pb-15-arrancamos-cd.jpg', arr: 'pb-16-arrancamos.jpg', volCd: 'pb-17-volvemos-cd.jpg', vol: 'pb-18-volvemos.jpg',
+      breaks: { '11:45': ['pb-09-coffee-1145.jpg', 'pb-08-coffee-1145-cd.jpg'], '15:50': ['pb-11-coffee-1550.jpg', 'pb-10-coffee-1550-cd.jpg'], '14:35': ['pb-13-break-1435.jpg', 'pb-12-break-1435-cd.jpg'] },
+      box: { 'pb-15-arrancamos-cd.jpg': [24, 371, 208, 100], 'pb-17-volvemos-cd.jpg': [24, 371, 208, 100], 'pb-08-coffee-1145-cd.jpg': [24, 387, 208, 100], 'pb-10-coffee-1550-cd.jpg': [24, 387, 208, 100], 'pb-12-break-1435-cd.jpg': [24, 387, 208, 100] } } // el banner no tiene placa de credencial
+  };
+  var PL = PLS[P] || {}, PLACAS = !!PLS[P] && !Q.has('sinplacas');
+  var CD_ARRANQUE = 15 * 60, CD_BREAK = 5 * 60, ROTA = 20000; // countdown en el recuadro: últimos 15 min antes de arrancar y últimos 5 min de cada break
+  if (PLACAS) { var todas = []; Object.keys(PL).forEach(function (k) { var x = PL[k]; if (typeof x === 'string') todas.push(x); else if (k === 'breaks') Object.keys(x).forEach(function (h) { todas = todas.concat(x[h]); }); });
+    todas.forEach(function (f) { var im = new Image(); im.src = f; }); } // precarga: las transiciones salen sin parpadeo
+  // v1.20.7 · placas con capas (sacadas de su diseño de Canva): el fondo + la foto entran primero y después cada elemento por separado
+  var CAPAS = {"pg-02-dalto.jpg":{"b":"pg-02-dalto","c":[["logo",83,230,"izq",0.5],["linea",595,115,"crece",0.9],["nombre",1273,246,"sube",1.2],["usuario",1279,411,"fade",1.6],["tema",1273,456,"sube",1.8],["hit",1761,758,"respira",2.3]]},"pg-03-natt.jpg":{"b":"pg-03-natt","c":[["logo",83,230,"izq",0.5],["linea",595,121,"crece",0.9],["nombre",1214,241,"sube",1.2],["usuario",1216,406,"fade",1.6],["tema",1214,451,"sube",1.8],["hit",1761,758,"respira",2.3]]},"pg-04-bonetto.jpg":{"b":"pg-04-bonetto","c":[["logo",83,230,"izq",0.5],["linea",595,115,"crece",0.9],["nombre",1185,225,"sube",1.2],["usuario",1185,395,"fade",1.6],["tema",1185,434,"sube",1.8],["hit",1761,758,"respira",2.3]]},"pg-05-sol.jpg":{"b":"pg-05-sol","c":[["logo",83,230,"izq",0.5],["linea",595,115,"crece",0.9],["nombre",1202,145,"sube",1.2],["usuario",1202,312,"fade",1.6],["tema",1202,365,"sube",1.8],["hit",1761,758,"respira",2.3]]},"pg-06-piacentini.jpg":{"b":"pg-06-piacentini","c":[["logo",83,230,"izq",0.5],["linea",595,115,"crece",0.9],["nombre",1202,145,"sube",1.2],["usuario",1202,315,"fade",1.6],["tema",1202,365,"sube",1.8],["hit",1761,758,"respira",2.3]]}};
+  function placa(f, txt) {
+    var c = CAPAS[f];
+    if (c) {
+      if (PLACAS && !placa.pre) { placa.pre = 1; Object.keys(CAPAS).forEach(function (k) { var x = CAPAS[k]; [x.b + '-base.jpg'].concat(x.c.map(function (y) { return x.b + '-' + y[0] + '.png'; })).forEach(function (u) { var im = new Image(); im.src = u; }); }); }
+      return { cls: 'pl sinPie sinTop', html: '<img class="plImg" src="' + c.b + '-base.jpg" alt="">' + c.c.map(function (y) {
+        return '<img class="plC an-' + y[3] + '" style="left:' + y[1] + 'px;top:' + y[2] + 'px;animation-delay:' + y[4] + 's' + (y[3] === 'respira' ? ',' + (y[4] + 1.2) + 's' : '') + '" src="' + c.b + '-' + y[0] + '.png" alt="">'; }).join('') +
+        '<i class="plBrillo"></i><span class="sr">' + esc(txt || '') + '</span>' };
+    }
+    return { cls: 'pl sinPie sinTop', html: '<img class="plImg" src="' + f + '" alt=""><i class="plBrillo"></i><span class="sr">' + esc(txt || '') + '</span>' };
+  }
+  // antes (rotan cada 20 s) → placa con recuadro y countdown → "fin" cuando llega a cero
+  function placaCd(antes, cd, fin, hasta, umbral, txt) {
+    var bx = (PL.box || {})[cd] || [0, 0, W, H];
+    antes = antes.filter(Boolean); // pantallas sin placa de credencial (banner)
+    var imgs = antes.map(function (f, i) { return '<img class="plImg" data-fase="antes" data-i="' + i + '" src="' + f + '" alt="">'; }).join('') +
+      '<img class="plImg" data-fase="cd" src="' + cd + '" alt=""><img class="plImg" data-fase="fin" src="' + fin + '" alt="">';
+    return { cls: 'pl fases sinPie sinTop', attrs: { 'data-hasta': hasta, 'data-umbral': umbral, 'data-n': antes.length },
+      html: imgs + '<div class="cdPl" style="left:' + bx[0] + 'px;top:' + bx[1] + 'px;width:' + bx[2] + 'px;height:' + bx[3] + 'px">' + (SINCD ? '' : '<div style="font-size:' + Math.round(Math.min(bx[3] * .77, bx[2] * .32)) + 'px">' + cdHtml(hasta, '') + '</div>') + '</div><i class="plBrillo"></i><span class="sr">' + esc(txt || '') + '</span>' };
+  }
+  function tickFases() {
+    Array.prototype.forEach.call(document.querySelectorAll('#escena .v.fases:not(.sale)'), function (v) {
+      var h = v.getAttribute('data-hasta'), n = +v.getAttribute('data-n') || 0, s = h ? Math.ceil((hoyA(h) - ahora()) / 1000) : 1e9;
+      var fase = s <= 0 ? 'fin' : (n && s > +v.getAttribute('data-umbral')) ? 'antes' : 'cd';
+      if (SINCD && fase === 'cd') fase = n ? 'antes' : 'cd';
+      var idx = n ? Math.floor(Date.now() / ROTA) % n : 0;
+      if (v.getAttribute('data-fase') !== fase) v.setAttribute('data-fase', fase);
+      Array.prototype.forEach.call(v.querySelectorAll('.plImg'), function (im) {
+        var on = im.getAttribute('data-fase') === fase && (fase !== 'antes' || +im.getAttribute('data-i') === idx);
+        if (im.classList.contains('on') !== on) im.classList.toggle('on', on);
+      });
+    });
+  }
+  function placaBreak(h, tit) {
+    var b = (PL.breaks || {})[h], txt = (tit || 'Break') + (h ? ' · Volvemos a las ' + h : '');
+    if (b) return placaCd([b[0], PL.credencial], b[1], PL.vol, h, CD_BREAK, txt);
+    if (PL.volCd) return placaCd([], PL.volCd, PL.vol, h, CD_BREAK, txt); // break con otra hora: "¡Ya volvemos!" con countdown
+    return null; // sin placa para esa hora: va el diseño en vivo
+  }
+
   // ── vistas ──
   var V = {};
   V.bienvenida = function (e) {
     var h = e.hasta || ARRANCA;
-    var izq = '<div class="izq"><div class="kick a1">Bienvenidos a</div><img class="eynG a2" src="p-eyn.svg" alt="Eventos y Negocios"><div class="txt a3" style="margin-top:calc(var(--u)*1.6)">' + esc(e.sub || 'Lunes 2 de noviembre · HIT Events Polo') + '</div></div>';
-    return { cls: 'dosCol sinEyn', html: izq + (SINCD ? '<div class="cdBox a4"><div class="cdK">En breve</div><div class="cd fin">comenzamos</div></div>' : cdBloque(e.titulo || 'Comenzamos en', h, 'En breve comenzamos')) };
+    if (PLACAS) return placaCd([PL.breve, PL.credencial], PL.arrCd, PL.arr, h, CD_ARRANQUE, '¡En breve comenzamos! · ¡Ya arrancamos!');
+    var tit = '<div class="h1 a1">' + esc(e.titulo && !/^comenzamos en$/i.test(e.titulo) ? e.titulo : '¡Ya arrancamos!') + '</div>' + (e.sub ? '<div class="vuelve a2">' + esc(e.sub) + '</div>' : '');
+    return { cls: 'dosCol', html: '<div class="izq">' + tit + '</div>' + (SINCD ? '<div class="cdBox a3"><div class="cdK">En breve</div><div class="cd fin">comenzamos</div></div>' : cdBloque('Comenzamos en', h, '¡Comenzamos!', 'a3')) };
   };
   V.agenda = function () {
     var t = ahora(), i = itemEn(t), a = i >= 0 ? AGENDA[i] : null, px = proximas(t, P === 'banner' ? 3 : 4);
@@ -307,6 +480,7 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
     return { html: '<div class="ag">' + ahoraCard + prox + '</div>' };
   };
   V.completa = function () {
+    if (PLACAS) return placa(PL.agenda, 'Agenda del día');
     var t = ahora(), L = AGENDA.filter(function (a) { return P !== 'banner' || a.tipo === 'charla'; });
     return { html: '<div class="kick a1">Agenda del día</div><div class="comp a2">' + L.map(function (a) { var vivo = t >= ms(a.ini) && t < ms(a.fin);
       return '<div class="fila' + (a.tipo === 'pausa' ? ' pz' : '') + (vivo ? ' en' : '') + '"><span class="hh">' + esc(a.ini) + '</span>' + img(a, 'mini') + '<div><b>' + esc(a.titulo) + '</b>' + (a.tema && P !== 'banner' ? '<small>' + esc(a.tema) + '</small>' : '') + '</div></div>'; }).join('') + '</div>' };
@@ -317,12 +491,15 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
     if (!a) { var i = itemEn(t); a = i >= 0 && AGENDA[i].tipo === 'charla' ? AGENDA[i] : null; }
     if (!a) { a = proximas(t, 5).filter(function (x) { return x.tipo === 'charla'; })[0]; k = a ? 'A continuación · ' + a.ini : ''; }
     if (!a) return V.agenda(e);
+    if (PLACAS && PL[a.foto]) return placa(PL[a.foto], k + ' · ' + a.titulo + ' · ' + (a.tema || ''));
     return { html: '<div class="placa"><div class="anillo a1">' + img(a) + '</div><div><span class="chip a2"><i></i>' + esc(k) + '</span><div class="nom a2" style="margin-top:.15em">' + esc(a.titulo) + '</div>' + (a.sub ? '<div class="rol a3">' + esc(a.sub) + '</div>' : '') + (a.tema ? '<div class="tema a4">“' + esc(a.tema) + '”</div>' : '') + '</div></div>' };
   };
   V['break'] = function (e) {
     var t = ahora(), i = itemEn(t), h = e.hasta || (i >= 0 && AGENDA[i].tipo === 'pausa' ? AGENDA[i].fin : '');
-    var tit = e.titulo || (i >= 0 && AGENDA[i].tipo === 'pausa' ? AGENDA[i].titulo : 'Coffee break'), ico = /break|caf|coffee/i.test(tit) && !/^break$/i.test(tit) ? '☕' : (/^break$/i.test(tit) ? '🍽️' : '☕');
-    var izq = '<div class="izq" style="align-items:center;text-align:center"><div class="taza a1">' + ico + '</div><div class="h1 a2">' + esc(tit) + '</div>' + (h ? '<div class="vuelve a3">Volvemos a las ' + esc(h) + '</div>' : '') + '</div>';
+    var tit = e.titulo || (i >= 0 && AGENDA[i].tipo === 'pausa' ? AGENDA[i].titulo : 'Coffee break');
+    if (PLACAS) { var pb = placaBreak(h, tit); if (pb) return pb; }
+    var ico = /break|caf|coffee/i.test(tit) && !/^break$/i.test(tit) ? '☕' : (/^break$/i.test(tit) ? '🍽️' : '☕');
+    var izq = '<div class="izq" style="align-items:center;text-align:center"><div class="h1 a2">' + esc(tit) + '</div>' + (h ? '<div class="vuelve a3">Volvemos a las ' + esc(h) + '</div>' : '') + '</div>';
     return { cls: 'dosCol', html: izq + cdBloque('Volvemos en', h, 'Volvemos a la sala') };
   };
   V.aviso = function (e) {
@@ -334,13 +511,29 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
     return { html: '<div class="preg"><div class="kick a1">Pregunta del público' + (q.charla ? ' · para ' + esc(q.charla) : '') + '</div><div class="comilla a2">“</div><div class="pregT a2">' + esc(q.texto) + '</div>' +
       '<div class="quien a3">' + esc(q.nombre || 'Anónima') + (q.empresa ? '<small>' + esc(q.empresa) + '</small>' : '') + '</div></div>' };
   };
+  V.credencial = function () {
+    if (PLACAS && PL.credencial) return placa(PL.credencial, 'Tu credencial, tu acceso a la app');
+    return { html: '<div class="kick a1">Tu credencial, tu acceso a la app</div><div class="h1 a2">Escaneá el QR de tu credencial</div><div class="txt a3" style="margin-top:.6em">El del frente, debajo de tu nombre: agenda en vivo, preguntas, directorio y sorteo</div>' };
+  };
+  V.fija = function (e) { return placa(PL[e.f] || PL.breve, e.txt || ''); };
+  // v1.20.7 · Sponsors: HIT (main sponsor) con prioridad, intercalando "AOFREP presenta Eventos y Negocios" entre cada uno
+  var SPO_T = 5, BACI_OK = false; // segundos por placa
+  (function () { var im = new Image(); im.onload = function () { BACI_OK = true; if (vista().v === 'sponsors') pintar(true); }; im.src = 'p-baci.png'; })();
+  function slSpo(k) {
+    if (k === 'hit') return '<div class="kick">Main sponsor</div><img class="slHit respira" src="p-hit.svg" alt="HIT Events">';
+    if (k === 'org') return '<img class="spAof" src="p-aofrep.svg" alt="AOFREP"><div class="kick spPre">presenta</div><img class="spEyn" src="p-eyn.svg" alt="Eventos y Negocios">';
+    if (k === 'piave') return '<div class="kick">Nos acompaña</div><img class="spLogo" src="p-piave.svg" alt="El Piave">';
+    return '<div class="kick">Nos acompaña</div><img class="spLogo" src="p-baci.png" alt="Bacigaluppi Hermanos">';
+  }
   V.sponsors = function () {
-    return { cls: 'sinPie', html: '<div class="slides">' +
-      '<div class="sl"><div class="kick">Main sponsor</div><img class="slHit respira" src="p-hit.svg" alt="HIT Events"></div>' +
-      '<div class="sl"><div class="kick">Nos acompaña</div><div class="slDos"><img class="piave" src="p-piave.svg" alt="El Piave"></div></div>' +
-      '<div class="sl"><div class="kick">Organiza</div><div class="slDos"><img class="aof" src="p-aofrep.svg" alt="AOFREP"><img class="eyn" src="p-eyn.svg" alt="Eventos y Negocios"></div></div></div>' };
+    var seq = []; ['hit', 'piave', 'hit'].concat(BACI_OK ? ['baci'] : []).forEach(function (k) { seq.push(k, 'org'); }); // HIT · org · Piave · org · HIT · org · Bacigaluppi · org …
+    var n = seq.length, T = n * SPO_T, p = 100 / n, f = 0.9 / T * 100, nom = 'spo' + n;
+    var kf = '@keyframes ' + nom + '{0%{opacity:0;transform:scale(.96)}' + f.toFixed(3) + '%{opacity:1;transform:none}' + p.toFixed(3) + '%{opacity:1;transform:none}' + (p + f).toFixed(3) + '%{opacity:0;transform:scale(1.03)}100%{opacity:0}}';
+    return { cls: 'sinPie sinTop', html: '<style>' + kf + '</style><div class="slides spo">' + seq.map(function (k, i) {
+      return '<div class="sl" style="animation:' + nom + ' ' + T + 's ' + (i * SPO_T) + 's infinite both">' + slSpo(k) + '</div>'; }).join('') + '</div>' };
   };
   V.gracias = function (e) {
+    if (PLACAS) return placa(PL.gracias, '¡Gracias por acompañarnos!');
     return { cls: 'sinPie', html: '<div class="kick a1">' + esc(e.sub || 'Eventos y Negocios 2026') + '</div><div class="h1 a2">' + esc(e.titulo || '¡Gracias por acompañarnos!') + '</div>' +
       '<div class="logosFila a3"><img src="p-aofrep.svg" alt="AOFREP"><img class="lgHit" src="p-hit.svg" alt="HIT Events"><img class="lgSpo" src="p-piave.svg" alt="El Piave"></div>' };
   };
@@ -397,16 +590,16 @@ canvas#conf { position: absolute; inset: 0; width: 100%; height: 100%; pointer-e
   // ── pintar con transición ──
   var clave = '';
   function pintar(forzar) {
-    var e = vista(), k = e.v + '|' + (e.ts || '') + '|' + (e.k || '') + '|' + (e.titulo || '') + '|' + (e.hasta || '') + '|' + (e.speaker || '');
+    var e = vista(), k = e.v + '|' + (e.ts || '') + '|' + (e.k || '') + '|' + (e.titulo || '') + '|' + (e.hasta || '') + '|' + (e.speaker || '') + '|' + (e.f || '');
     if (k === clave && !forzar) return; clave = k;
     var b = (V[e.v] || V.agenda)(e), esc_ = $('escena'), vieja = esc_.querySelector('.v:not(.sale)');
     if (vieja) { vieja.classList.add('sale'); setTimeout(function () { vieja.remove(); }, 750); }
-    var d = document.createElement('div'); d.className = 'v ' + (b.cls || ''); d.innerHTML = b.html; esc_.appendChild(d);
-    lz.classList.toggle('sinPie', /sinPie/.test(b.cls || '')); lz.classList.toggle('sinEyn', /sinEyn/.test(b.cls || ''));
-    tickCd();
+    var d = document.createElement('div'); d.className = 'v ' + (b.cls || ''); if (b.attrs) Object.keys(b.attrs).forEach(function (k) { d.setAttribute(k, b.attrs[k]); }); d.innerHTML = b.html; esc_.appendChild(d);
+    lz.classList.toggle('sinPie', /sinPie/.test(b.cls || '')); lz.classList.toggle('sinEyn', /sinEyn/.test(b.cls || '')); lz.classList.toggle('sinTop', /sinTop/.test(b.cls || ''));
+    tickCd(); tickFases();
     if (b.sorteo) { S.giro = S.giro || 0; S.rev = 0; S.girando = false; if (S.d) sorPintar(); sorConsultar(); }
   }
-  setInterval(function () { tickCd(); if (vista().v !== 'sorteo' || !FORZADO) pintar(); }, 250);
+  setInterval(function () { tickCd(); tickFases(); if (vista().v !== 'sorteo' || !FORZADO) pintar(); }, 250);
   // la agenda automática cambia sola con la hora: se repinta cada 30 s por si cambió "ahora"
   setInterval(function () { var e = vista(); if (e.v === 'agenda') pintar(true); }, 30000);
 
