@@ -99,6 +99,7 @@
   .barra div { height: 100%; background: var(--vivo); }
   .marca { position: absolute; left: 0; width: 80px; height: 0; z-index: 2; pointer-events: none; border-top: 2px dashed rgba(91,227,155,.75); }
   .marca span { position: absolute; left: 0; top: -10px; font-size: 10px; font-weight: 800; color: var(--vivo); background: var(--noche); padding: 1px 4px; border-radius: 4px; }
+  .almLink { display: inline-block; margin-top: 10px; background: var(--crema); color: #0D2846; font-weight: 800; font-size: 14px; text-decoration: none; border-radius: 10px; padding: 8px 12px; }
   .info { margin-top: 26px; display: grid; gap: 10px; }
   .info div { background: rgba(255,255,255,.07); border: 1px solid var(--linea); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #E6F1FB; }
   .info b { color: var(--crema); }
@@ -171,6 +172,7 @@
     <div id="wifi" hidden></div>
     <div id="llegar">📍 <b>HIT Events Polo</b> · Dorrego 3562, CABA · <a href="https://www.google.com/maps/search/?api=1&amp;query=HIT%20Events%20Polo%2C%20Dorrego%203562%2C%20CABA" target="_blank" rel="noopener">Cómo llegar</a></div>
     <div>☕ <b>Desayuno y coffee breaks</b> incluidos con tu ticket.</div>
+    <div id="almuerzo">🍽️ <b>Almuerzo</b> (13:15 a 14:35): no está incluido en el ticket. Podés pedirlo en la sede · <a href="https://kicket.club/m/sede-polo" target="_blank" rel="noopener">Ver menú y pedir</a></div>
     <div id="cert">🎓 <b>Certificado de participación AOFREP</b>: te llega por mail después del evento y también podés descargarlo escaneando el QR del frente de tu credencial.</div>
   </div>
   <div class="pie"><div class="lineaPie"></div><div class="k">Main sponsor</div><img src="assets/logo-hit.png" alt="HIT Events"></div>
@@ -189,7 +191,7 @@
     { ini: '11:25', fin: '11:45', tipo: 'pausa', ico: '☕', titulo: 'Coffee break', sub: '20 minutos para recargar' },
     { ini: '11:45', fin: '12:30', tipo: 'charla', foto: 'sol', titulo: 'Sol Espasandín', sub: 'Diseñadora y ambientadora de eventos', tema: 'Conectar con el cliente y crear propuestas que se eligen', desc: 'Cómo conectar con el cliente, entender qué valora y transformar sus deseos en propuestas que se destaquen y sean elegidas. Sol se especializa en bodas, fiestas de 15 y celebraciones donde cada detalle refleja la identidad de sus clientes.', preguntas: 10 },
     { ini: '12:30', fin: '13:15', tipo: 'charla', foto: 'bonetto', titulo: 'Daniela Bonetto', sub: 'CEO de Bonetto Sonido e Iluminación', tema: 'Cómo construir una empresa sólida que crezca y se sostenga', desc: 'Una charla sobre cómo construir una empresa sólida en una industria que cambia constantemente: la gestión, la formación de equipos y las decisiones que permiten sostener la calidad, adaptarse a nuevos desafíos y proyectar el negocio a largo plazo.', preguntas: 10 },
-    { ini: '13:15', fin: '14:35', tipo: 'pausa', ico: '🍽️', titulo: 'Break', sub: 'Volvemos a las 14:35' },
+    { ini: '13:15', fin: '14:35', tipo: 'pausa', ico: '🍽️', titulo: 'Break', sub: 'Volvemos a las 14:35', link: { url: 'https://kicket.club/m/sede-polo', txt: '🍽️ Ver menú y pedir tu almuerzo' } },
     { ini: '14:35', fin: '14:40', tipo: 'general', ico: '🎤', titulo: 'Inicio de la segunda parte', sub: 'Volvemos a la sala' },
     { ini: '14:40', fin: '15:30', tipo: 'charla', foto: 'natt', titulo: 'Natt La Regina', sub: 'Event Planner · Directora de Natt La Regina Planners', etiqueta: 'Entrevista', tema: 'El negocio detrás de los eventos', desc: 'Una entrevista sobre el lado del negocio que pocas veces se muestra: cómo se pasa de hacer todo a liderar un equipo, cómo se arma un presupuesto para que un evento sea rentable, qué tareas se pueden optimizar y cómo se sostiene la calidad cuando la empresa crece. Natt lleva 25 años construyendo una empresa de eventos sociales y corporativos.', preguntas: 10 },
     { ini: '15:30', fin: '15:50', tipo: 'pausa', ico: '☕', titulo: 'Coffee break', sub: '20 minutos para recargar' },
@@ -222,7 +224,7 @@
       var det = a.tipo === 'charla' ? '<div class="det">' + (a.desc ? '<p>' + esc(a.desc) + '</p>' : '<p><b>' + esc(a.titulo) + '</b> · ' + esc(a.sub) + '</p>') + '<p class="cuando">' + esc(a.ini) + ' a ' + esc(a.fin) + ' hs · ' + esc(a.etiqueta || 'Charla') + ' de ' + dur(a.ini, a.fin) + ', con ' + a.preguntas + ' minutos de preguntas al final.</p></div>' : '';
       return '<div class="item ' + est + '" data-i="' + i + '"><div class="hora">' + esc(a.ini) + '</div><div class="eje"><span class="nodo"></span></div>' +
         '<div class="tarjeta' + (a.tipo === 'pausa' ? ' pausa' : '') + (abiertas[i] ? ' abierta' : '') + '" data-i="' + i + '">' +
-        (a.tipo === 'charla' ? '<button aria-expanded="' + (abiertas[i] ? 'true' : 'false') + '">' + cab + '</button>' : '<div style="display:flex;gap:12px;align-items:center">' + cab + '</div>') + prog + det + '</div></div>';
+        (a.tipo === 'charla' ? '<button aria-expanded="' + (abiertas[i] ? 'true' : 'false') + '">' + cab + '</button>' : '<div style="display:flex;gap:12px;align-items:center">' + cab + '</div>') + (a.link ? '<a class="almLink" href="' + esc(a.link.url) + '" target="_blank" rel="noopener">' + esc(a.link.txt) + ' ›</a>' : '') + prog + det + '</div></div>';
     }).join('');
     marca(t); estado(t);
   }
